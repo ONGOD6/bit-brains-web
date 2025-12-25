@@ -1,5 +1,5 @@
 {
-  "name": "bit-brains-web",
+  "name": "bit-brains",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -7,8 +7,8 @@
     "start": "next start"
   },
   "dependencies": {
-    "next": "14.x",
-    "react": "18.x",
-    "react-dom": "18.x"
+    "next": "14.1.0",
+    "react": "20.0.0",
+    "react-dom": "20.0.0"
   }
 }
