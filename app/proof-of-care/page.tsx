@@ -1,38 +1,28 @@
-export default function Home() {
+export default function ProofOfCare() {
   return (
     <main
       style={{
         padding: "2.5rem",
         maxWidth: "960px",
         margin: "0 auto",
-        fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, sans-serif",
-      }}
-    >
-      <header>
-        <h1>Bit Brains Protocol</h1>
-        <p>A Proof of Care powered autonomous intelligence protocol.</p>
+        fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, sans-
       </header>
+          
+<p>
+  Proof of Care is the core consensus primitive of Bit Brains. It replaces
+  extractive incentive models with demonstrated stewardship. Care actions
+  are observable, attributable, and economically recognized through
+  verifiable computation and zero-knowledge proof technologies.
+</p>
 
       <section style={{ marginTop: "2.5rem" }}>
         <h2>What is Bit Brains?</h2>
         <p>
-          Bit Brains is a decentralized protocol that recognizes, measures,
-          and rewards cognitive care, stewardship, and intelligence
-          contribution. Participants earn protocol-native value by
-          demonstrating proof of care toward autonomous intelligence
-          artifacts known as Brains.
+  Proof of Care is the core consensus primitive of Bit Brains. It replaces
+  extractive incentive models with demonstrated stewardship. Care actions
+  are observable, attributable, and economically recognized through
+  verifiable computation and zero-knowledge proof technologies.
         </p>
-      </section>
-
-      <section style={{ marginTop: "2.5rem" }}>
-        <h2>Proof of Care</h2>
-        <p>
-          Proof of Care is the core consensus primitive of Bit Brains. It
-          replaces extractive incentives with demonstrated stewardship.
-          Care actions are observable, attributable, and economically
-          recognized by the protocol.
-        </p>
-      </section>
 
       <section style={{ marginTop: "2.5rem" }}>
         <h2>Brains & Brainiacs</h2>
