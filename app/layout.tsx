@@ -26,6 +26,7 @@ export default function RootLayout({
           <Link href="/">Home</Link>
           <Link href="/manifesto">Manifesto</Link>
           <Link href="/mint">Mint</Link>
+          <Link href="/music">Music</Link>
           <Link href="/stake">Stake</Link>
         </nav>
 
