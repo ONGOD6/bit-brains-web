@@ -29,6 +29,7 @@ export default function RootLayout({
           <Link href="/mint">Mint</Link>
           <Link href="/music">Music</Link>
           <Link href="/stake">Stake</Link>
+         <Link href="/proof-of-care">Proof of Care</Link>
         </nav>
 
         <div style={{ padding: "2rem" }}>{children}</div>
