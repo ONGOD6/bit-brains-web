@@ -2,10 +2,25 @@ export default function Home() {
   return (
     <main style={{ textAlign: "center", padding: "4rem 1rem" }}>
       <img
-        src="/brain-evolution.gif"
-        alt="Proof of Care Brain"
-        style={{ maxWidth: "320px", margin: "0 auto 2rem" }}
-      />
+  src="/brain-evolution.gif"
+  alt="Proof of Care Brain"
+  style={{
+    maxWidth: "320px",
+    margin: "0 auto 2rem",
+    animation: "spin 18s linear infinite"
+  }}
+/>
+      
+      <style jsx>{`
+  @keyframes spin {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+`}</style>
 
       <h1>Proof of Care (PoC)</h1>
 
