@@ -14,18 +14,56 @@ export default function Home() {
       }}
     >
       {/* ========================= */}
-      {/* Brain (large, static) */}
+      {/* Static container */}
       {/* ========================= */}
-      <img
-        src="/brain-evolution.gif"
-        alt="Proof of Care Brain"
+      <div
         style={{
           width: "100%",
-          maxWidth: "600px", // large size stays
+          maxWidth: "600px",
           marginBottom: "2.75rem",
-          opacity: 0.96,
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
         }}
-      />
+      >
+        {/* ========================= */}
+        {/* Rotating brain ONLY */}
+        {/* ========================= */}
+        <img
+          src="/brain-evolution.gif"
+          alt="Proof of Care Brain"
+          className="rotatingBrain"
+          style={{
+            width: "100%",
+            opacity: 0.96,
+          }}
+        />
+      </div>
+
+      {/* ========================= */}
+      {/* Slow rotation (inner only) */}
+      {/* ========================= */}
+      <style jsx>{`
+        .rotatingBrain {
+          animation: slowSpin 120s linear infinite; /* slowed one notch */
+          transform-origin: center center;
+        }
+
+        @keyframes slowSpin {
+          from {
+            transform: rotate(0deg);
+          }
+          to {
+            transform: rotate(360deg);
+          }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .rotatingBrain {
+            animation: none;
+          }
+        }
+      `}</style>
 
       {/* ========================= */}
       {/* Title */}
