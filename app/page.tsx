@@ -14,33 +14,18 @@ export default function Home() {
       }}
     >
       {/* ========================= */}
-      {/* Brain */}
+      {/* Brain (large, static) */}
       {/* ========================= */}
       <img
         src="/brain-evolution.gif"
         alt="Proof of Care Brain"
         style={{
           width: "100%",
-          maxWidth: "600px", // DOUBLE SIZE (was 300px)
+          maxWidth: "600px", // large size stays
           marginBottom: "2.75rem",
-          animation: "spin 28s linear infinite",
           opacity: 0.96,
         }}
       />
-
-      {/* ========================= */}
-      {/* Animation */}
-      {/* ========================= */}
-      <style jsx>{`
-        @keyframes spin {
-          from {
-            transform: rotate(0deg);
-          }
-          to {
-            transform: rotate(360deg);
-          }
-        }
-      `}</style>
 
       {/* ========================= */}
       {/* Title */}
