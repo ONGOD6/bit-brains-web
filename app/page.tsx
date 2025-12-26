@@ -1,39 +1,76 @@
 export default function Home() {
   return (
-    <main style={{ textAlign: "center", padding: "4rem 1rem" }}>
+    <main
+      style={{
+        minHeight: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        textAlign: "center",
+        padding: "4rem 1.5rem",
+      }}
+    >
+      {/* Brain */}
       <img
-  src="/brain-evolution.gif"
-  alt="Proof of Care Brain"
-  style={{
-    maxWidth: "320px",
-    margin: "0 auto 2rem",
-    animation: "spin 18s linear infinite"
-  }}
-/>
-      
+        src="/brain-evolution.gif"
+        alt="Proof of Care Brain"
+        style={{
+          maxWidth: "300px",
+          marginBottom: "2.5rem",
+          animation: "spin 28s linear infinite",
+          opacity: 0.95,
+        }}
+      />
+
+      {/* Animation */}
       <style jsx>{`
-  @keyframes spin {
-    from {
-      transform: rotate(0deg);
-    }
-    to {
-      transform: rotate(360deg);
-    }
-  }
-`}</style>
+        @keyframes spin {
+          from {
+            transform: rotate(0deg);
+          }
+          to {
+            transform: rotate(360deg);
+          }
+        }
+      `}</style>
 
-      <h1>Proof of Care (PoC)</h1>
+      {/* Title */}
+      <h1 style={{ fontSize: "2.25rem", marginBottom: "1rem" }}>
+        Proof of Care
+      </h1>
 
-      <p style={{ maxWidth: "720px", margin: "1rem auto", fontSize: "1.1rem" }}>
-        Everything starts with Proof of Care.
+      {/* Core Message */}
+      <p
+        style={{
+          maxWidth: "720px",
+          fontSize: "1.15rem",
+          lineHeight: 1.6,
+          opacity: 0.9,
+          marginBottom: "2rem",
+        }}
+      >
+        A new protocol standard for intelligence, stewardship,
+        and value rooted in verifiable care.
         <br />
-        Care is measured. Care is verified. Care becomes value.
+        <br />
+        <strong>Everything else emerges from it.</strong>
       </p>
 
-      <p style={{ maxWidth: "720px", margin: "0 auto", opacity: 0.85 }}>
-        BitBrains introduces a PoC-first protocol layer combining ENS identity,
-        zero-knowledge verification, and real-world asset alignment.
-      </p>
+      {/* CTA */}
+      <a
+        href="/proof-of-care"
+        style={{
+          textDecoration: "none",
+          padding: "0.75rem 1.5rem",
+          border: "1px solid currentColor",
+          borderRadius: "999px",
+          fontSize: "0.95rem",
+          opacity: 0.85,
+        }}
+      >
+        Explore Proof of Care →
+      </a>
     </main>
   );
 }
