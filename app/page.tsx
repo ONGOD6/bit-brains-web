@@ -1,3 +1,5 @@
+"use client";
+
 export default function Home() {
   return (
     <main
@@ -36,9 +38,7 @@ export default function Home() {
       `}</style>
 
       {/* Title */}
-      <h1 style={{ fontSize: "2.25rem", marginBottom: "1rem" }}>
-        Proof of Care
-      </h1>
+      <h1 style={{ fontSize: "2.25rem", marginBottom: "1rem" }}>Proof of Care</h1>
 
       {/* Core Message */}
       <p
@@ -51,6 +51,7 @@ export default function Home() {
         }}
       >
         A new protocol standard for intelligence, stewardship,
+        <br />
         and value rooted in verifiable care.
         <br />
         <br />
