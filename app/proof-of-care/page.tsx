@@ -1,7 +1,10 @@
+"use client";
+
 import Image from "next/image";
 
 export default function ProofOfCarePage() {
   return (
+    ...
     <main
       style={{
         padding: "2.5rem",
