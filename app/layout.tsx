@@ -1,4 +1,4 @@
- import type { ReactNode } from "react";
+import type { ReactNode } from "react";
 import Link from "next/link";
 
 export default function RootLayout({
@@ -29,7 +29,8 @@ export default function RootLayout({
           <Link href="/mint">Mint</Link>
           <Link href="/music">Music</Link>
           <Link href="/stake">Stake</Link>
-         <Link href="/proof-of-care">Proof of Care</Link>
+          <Link href="/proof-of-care">Proof of Care</Link>
+          <Link href="/ens">ENS</Link>
         </nav>
 
         <div style={{ padding: "2rem" }}>{children}</div>
