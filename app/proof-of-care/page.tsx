@@ -28,8 +28,8 @@ export default function ProofOfCarePage() {
         </p>
 
         <p>
-          Proof of Care aligns intelligence, ownership, and responsibility into
-          a single accountable system.
+          Proof of Care aligns intelligence, ownership, and responsibility into a
+          single accountable system.
         </p>
       </header>
 
@@ -38,19 +38,17 @@ export default function ProofOfCarePage() {
       {/* ============================ */}
       <section style={{ marginTop: "3.5rem", textAlign: "center" }}>
         <Image
-  src="/images/IMG_0617.jpg"
-  alt="Proof of Care"
-  width={960}
-  height={540}
+          src="/images/IMG_0617.jpg"
+          alt="Proof of Care"
+          width={960}
+          height={540}
           priority
-  style={{ margin: "2rem 0", borderRadius: "12px" }}
-/>
-        
-          
+          style={{ margin: "2rem 0", borderRadius: "12px" }}
+        />
 
         <p style={{ marginTop: "1.25rem", opacity: 0.85 }}>
-          Care practices signal responsibility. Responsibility forms stewardship.
-          Proof enables access, governance, and yield.
+          Care practices signal responsibility. Responsibility forms
+          stewardship. Proof enables access, governance, and yield.
         </p>
       </section>
 
@@ -64,13 +62,13 @@ export default function ProofOfCarePage() {
 
         <p>
           It enables the creation, ownership, and evolution of autonomous
-          intelligence artifacts ("Brains") that are guided by human stewards
-          rather than exploited as disposable compute.
+          intelligence artifacts (&quot;Brains&quot;) that are guided by human
+          stewards rather than exploited as disposable compute.
         </p>
 
         <p>
-          The system rewards long-term alignment, care, and participation
-          instead of short-term extraction.
+          The system rewards long-term alignment, care, and participation instead
+          of short-term extraction.
         </p>
       </section>
 
@@ -127,22 +125,8 @@ export default function ProofOfCarePage() {
           and reflected back into the system as influence.
         </p>
 
-        <p>
-          Care → Signal → Verification → Weight → Influence → Feedback → Care
-        </p>
-
-        <p>
-          This loop allows intelligence, identity, and value to mature
-          responsibly over time.
-        </p>
+        <p>Care → Signal → Verification → Weight → Influence → Feedback → Care</p>
       </section>
-
-      {/* ============================ */}
-      {/* Footer */}
-      {/* ============================ */}
-      <footer style={{ marginTop: "4rem", opacity: 0.7 }}>
-        <p>Status: Proof of Care layer under active development.</p>
-      </footer>
     </main>
   );
 }
