@@ -1,53 +1,62 @@
-import React from "react";
-import RotatingCareDiagram from "@/components/RotatingCareDiagram";
+import Image from "next/image";
 
-export default function ProofOfCare() {
+export default function ProofOfCarePage() {
   return (
     <main
       style={{
         padding: "2.5rem",
         maxWidth: "960px",
         margin: "0 auto",
-        fontFamily:
-          "system-ui, -apple-system, BlinkMacSystemFont, sans-serif",
+        lineHeight: 1.6,
       }}
     >
-      {/* ============================== */}
-      {/* Proof of Care — Overview */}
-      {/* ============================== */}
-
-      <h1>Proof of Care</h1>
-
-      <p>
-        Proof of Care (PoC) is the core consensus primitive of Bit Brains. It
-        replaces extractive incentive models with demonstrated stewardship.
-      </p>
-
-      <p>
-        Care is not claimed — it is observed, attributable, and verifiable.
-        Actions that preserve, improve, or responsibly guide intelligent systems
-        are recognized as first-class economic signals through verifiable
-        computation and zero-knowledge proof technologies.
-      </p>
-
-      <p>
-        Proof of Care aligns intelligence, ownership, and responsibility into a
-        single accountable system.
-      </p>
-
-      {/* Visual / Diagram */}
-      <RotatingCareDiagram />
-
-      {/* ============================== */}
-      {/* What Is Bit Brains */}
-      {/* ============================== */}
-
-      <section style={{ marginTop: "2.5rem" }}>
-        <h2>What Is Bit Brains</h2>
+      {/* ========================= */}
+      {/* Header */}
+      {/* ========================= */}
+      <header>
+        <h1>Proof of Care</h1>
 
         <p>
-          Bit Brains is a protocol for stewarded intelligence.
+          Proof of Care (PoC) is the core consensus primitive of Bit Brains. It
+          replaces extractive incentive models with demonstrated stewardship.
         </p>
+
+        <p>
+          Care is not claimed — it is observed, attributable, and verifiable.
+          Actions that preserve, improve, or responsibly guide intelligent
+          systems are recognized as first-class economic signals.
+        </p>
+
+        <p>
+          Proof of Care aligns intelligence, ownership, and responsibility into
+          a single accountable system.
+        </p>
+      </header>
+
+      {/* ========================= */}
+      {/* Visual / Image */}
+      {/* ========================= */}
+      <section style={{ marginTop: "3rem", textAlign: "center" }}>
+        <Image
+          src="/proof-of-care.png"
+          alt="Proof of Care diagram"
+          width={720}
+          height={420}
+          style={{
+            maxWidth: "100%",
+            height: "auto",
+            borderRadius: "12px",
+          }}
+        />
+      </section>
+
+      {/* ========================= */}
+      {/* What Is Bit Brains */}
+      {/* ========================= */}
+      <section style={{ marginTop: "3rem" }}>
+        <h2>What Is Bit Brains</h2>
+
+        <p>Bit Brains is a protocol for stewarded intelligence.</p>
 
         <p>
           It enables the creation, ownership, and evolution of autonomous
@@ -56,16 +65,15 @@ export default function ProofOfCare() {
         </p>
 
         <p>
-          The system rewards long-term alignment, care, and participation instead
-          of short-term extraction.
+          The system rewards long-term alignment, care, and participation
+          instead of short-term extraction.
         </p>
       </section>
 
-      {/* ============================== */}
+      {/* ========================= */}
       {/* Brains & Brainiacs */}
-      {/* ============================== */}
-
-      <section style={{ marginTop: "2.5rem" }}>
+      {/* ========================= */}
+      <section style={{ marginTop: "3rem" }}>
         <h2>Brains &amp; Brainiacs</h2>
 
         <p>
@@ -80,11 +88,10 @@ export default function ProofOfCare() {
         </p>
       </section>
 
-      {/* ============================== */}
+      {/* ========================= */}
       {/* Cerebrals */}
-      {/* ============================== */}
-
-      <section style={{ marginTop: "2.5rem" }}>
+      {/* ========================= */}
+      <section style={{ marginTop: "3rem" }}>
         <h2>Cerebrals</h2>
 
         <p>
@@ -100,11 +107,10 @@ export default function ProofOfCare() {
         </p>
       </section>
 
-      {/* ============================== */}
+      {/* ========================= */}
       {/* The Care Loop */}
-      {/* ============================== */}
-
-      <section style={{ marginTop: "2.5rem" }}>
+      {/* ========================= */}
+      <section style={{ marginTop: "3rem" }}>
         <h2>The Care Loop</h2>
 
         <p>
@@ -126,6 +132,13 @@ export default function ProofOfCare() {
           responsibly over time.
         </p>
       </section>
+
+      {/* ========================= */}
+      {/* Footer */}
+      {/* ========================= */}
+      <footer style={{ marginTop: "4rem", opacity: 0.7 }}>
+        <p>Status: Proof of Care layer under active development.</p>
+      </footer>
     </main>
   );
 }
