@@ -1,151 +1,136 @@
 "use client";
 
-export default function ENSLandingPage() {
+export default function ENSPage() {
+  const ensAppName = "BitBrains";
+
   return (
     <main
       style={{
-        padding: "2.5rem",
-        maxWidth: "980px",
+        minHeight: "100vh",
+        padding: "2.5rem 1.25rem",
+        maxWidth: "960px",
         margin: "0 auto",
         lineHeight: 1.65,
       }}
     >
-      {/* ================= HEADER ================= */}
-      <header style={{ marginBottom: "2.5rem" }}>
-        <h1 style={{ fontSize: "2.3rem", marginBottom: "0.75rem" }}>
-          ENS Wallet Verification
-        </h1>
+      {/* Title */}
+      <h1 style={{ fontSize: "2.4rem", marginBottom: "0.75rem" }}>
+        ENS Wallet Resolution
+      </h1>
 
-        <p style={{ opacity: 0.9, fontSize: "1.05rem" }}>
-          Every Brain holder must resolve their assigned ENS subdomain
-          (example: <code>brain-0421.bitbrains.eth</code>) to a wallet they control
-          in order to receive and redeem rewards.
-        </p>
-      </header>
+      <p style={{ opacity: 0.9, fontSize: "1.1rem", marginBottom: "1.5rem" }}>
+        To receive staking rewards, each Brain holder must resolve their ENS subdomain
+        to a wallet they control. ENS resolution is the first required verification step.
+      </p>
 
-      {/* ================= HOW IT WORKS ================= */}
+      {/* Requirements */}
       <section
         style={{
+          padding: "1.25rem",
           border: "1px solid rgba(255,255,255,0.15)",
           borderRadius: "14px",
-          padding: "1.4rem",
           marginBottom: "2rem",
         }}
       >
-        <h2 style={{ marginTop: 0 }}>How Rewards Work</h2>
-
-        <ul style={{ opacity: 0.92 }}>
+        <h2 style={{ fontSize: "1.4rem", marginBottom: "0.75rem" }}>
+          Requirements (Non-Negotiable)
+        </h2>
+        <ul style={{ opacity: 0.9, paddingLeft: "1.2rem", margin: 0 }}>
           <li>
-            <strong>ENS routing:</strong> Your Brain ENS is the canonical payout
-            address.
+            Your Brain subdomain (example: <strong>brain-###.bitbrains.eth</strong>) must
+            resolve to a wallet you control.
           </li>
           <li>
-            <strong>ZK verification:</strong> Zero-knowledge proofs verify
-            eligibility without revealing private data.
+            Rewards are paid to the <strong>resolved address</strong> for that ENS name.
           </li>
           <li>
-            <strong>Internal accrual:</strong> Rewards accrue internally while
-            staked — no constant claiming required.
+            You pay ENS gas fees when updating records (the protocol does not pay these fees).
           </li>
           <li>
-            <strong>Redemption:</strong> When you redeem, rewards are sent on
-            Ethereum to your ENS-resolved wallet.
-          </li>
-          <li>
-            <strong>Gas:</strong> Gas is paid only when you redeem rewards.
+            ZK proofs can track eligibility/accounting separately, but ENS resolution is the
+            payout destination.
           </li>
         </ul>
       </section>
 
-      {/* ================= USER ACTION ================= */}
-      <section style={{ marginBottom: "2rem" }}>
-        <h2>What You Need To Do</h2>
-
-        <ol style={{ opacity: 0.92 }}>
-          <li>Locate your assigned Brain ENS subdomain.</li>
-          <li>
-            Set the ENS <strong>address record</strong> to a wallet you control.
-          </li>
-          <li>
-            That wallet becomes your permanent reward destination.
-          </li>
-        </ol>
-
-        <div
-          style={{
-            display: "flex",
-            gap: "0.75rem",
-            flexWrap: "wrap",
-            marginTop: "1.25rem",
-          }}
-        >
-          <a
-            href="https://app.ens.domains/"
-            target="_blank"
-            rel="noreferrer"
-            style={{
-              padding: "0.8rem 1.2rem",
-              borderRadius: "12px",
-              border: "1px solid rgba(255,255,255,0.25)",
-              textDecoration: "none",
-            }}
-          >
-            Open ENS Manager ↗
-          </a>
-
-          <a
-            href="/ens/verify"
-            style={{
-              padding: "0.8rem 1.2rem",
-              borderRadius: "12px",
-              border: "1px solid currentColor",
-              textDecoration: "none",
-            }}
-          >
-            Verify ENS (Coming Next) →
-          </a>
-        </div>
-      </section>
-
-      {/* ================= RULES ================= */}
+      {/* Action buttons */}
       <section
         style={{
-          border: "1px solid rgba(255,255,255,0.15)",
-          borderRadius: "14px",
-          padding: "1.4rem",
+          display: "grid",
+          gap: "0.9rem",
           marginBottom: "2rem",
         }}
       >
-        <h2 style={{ marginTop: 0 }}>Important Rules</h2>
+        <a
+          href={`https://app.ens.domains/`}
+          target="_blank"
+          rel="noreferrer"
+          style={{
+            display: "inline-block",
+            textDecoration: "none",
+            padding: "0.95rem 1.25rem",
+            borderRadius: "999px",
+            border: "1px solid rgba(255,255,255,0.35)",
+            textAlign: "center",
+            fontSize: "1rem",
+            opacity: 0.95,
+          }}
+        >
+          Open ENS Manager (Set / Resolve My Subdomain) →
+        </a>
 
-        <p style={{ opacity: 0.9 }}>
-          If your Brain ENS is not correctly resolved, rewards cannot be delivered.
-          ENS defines the destination. ZK proofs define eligibility.
-        </p>
+        <a
+          href={`/proof-of-care`}
+          style={{
+            display: "inline-block",
+            textDecoration: "none",
+            padding: "0.95rem 1.25rem",
+            borderRadius: "999px",
+            border: "1px solid rgba(255,255,255,0.2)",
+            textAlign: "center",
+            fontSize: "1rem",
+            opacity: 0.85,
+          }}
+        >
+          Back to Proof of Care →
+        </a>
       </section>
 
-      {/* ================= FAQ ================= */}
-      <section style={{ opacity: 0.92 }}>
-        <h2>FAQ</h2>
+      {/* Claim rewards */}
+      <section
+        style={{
+          padding: "1.25rem",
+          border: "1px solid rgba(255,255,255,0.15)",
+          borderRadius: "14px",
+        }}
+      >
+        <h2 style={{ fontSize: "1.4rem", marginBottom: "0.6rem" }}>
+          Claim Rewards
+        </h2>
 
-        <p>
-          <strong>Does the protocol pay ENS gas fees?</strong>
-          <br />
-          No. Each Brain holder resolves their own ENS.
+        <p style={{ opacity: 0.9, marginBottom: "1rem" }}>
+          Rewards accrue internally while your Brain remains staked. When you choose to claim,
+          you will pay the gas for the redemption transaction. The protocol routes rewards to the
+          resolved ENS address.
         </p>
 
-        <p>
-          <strong>Do I need an exchange to redeem rewards?</strong>
+        <div
+          style={{
+            padding: "0.9rem 1rem",
+            borderRadius: "12px",
+            background: "rgba(255,255,255,0.06)",
+            opacity: 0.9,
+          }}
+        >
+          <strong>Status:</strong> Claim UI is coming next.
           <br />
-          No. Redemptions are protocol-native and sent directly to your ENS wallet.
-        </p>
-
-        <p>
-          <strong>Will Solana payouts be supported?</strong>
-          <br />
-          Possibly later. Version one is Ethereum-only for clarity and security.
-        </p>
+          For now, resolve your ENS so you are eligible to receive rewards.
+        </div>
       </section>
+
+      <footer style={{ marginTop: "2.25rem", opacity: 0.65, fontSize: "0.95rem" }}>
+        ENS App: <strong>{ensAppName}</strong> — Ethereum-only redemptions (v1).
+      </footer>
     </main>
   );
 }
