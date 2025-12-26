@@ -38,17 +38,15 @@ export default function ProofOfCarePage() {
       {/* ============================ */}
       <section style={{ marginTop: "3.5rem", textAlign: "center" }}>
         <Image
-          src="/Proof of care img.jpeg"
-          alt="Proof of Care flow: Care Signal → Autonomous Intelligent Identity → ZK Verification → Access, Governance, and RWAs"
-          width={1600}
-          height={900}
-          style={{
-            maxWidth: "100%",
-            height: "auto",
-            borderRadius: "16px",
-          }}
+  src="/images/IMG_0617.jpg"
+  alt="Proof of Care"
+  width={960}
+  height={540}
           priority
-        />
+  style={{ margin: "2rem 0", borderRadius: "12px" }}
+/>
+        
+          
 
         <p style={{ marginTop: "1.25rem", opacity: 0.85 }}>
           Care practices signal responsibility. Responsibility forms stewardship.
