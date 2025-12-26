@@ -13,28 +13,58 @@ export default function Home() {
         padding: "4rem 1.5rem",
       }}
     >
+      {/* ========================= */}
       {/* Brain */}
+      {/* ========================= */}
       <img
         src="/brain-evolution.gif"
         alt="Proof of Care Brain"
         style={{
-          maxWidth: "300px",
-          marginBottom: "2.5rem",
-          opacity: 0.95,
+          width: "100%",
+          maxWidth: "600px", // DOUBLE SIZE (was 300px)
+          marginBottom: "2.75rem",
+          animation: "spin 28s linear infinite",
+          opacity: 0.96,
         }}
       />
 
-      {/* Title */}
-      <h1 style={{ fontSize: "2.25rem", marginBottom: "1rem" }}>Proof of Care</h1>
+      {/* ========================= */}
+      {/* Animation */}
+      {/* ========================= */}
+      <style jsx>{`
+        @keyframes spin {
+          from {
+            transform: rotate(0deg);
+          }
+          to {
+            transform: rotate(360deg);
+          }
+        }
+      `}</style>
 
+      {/* ========================= */}
+      {/* Title */}
+      {/* ========================= */}
+      <h1
+        style={{
+          fontSize: "2.5rem",
+          marginBottom: "1.25rem",
+          fontWeight: 600,
+        }}
+      >
+        Proof of Care
+      </h1>
+
+      {/* ========================= */}
       {/* Core Message */}
+      {/* ========================= */}
       <p
         style={{
           maxWidth: "720px",
           fontSize: "1.15rem",
           lineHeight: 1.6,
           opacity: 0.9,
-          marginBottom: "2rem",
+          marginBottom: "2.25rem",
         }}
       >
         A new protocol standard for intelligence, stewardship,
@@ -45,12 +75,14 @@ export default function Home() {
         <strong>Everything else emerges from it.</strong>
       </p>
 
+      {/* ========================= */}
       {/* CTA */}
+      {/* ========================= */}
       <a
         href="/proof-of-care"
         style={{
           textDecoration: "none",
-          padding: "0.75rem 1.5rem",
+          padding: "0.8rem 1.75rem",
           border: "1px solid currentColor",
           borderRadius: "999px",
           fontSize: "0.95rem",
