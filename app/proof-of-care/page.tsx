@@ -10,9 +10,9 @@ export default function ProofOfCarePage() {
         lineHeight: 1.6,
       }}
     >
-      {/* ========================= */}
+      {/* ============================ */}
       {/* Header */}
-      {/* ========================= */}
+      {/* ============================ */}
       <header>
         <h1>Proof of Care</h1>
 
@@ -33,26 +33,32 @@ export default function ProofOfCarePage() {
         </p>
       </header>
 
-      {/* ========================= */}
-      {/* Visual / Image */}
-      {/* ========================= */}
-      <section style={{ marginTop: "3rem", textAlign: "center" }}>
+      {/* ============================ */}
+      {/* Proof of Care Visual */}
+      {/* ============================ */}
+      <section style={{ marginTop: "3.5rem", textAlign: "center" }}>
         <Image
-          src="/proof-of-care.png"
-          alt="Proof of Care diagram"
-          width={720}
-          height={420}
+          src="/Proof of care img.jpeg"
+          alt="Proof of Care flow: Care Signal → Autonomous Intelligent Identity → ZK Verification → Access, Governance, and RWAs"
+          width={1600}
+          height={900}
           style={{
             maxWidth: "100%",
             height: "auto",
-            borderRadius: "12px",
+            borderRadius: "16px",
           }}
+          priority
         />
+
+        <p style={{ marginTop: "1.25rem", opacity: 0.85 }}>
+          Care practices signal responsibility. Responsibility forms stewardship.
+          Proof enables access, governance, and yield.
+        </p>
       </section>
 
-      {/* ========================= */}
+      {/* ============================ */}
       {/* What Is Bit Brains */}
-      {/* ========================= */}
+      {/* ============================ */}
       <section style={{ marginTop: "3rem" }}>
         <h2>What Is Bit Brains</h2>
 
@@ -60,7 +66,7 @@ export default function ProofOfCarePage() {
 
         <p>
           It enables the creation, ownership, and evolution of autonomous
-          intelligence artifacts (“Brains”) that are guided by human stewards
+          intelligence artifacts ("Brains") that are guided by human stewards
           rather than exploited as disposable compute.
         </p>
 
@@ -70,9 +76,9 @@ export default function ProofOfCarePage() {
         </p>
       </section>
 
-      {/* ========================= */}
+      {/* ============================ */}
       {/* Brains & Brainiacs */}
-      {/* ========================= */}
+      {/* ============================ */}
       <section style={{ marginTop: "3rem" }}>
         <h2>Brains &amp; Brainiacs</h2>
 
@@ -88,9 +94,9 @@ export default function ProofOfCarePage() {
         </p>
       </section>
 
-      {/* ========================= */}
+      {/* ============================ */}
       {/* Cerebrals */}
-      {/* ========================= */}
+      {/* ============================ */}
       <section style={{ marginTop: "3rem" }}>
         <h2>Cerebrals</h2>
 
@@ -107,9 +113,9 @@ export default function ProofOfCarePage() {
         </p>
       </section>
 
-      {/* ========================= */}
+      {/* ============================ */}
       {/* The Care Loop */}
-      {/* ========================= */}
+      {/* ============================ */}
       <section style={{ marginTop: "3rem" }}>
         <h2>The Care Loop</h2>
 
@@ -133,9 +139,9 @@ export default function ProofOfCarePage() {
         </p>
       </section>
 
-      {/* ========================= */}
+      {/* ============================ */}
       {/* Footer */}
-      {/* ========================= */}
+      {/* ============================ */}
       <footer style={{ marginTop: "4rem", opacity: 0.7 }}>
         <p>Status: Proof of Care layer under active development.</p>
       </footer>
