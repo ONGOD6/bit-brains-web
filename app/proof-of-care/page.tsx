@@ -127,9 +127,12 @@ export default function ProofOfCarePage() {
           Care is expressed through action, observed through verifiable signals,
           and reflected back into the system as influence.
         </p>
+        <p>
+  Care → Signal → Verification → Weight → Influence → Feedback → Care
+</p>
+</section>
 
-        <p>Care → Signal → Verification → Weight → Influence → Feedback → Care</p>
-      </section>
-    </main>
-  );
-}
+        
+
+
+  
