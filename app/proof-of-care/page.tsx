@@ -1,4 +1,5 @@
 import React from "react";
+import RotatingCareDiagram from "@/components/RotatingCareDiagram";
 
 export default function ProofOfCare() {
   return (
@@ -29,6 +30,7 @@ export default function ProofOfCare() {
         Proof of Care aligns intelligence, ownership, and responsibility into
         a single accountable system.
       </p>
+      <RotatingCareDiagram />
 
       {/* ========================= */}
       {/* What Is Bit Brains */}
