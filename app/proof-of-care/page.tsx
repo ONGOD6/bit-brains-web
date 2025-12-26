@@ -36,22 +36,20 @@ export default function ProofOfCarePage() {
       </header>
 
       {/* ============================ */}
-      {/* Proof of Care Visual (Motion) */}
+      {/* Nerve / Autonomy Image (Animated) */}
       {/* ============================ */}
-      <section style={{ marginTop: "3.5rem", textAlign: "center" }}>
-        <div className="nerveWrap">
-          <div className="glowRing" aria-hidden="true" />
+      <section style={{ marginTop: "2.5rem" }}>
+        <div className="poc-image-wrap">
           <Image
             src="/images/IMG_0617.jpg"
-            alt="Proof of Care"
-            width={960}
-            height={540}
+            alt="Proof of Care — Care Signal to Autonomy"
+            width={1400}
+            height={800}
             priority
-            className="nerveImg"
+            className="poc-image"
           />
         </div>
-
-        <p style={{ marginTop: "1.25rem", opacity: 0.85 }}>
+        <p style={{ opacity: 0.85, marginTop: "0.9rem" }}>
           Care practices signal responsibility. Responsibility forms stewardship.
           Proof enables access, governance, and yield.
         </p>
@@ -62,13 +60,11 @@ export default function ProofOfCarePage() {
       {/* ============================ */}
       <section style={{ marginTop: "3rem" }}>
         <h2>Cerebrals</h2>
-
         <p>
           <strong>Cerebrals</strong> are the internal cognitive state layers of a
           Brain. They encode memory, context, intent, and learned behavior over
           time.
         </p>
-
         <p>
           Care does not directly mutate a Brain as a static artifact. Instead,
           verified care signals condition Cerebrals — shaping how intelligence
@@ -97,77 +93,45 @@ export default function ProofOfCarePage() {
         </p>
       </section>
 
-      {/* Motion + glow (safe + subtle) */}
       <style jsx>{`
-        .nerveWrap {
-          position: relative;
-          display: inline-block;
-          width: min(960px, 100%);
-          border-radius: 14px;
+        .poc-image-wrap {
+          margin-top: 1.25rem;
+          border-radius: 16px;
           overflow: hidden;
-          transform: translateZ(0);
+          will-change: transform, filter;
+          animation: drift 7.5s ease-in-out infinite;
+          filter: drop-shadow(0 10px 28px rgba(0, 0, 0, 0.35));
         }
 
-        .nerveImg {
+        .poc-image {
           width: 100%;
           height: auto;
           display: block;
-          border-radius: 14px;
-          animation: nerveFloat 10s ease-in-out infinite;
-          will-change: transform, filter;
+          border-radius: 16px;
+          animation: glow 6.5s ease-in-out infinite;
         }
 
-        /* Soft living glow behind image */
-        .glowRing {
-          position: absolute;
-          inset: -18%;
-          background: radial-gradient(
-            circle at 50% 45%,
-            rgba(120, 170, 255, 0.22),
-            rgba(255, 170, 120, 0.16),
-            transparent 60%
-          );
-          filter: blur(22px);
-          opacity: 0.8;
-          animation: glowPulse 8.5s ease-in-out infinite;
-          pointer-events: none;
-        }
-
-        @keyframes nerveFloat {
+        @keyframes drift {
           0% {
             transform: translateY(0px) scale(1);
-            filter: saturate(1) brightness(1);
           }
           50% {
             transform: translateY(-6px) scale(1.01);
-            filter: saturate(1.05) brightness(1.03);
           }
           100% {
             transform: translateY(0px) scale(1);
-            filter: saturate(1) brightness(1);
           }
         }
 
-        @keyframes glowPulse {
+        @keyframes glow {
           0% {
-            transform: scale(1);
-            opacity: 0.68;
+            filter: brightness(1) contrast(1);
           }
           50% {
-            transform: scale(1.04);
-            opacity: 0.95;
+            filter: brightness(1.06) contrast(1.03);
           }
           100% {
-            transform: scale(1);
-            opacity: 0.68;
-          }
-        }
-
-        /* Respect accessibility settings */
-        @media (prefers-reduced-motion: reduce) {
-          .nerveImg,
-          .glowRing {
-            animation: none !important;
+            filter: brightness(1) contrast(1);
           }
         }
       `}</style>
