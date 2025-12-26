@@ -20,22 +20,9 @@ export default function Home() {
         style={{
           maxWidth: "300px",
           marginBottom: "2.5rem",
-          animation: "spin 28s linear infinite",
           opacity: 0.95,
         }}
       />
-
-      {/* Animation */}
-      <style jsx>{`
-        @keyframes spin {
-          from {
-            transform: rotate(0deg);
-          }
-          to {
-            transform: rotate(360deg);
-          }
-        }
-      `}</style>
 
       {/* Title */}
       <h1 style={{ fontSize: "2.25rem", marginBottom: "1rem" }}>Proof of Care</h1>
