@@ -8,6 +8,18 @@ export const metadata: Metadata = {
   description: "Proof of Care comes first.",
 };
 
+const NAV_LINKS: { href: string; label: string }[] = [
+  { href: "/", label: "Home" },
+  { href: "/proof-of-care", label: "Proof of Care" },
+  { href: "/protocol-standards", label: "Protocol Standards" },
+
+  // Replace these 4 with your real pages:
+  { href: "/about", label: "About" },
+  { href: "/roadmap", label: "Roadmap" },
+  { href: "/genesis", label: "Genesis" },
+  { href: "/faq", label: "FAQ" },
+];
+
 export default function RootLayout({
   children,
 }: {
@@ -18,15 +30,18 @@ export default function RootLayout({
       <body>
         <header className="siteHeader">
           <div className="siteHeaderInner">
-            <div className="brand">Bit Brains</div>
+            <div className="brand">
+              <Link href="/" className="brandLink">
+                Bit Brains
+              </Link>
+            </div>
 
             <nav className="siteNav" aria-label="Primary">
-              <Link href="/proof-of-care" className="navLink">
-                Proof of Care
-              </Link>
-              <Link href="/protocol-standards" className="navLink">
-                Protocol Standards
-              </Link>
+              {NAV_LINKS.map((item) => (
+                <Link key={item.href} href={item.href} className="navLink">
+                  {item.label}
+                </Link>
+              ))}
             </nav>
           </div>
         </header>
