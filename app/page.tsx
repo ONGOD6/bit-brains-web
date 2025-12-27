@@ -1,265 +1,231 @@
 'use client';
-import Link from "next/link";
 
-export default function HomePage() {
-  const brainGifSrc = "/images/brain-10813_256.gif";
+import Link from 'next/link';
+import { useEffect, useMemo, useRef, useState } from 'react';
+
+export default function Page() {
+  // ====== AUDIO (iPad-safe: must start on user gesture) ======
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [audioStarted, setAudioStarted] = useState(false);
+  const [muted, setMuted] = useState(false);
+
+  // IMPORTANT: your repo shows /public/Audio/Ambient.mp3 (capital A)
+  const AUDIO_SRC = '/Audio/Ambient.mp3';
+
+  useEffect(() => {
+    const audio = new Audio(AUDIO_SRC);
+    audio.loop = true;
+    audio.preload = 'auto';
+    audio.volume = 0.55;
+    audio.muted = false;
+    audioRef.current = audio;
+
+    return () => {
+      try {
+        audio.pause();
+        audio.src = '';
+      } catch {}
+    };
+  }, []);
+
+  const startAudio = async () => {
+    if (!audioRef.current) return;
+    try {
+      audioRef.current.muted = muted;
+      await audioRef.current.play();
+      setAudioStarted(true);
+    } catch {
+      // iOS sometimes needs a second tap—this stays quiet by design.
+    }
+  };
+
+  const toggleMute = async () => {
+    setMuted((m) => {
+      const next = !m;
+      if (audioRef.current) audioRef.current.muted = next;
+      return next;
+    });
+
+    // If user taps mute before first play, try starting audio on that tap too.
+    if (!audioStarted) {
+      await startAudio();
+    }
+  };
+
+  // ====== CONTENT (keeps things structured without bloating lines) ======
+  const navItems = useMemo(
+    () => [
+      { href: '/', label: 'Home' },
+      { href: '/proof-of-care', label: 'Proof of Care' },
+      { href: '/eips', label: 'EIPs' },
+    ],
+    []
+  );
 
   return (
-    <main className="page">
-      {/* Top Nav */}
-      <header className="topNav">
-        <nav className="navLinks">
-          <Link className="navLink" href="/">
-            Home
+    <main className="min-h-screen flex flex-col">
+      {/* ===================== NAV (YOU SAID NAV MUST BE HERE) ===================== */}
+      <header className="sticky top-0 z-50 border-b border-white/10 backdrop-blur">
+        <div className="mx-auto max-w-6xl px-6 py-4 flex items-center justify-between">
+          <Link href="/" className="font-semibold tracking-tight">
+            Bit Brains
           </Link>
-          <Link className="navLink" href="/manifesto">
-            Manifesto
-          </Link>
-          <Link className="navLink" href="/mint">
-            Mint
-          </Link>
-          <Link className="navLink" href="/music">
-            Music
-          </Link>
-          <Link className="navLink" href="/stake">
-            Stake
-          </Link>
-          <Link className="navLink" href="/proof-of-care">
-            Proof of Care
-          </Link>
-          <Link className="navLink" href="/ens">
-            ENS
-          </Link>
-        </nav>
+
+          <nav className="flex items-center gap-6 text-sm">
+            {navItems.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="opacity-80 hover:opacity-100 transition-opacity"
+              >
+                {item.label}
+              </Link>
+            ))}
+          </nav>
+        </div>
       </header>
 
-      {/* Hero */}
-      <section className="heroWrap" aria-label="Bit Brains hero">
-        <div className="heroCard">
-          <div className="heroTitle">BIT BRAINS</div>
+      {/* ===================== HERO ===================== */}
+      <section className="flex-1">
+        <div className="mx-auto max-w-6xl px-6 py-12 lg:py-16">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-12 items-center">
+            {/* -------- LEFT: TEXT -------- */}
+            <div className="text-left">
+              <p className="text-sm opacity-70 tracking-wide">
+                Proof of Care (PoC) — Protocol Standard
+              </p>
 
-          <p className="heroSubtitle">
-            Proof of Care (PoC) is the genesis signal. Brains evolve through continuity,
-            verification, and time—anchored by ENS identity and secured by zero-knowledge
-            proof systems—until autonomous, intelligent technology emerges.
-          </p>
+              <h1 className="mt-3 text-4xl md:text-5xl font-semibold tracking-tight leading-tight">
+                Care begins the lineage.
+                <br />
+                <span className="opacity-80">ENS anchors identity</span> and{' '}
+                <span className="opacity-80">ZK preserves privacy</span>.
+              </h1>
 
-          {/* Brain Field */}
-          <div className="fieldWrap">
-            <div className="outerRing" aria-hidden="true" />
-            <div className="innerField">
-              <div className="brainCenter">
-                <img
-                  className="brainGif"
-                 src="/images/brain-10813_256.gif" 
-                  alt="Rotating brain"
-                  draggable={false}
-                />
+              <p className="mt-5 text-base md:text-lg opacity-80 leading-relaxed">
+                Proof of Care is the entry rule. Each Brain binds to an ENS subdomain that resolves
+                to a wallet you control for rewards. Zero-knowledge proofs track eligibility and
+                continuity as the Brain evolves toward autonomous, intelligent technology.
+              </p>
+
+              {/* CTA Row */}
+              <div className="mt-7 flex flex-col sm:flex-row gap-3">
+                <Link
+                  href="/proof-of-care"
+                  className="inline-flex items-center justify-center rounded-md px-5 py-3 text-sm font-semibold border border-white/20 hover:border-white/40 transition-colors"
+                >
+                  Enter Proof of Care
+                </Link>
+
+                <Link
+                  href="/eips"
+                  className="inline-flex items-center justify-center rounded-md px-5 py-3 text-sm font-semibold opacity-80 hover:opacity-100 transition-opacity"
+                >
+                  Read EIPs →
+                </Link>
               </div>
-              <div className="fieldGlow" aria-hidden="true" />
+
+              {/* Evolution points (kept compact but complete) */}
+              <div className="mt-8 border border-white/10 rounded-xl p-5">
+                <p className="text-sm opacity-70">Evolution Path</p>
+                <ul className="mt-3 list-disc pl-5 text-sm opacity-85 leading-6">
+                  <li>
+                    <span className="font-semibold">Genesis Brain</span> — Proof of Care begins.
+                  </li>
+                  <li>
+                    <span className="font-semibold">ENS Binding</span> — deterministic reward routing.
+                  </li>
+                  <li>
+                    <span className="font-semibold">ZK Eligibility</span> — private verification and accrual.
+                  </li>
+                  <li>
+                    <span className="font-semibold">Evolution</span> — continuity into autonomous intelligence.
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            {/* -------- RIGHT: BRAIN + AUDIO -------- */}
+            <div className="flex items-center justify-center">
+              <div className="w-full max-w-md">
+                {/* Make the whole card tappable to start audio (best for iPad) */}
+                <button
+                  type="button"
+                  onClick={startAudio}
+                  className="w-full rounded-2xl border border-white/10 p-6 text-left"
+                  style={{ background: 'transparent' }}
+                  aria-label="Start ambience"
+                >
+                  <div className="w-full flex items-center justify-center">
+                    <img
+                      src="/brain-10813_256.gif"
+                      alt="Rotating Brain"
+                      className="block mx-auto h-auto w-[260px] sm:w-[320px] md:w-[380px]"
+                      draggable={false}
+                    />
+                  </div>
+
+                  {/* Controls row (quiet + minimal) */}
+                  <div className="mt-5 flex items-center justify-between">
+                    <p className="text-xs opacity-60">
+                      {audioStarted ? 'Ambience active' : 'Tap brain to start ambience'}
+                    </p>
+
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation(); // don’t trigger the whole-card tap twice
+                        toggleMute();
+                      }}
+                      className="text-xs opacity-80 hover:opacity-100 transition-opacity border border-white/15 rounded-md px-3 py-1"
+                      aria-label={muted ? 'Unmute ambience' : 'Mute ambience'}
+                    >
+                      {muted ? 'Unmute' : 'Mute'}
+                    </button>
+                  </div>
+                </button>
+
+                {/* Small note for path correctness (kept minimal) */}
+                <p className="mt-3 text-xs opacity-50 text-center">
+                  Audio source: <span className="opacity-70">{AUDIO_SRC}</span>
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* ===================== SECONDARY STRIP (optional but useful) ===================== */}
+          <div className="mt-12 border-t border-white/10 pt-8">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="border border-white/10 rounded-xl p-5">
+                <p className="text-sm font-semibold">ENS First</p>
+                <p className="mt-2 text-sm opacity-75 leading-6">
+                  Rewards route through ENS resolution to a wallet you control — clear, verifiable, and canonical.
+                </p>
+              </div>
+              <div className="border border-white/10 rounded-xl p-5">
+                <p className="text-sm font-semibold">ZK Integrity</p>
+                <p className="mt-2 text-sm opacity-75 leading-6">
+                  Eligibility and continuity can be proven without exposing sensitive data — privacy with auditability.
+                </p>
+              </div>
+              <div className="border border-white/10 rounded-xl p-5">
+                <p className="text-sm font-semibold">Evolution</p>
+                <p className="mt-2 text-sm opacity-75 leading-6">
+                  The Brain progresses through phases into autonomous intelligence — on-chain lineage, provable transitions.
+                </p>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Background layers */}
-      <div className="bgGlowA" aria-hidden="true" />
-      <div className="bgGlowB" aria-hidden="true" />
-
-      <style jsx>{`
-        /* ----------------------------
-           PAGE / BACKGROUND
-        ---------------------------- */
-        .page {
-          min-height: 100vh;
-          display: flex;
-          flex-direction: column;
-          position: relative;
-          overflow-x: hidden;
-
-          /* background */
-          background: radial-gradient(1200px 800px at 50% 20%, rgba(58, 108, 255, 0.18), rgba(0, 0, 0, 0)),
-            radial-gradient(900px 600px at 20% 40%, rgba(124, 58, 237, 0.12), rgba(0, 0, 0, 0)),
-            linear-gradient(180deg, #050712 0%, #03040c 45%, #02030a 100%);
-          color: rgba(255, 255, 255, 0.92);
-        }
-
-        /* Decorative glows (behind everything) */
-        .bgGlowA {
-          position: absolute;
-          inset: -200px -200px auto -200px;
-          height: 520px;
-          background: radial-gradient(closest-side, rgba(66, 153, 225, 0.18), rgba(0, 0, 0, 0));
-          filter: blur(18px);
-          pointer-events: none;
-          z-index: 0;
-        }
-
-        .bgGlowB {
-          position: absolute;
-          inset: auto -200px -260px -200px;
-          height: 560px;
-          background: radial-gradient(closest-side, rgba(147, 51, 234, 0.14), rgba(0, 0, 0, 0));
-          filter: blur(20px);
-          pointer-events: none;
-          z-index: 0;
-        }
-
-        /* ----------------------------
-           TOP NAV
-        ---------------------------- */
-        .topNav {
-          position: sticky;
-          top: 0;
-          z-index: 50;
-          backdrop-filter: blur(10px);
-          background: linear-gradient(180deg, rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0.25));
-          border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-        }
-
-        .navLinks {
-          max-width: 1200px;
-          margin: 0 auto;
-          padding: 14px 18px;
-          display: flex;
-          gap: 18px;
-          flex-wrap: wrap;
-          align-items: center;
-        }
-
-        .navLink {
-          color: rgba(255, 255, 255, 0.78);
-          text-decoration: none;
-          font-size: 14px;
-          letter-spacing: 0.2px;
-        }
-
-        .navLink:hover {
-          color: rgba(255, 255, 255, 0.95);
-          text-decoration: underline;
-          text-underline-offset: 4px;
-        }
-
-        /* ----------------------------
-           HERO LAYOUT
-        ---------------------------- */
-        .heroWrap {
-          flex: 1;
-          display: flex;
-          align-items: flex-start;
-          justify-content: center;
-          padding: 38px 18px 60px;
-          position: relative;
-          z-index: 1; /* above bg glows */
-        }
-
-        .heroCard {
-          width: min(1200px, 100%);
-          border-radius: 22px;
-          padding: 34px 26px 30px;
-          background: rgba(8, 12, 28, 0.62);
-          border: 1px solid rgba(255, 255, 255, 0.08);
-          box-shadow: 0 18px 60px rgba(0, 0, 0, 0.42);
-          backdrop-filter: blur(10px);
-
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          text-align: center;
-          gap: 14px;
-        }
-
-        .heroTitle {
-          font-size: clamp(28px, 4vw, 44px);
-          font-weight: 800;
-          letter-spacing: 6px;
-          line-height: 1.1;
-          margin-top: 2px;
-        }
-
-        .heroSubtitle {
-          max-width: 920px;
-          margin: 0;
-          font-size: 16px;
-          line-height: 1.65;
-          color: rgba(255, 255, 255, 0.82);
-        }
-
-        /* ----------------------------
-           BRAIN FIELD (NO OVERLAP)
-        ---------------------------- */
-        .fieldWrap {
-          width: 100%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          margin-top: 10px;
-          position: relative;
-        }
-
-        .outerRing {
-          position: absolute;
-          width: min(760px, 92vw);
-          height: min(420px, 55vw);
-          border-radius: 999px;
-          border: 1px solid rgba(255, 255, 255, 0.08);
-          box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
-          background: radial-gradient(closest-side, rgba(255, 255, 255, 0.05), rgba(0, 0, 0, 0));
-          filter: blur(0px);
-        }
-
-        .innerField {
-          width: min(760px, 92vw);
-          height: min(420px, 55vw);
-          border-radius: 20px;
-          border: 1px solid rgba(255, 255, 255, 0.09);
-          background: rgba(0, 0, 0, 0.22);
-          position: relative;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          overflow: hidden;
-        }
-
-        .brainCenter {
-          width: min(520px, 72vw);
-          aspect-ratio: 16 / 9;
-          border-radius: 14px;
-          background: rgba(0, 0, 0, 0.28);
-          border: 1px solid rgba(255, 255, 255, 0.08);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          overflow: hidden;
-          z-index: 2;
-        }
-
-        .brainGif {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-          display: block;
-        }
-
-        .fieldGlow {
-          position: absolute;
-          inset: -40%;
-          background: radial-gradient(circle at 50% 45%, rgba(96, 165, 250, 0.22), rgba(0, 0, 0, 0) 55%);
-          filter: blur(22px);
-          z-index: 1;
-          pointer-events: none;
-        }
-
-        /* Mobile tweaks */
-        @media (max-width: 640px) {
-          .heroCard {
-            padding: 26px 16px 22px;
-          }
-          .navLinks {
-            gap: 12px;
-          }
-        }
-      `}</style>
+      {/* ===================== FOOTER ===================== */}
+      <footer className="border-t border-white/10">
+        <div className="mx-auto max-w-6xl px-6 py-6 text-xs opacity-60 flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-between">
+          <p>© {new Date().getFullYear()} Bit Brains</p>
+          <p>PoC-first • ENS anchored • ZK secured</p>
+        </div>
+      </footer>
     </main>
   );
 }
