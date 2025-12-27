@@ -388,7 +388,12 @@ flex-direction: column;
             font-size: 15px;
           }
           .innerField {
-            width: 78%;
+  width: 100%;
+  max-width: 720px;
+  margin-left: auto;
+  margin-right: auto;
+}
+            
           }
           .brainGif {
   display: block;
@@ -400,6 +405,21 @@ flex-direction: column;
 
           
           }
+          /* iPad fix: force hero to single centered column */
+@media (max-width: 1024px) {
+  .heroLayout,
+  .heroGrid,
+  .heroContent,
+  .heroRow {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+  }
+
+  
+}
         }
       `}</style>
     </main>
