@@ -1,109 +1,121 @@
 "use client";
 
 import Image from "next/image";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export default function HomePage() {
-  // Audio (tap to start)
+  /* ================= AUDIO ================= */
   const audioRef = useRef<HTMLAudioElement>(null);
   const [started, setStarted] = useState(false);
   const [muted, setMuted] = useState(false);
 
   const startAudio = async () => {
     const a = audioRef.current;
-    if (!a || started) return;
+    if (!a) return;
 
     try {
-      setStarted(true);
       a.loop = true;
-      a.volume = 0;
       a.muted = false;
+      a.volume = 0.25;
+      a.load();
       await a.play();
-
-      // soft fade-in
-      const target = 0.25;
-      const step = 0.01;
-      const timer = setInterval(() => {
-        if (!audioRef.current) return clearInterval(timer);
-        const v = audioRef.current.volume ?? 0;
-        if (v >= target) {
-          audioRef.current.volume = target;
-          clearInterval(timer);
-        } else {
-          audioRef.current.volume = Math.min(target, v + step);
-        }
-      }, 60);
+      setStarted(true);
     } catch {
-      setStarted(false);
+      // iOS sometimes blocks first attempt — user can tap again
     }
   };
 
   const toggleMute = () => {
     const a = audioRef.current;
     if (!a) return;
-    const next = !muted;
-    setMuted(next);
-    a.muted = next;
+    a.muted = !a.muted;
+    setMuted(a.muted);
   };
+
+  /* ================= PULSE GLOW (NO ROTATION) ================= */
+  const glowRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    let frame: number;
+    const start = performance.now();
+
+    const animate = (now: number) => {
+      const t = (now - start) * 0.001; // speed
+      const pulse = (Math.sin(t * Math.PI * 2) + 1) / 2; // 0 → 1
+
+      const glowStrength = 0.25 + pulse * 0.35;
+      const glowSize = 70 + pulse * 60;
+
+      if (glowRef.current) {
+        glowRef.current.style.boxShadow = `
+          0 30px 90px rgba(0,0,0,0.65),
+          0 0 ${glowSize}px rgba(140,160,255,${glowStrength})
+        `;
+      }
+
+      frame = requestAnimationFrame(animate);
+    };
+
+    frame = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(frame);
+  }, []);
 
   return (
     <main style={styles.page}>
-      <audio ref={audioRef} preload="auto" src="/Audio/Ambient.mp3" />
+      {/* AUDIO */}
+      <audio
+        ref={audioRef}
+        preload="auto"
+        playsInline
+        src="/Audio/Ambient.mp3"
+      />
 
-      {/* Tap anywhere (except buttons/links) to start audio */}
-      <div
-        onPointerDown={startAudio}
-        style={styles.tapLayer}
-      >
-        <section style={styles.hero}>
-          {/* BIGGER COSMIC BOX (STATIC) */}
-          <div style={styles.brainBox}>
-            <div style={styles.brainInner}>
-              <Image
-                src="/brain-10813_256.gif"
-                alt="Bit Brains — Genesis Brain"
-                width={256}
-                height={256}
-                priority
-                unoptimized
-                style={{ display: "block" }}
-              />
-            </div>
+      <section style={styles.hero}>
+        {/* COSMIC BOX WITH PULSE GLOW */}
+        <div ref={glowRef} style={styles.brainBox}>
+          <div style={styles.brainInner}>
+            <Image
+              src="/brain-10813_256.gif"
+              alt="Bit Brains — Genesis Brain"
+              width={256}
+              height={256}
+              priority
+              unoptimized
+            />
           </div>
+        </div>
 
-          <div style={styles.textBlock}>
-            <h1 style={styles.h1}>Proof of Care comes first.</h1>
+        {/* TEXT */}
+        <div style={styles.textBlock}>
+          <h1 style={styles.h1}>Proof of Care comes first.</h1>
 
-            <p style={styles.p}>
-              Bit Brains is a protocol for NFTs, ENS-based identity, zero-knowledge
-              eligibility, and real-world asset integration — beginning on Ethereum.
-            </p>
+          <p style={styles.p}>
+            Bit Brains is a protocol for NFTs, ENS-based identity, zero-knowledge
+            eligibility, and real-world asset integration — beginning on Ethereum.
+          </p>
 
-            <a
-              href="/proof-of-care"
-              style={styles.cta}
-              onPointerDown={(e) => e.stopPropagation()}
-            >
+          <div style={styles.buttons}>
+            <a href="/proof-of-care" style={styles.cta}>
               Enter Proof of Care →
             </a>
 
-            {started ? (
-              <button
-                onPointerDown={(e) => e.stopPropagation()}
-                onClick={toggleMute}
-                style={styles.muteBtn}
-              >
-                {muted ? "Unmute" : "Mute"}
+            {!started ? (
+              <button style={styles.audioBtn} onClick={startAudio}>
+                Begin Sound
               </button>
             ) : (
-              <p style={styles.hint}>Tap anywhere to begin the initiation tone.</p>
+              <button style={styles.audioBtn} onClick={toggleMute}>
+                {muted ? "Unmute" : "Mute"}
+              </button>
             )}
           </div>
-        </section>
-      </div>
+        </div>
+      </section>
     </main>
   );
 }
+
+/* ================= STYLES ================= */
 
 const styles: Record<string, React.CSSProperties> = {
   page: {
@@ -111,16 +123,10 @@ const styles: Record<string, React.CSSProperties> = {
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    padding: "26px 16px",
+    padding: "24px 16px",
     background:
       "radial-gradient(circle at 50% 30%, #0b1022 0%, #05060a 55%, #000 100%)",
     color: "white",
-  },
-
-  tapLayer: {
-    width: "100%",
-    display: "flex",
-    justifyContent: "center",
   },
 
   hero: {
@@ -132,29 +138,27 @@ const styles: Record<string, React.CSSProperties> = {
     textAlign: "center",
   },
 
-  // ✅ BIG BOX: width like your headline span, height similar to before
   brainBox: {
-    width: "min(820px, 92vw)",   // wider = more cosmic space
-    height: 340,                // height stays similar
+    width: "min(820px, 92vw)",
+    height: 340,
     display: "grid",
     placeItems: "center",
     borderRadius: 22,
     border: "1px solid rgba(255,255,255,0.14)",
-    background: "rgba(0,0,0,0.35)", // darker, more cosmic
+    background: "rgba(0,0,0,0.38)",
     backdropFilter: "blur(10px)",
-    boxShadow: "0 28px 90px rgba(0,0,0,0.65)",
+    boxShadow: "0 30px 90px rgba(0,0,0,0.65)",
     overflow: "hidden",
-    position: "relative",
+    transition: "box-shadow 0.1s linear",
   },
 
-  // ✅ Inner “cosmic” vignette so the empty space looks intentional
   brainInner: {
     width: "100%",
     height: "100%",
     display: "grid",
     placeItems: "center",
     background:
-      "radial-gradient(circle at 50% 45%, rgba(120,140,255,0.10) 0%, rgba(0,0,0,0.0) 38%, rgba(0,0,0,0.55) 100%)",
+      "radial-gradient(circle at 50% 45%, rgba(140,160,255,0.12) 0%, rgba(0,0,0,0.0) 38%, rgba(0,0,0,0.55) 100%)",
   },
 
   textBlock: {
@@ -180,9 +184,15 @@ const styles: Record<string, React.CSSProperties> = {
     opacity: 0.9,
   },
 
-  cta: {
-    width: "fit-content",
+  buttons: {
+    display: "flex",
+    gap: 12,
     marginTop: 8,
+    flexWrap: "wrap",
+    justifyContent: "center",
+  },
+
+  cta: {
     padding: "12px 16px",
     borderRadius: 12,
     border: "1px solid rgba(255,255,255,0.18)",
@@ -192,20 +202,13 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: 16,
   },
 
-  muteBtn: {
-    marginTop: 10,
-    padding: "10px 12px",
+  audioBtn: {
+    padding: "12px 16px",
     borderRadius: 12,
     border: "1px solid rgba(255,255,255,0.18)",
     background: "rgba(255,255,255,0.06)",
     color: "white",
-    fontSize: 14,
+    fontSize: 16,
     cursor: "pointer",
-  },
-
-  hint: {
-    marginTop: 10,
-    fontSize: 13,
-    opacity: 0.65,
   },
 };
