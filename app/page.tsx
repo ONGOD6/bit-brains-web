@@ -1,14 +1,34 @@
-// app/page.tsx
+"use client";
+
 import Image from "next/image";
+import { useEffect, useRef } from "react";
 
 export default function HomePage() {
+  const brainRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    let angle = 0;
+    let frame: number;
+
+    const rotate = () => {
+      angle += 0.05; // slower = smaller number
+      if (brainRef.current) {
+        brainRef.current.style.transform = `rotate(${angle}deg)`;
+      }
+      frame = requestAnimationFrame(rotate);
+    };
+
+    frame = requestAnimationFrame(rotate);
+    return () => cancelAnimationFrame(frame);
+  }, []);
+
   return (
     <main style={styles.page}>
       <section style={styles.hero}>
         {/* STATIC CONTAINER */}
         <div style={styles.brainBox}>
           {/* ONLY THE BRAIN ROTATES */}
-          <div className="brainSpin">
+          <div ref={brainRef} style={styles.brainSpin}>
             <Image
               src="/brain-10813_256.gif"
               alt="Bit Brains — Genesis Brain"
@@ -25,8 +45,9 @@ export default function HomePage() {
           <h1 style={styles.h1}>Proof of Care comes first.</h1>
 
           <p style={styles.p}>
-            Bit Brains is a protocol for NFTs, ENS-based identity, zero-knowledge
-            eligibility, and real-world asset integration — beginning on Ethereum.
+            Bit Brains is a protocol for NFTs, ENS-based identity,
+            zero-knowledge eligibility, and real-world asset integration —
+            beginning on Ethereum.
           </p>
 
           <a href="/proof-of-care" style={styles.cta}>
@@ -34,31 +55,6 @@ export default function HomePage() {
           </a>
         </div>
       </section>
-
-      {/* GLOBAL CSS */}
-      <style jsx global>{`
-        .brainSpin {
-          display: inline-block;
-          animation: brain-rotate 36s linear infinite;
-          transform-origin: center center;
-          will-change: transform;
-        }
-
-        @keyframes brain-rotate {
-          from {
-            transform: rotate(0deg);
-          }
-          to {
-            transform: rotate(360deg);
-          }
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-          .brainSpin {
-            animation: none;
-          }
-        }
-      `}</style>
     </main>
   );
 }
@@ -91,6 +87,11 @@ const styles: Record<string, React.CSSProperties> = {
     backdropFilter: "blur(8px)",
     boxShadow: "0 18px 60px rgba(0,0,0,0.55)",
     overflow: "hidden",
+  },
+  brainSpin: {
+    display: "inline-block",
+    transformOrigin: "center center",
+    willChange: "transform",
   },
   textBlock: {
     display: "flex",
