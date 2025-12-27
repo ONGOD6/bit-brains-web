@@ -1,55 +1,50 @@
-"use client";
+// app/page.tsx
+import Image from "next/image";
 
-export default function Home() {
+export default function HomePage() {
   return (
-    <main
-      style={{
-        minHeight: "100vh",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        textAlign: "center",
-        padding: "4rem 1.5rem",
-      }}
-    >
-      {/* ========================= */}
-      {/* Static container */}
-      {/* ========================= */}
-      <div
-        style={{
-          width: "100%",
-          maxWidth: "600px",
-          marginBottom: "2.75rem",
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-        }}
-      >
-        {/* ========================= */}
-        {/* Rotating brain ONLY */}
-        {/* ========================= */}
-        <img
-          src="/brain-evolution.gif"
-          alt="Proof of Care Brain"
-          className="rotatingBrain"
-          style={{
-            width: "100%",
-            opacity: 0.96,
-          }}
-        />
-      </div>
+    <main style={styles.page}>
+      <section style={styles.hero}>
+        {/* STATIC CONTAINER */}
+        <div style={styles.brainBox}>
+          {/* ONLY THE BRAIN ROTATES */}
+          <div className="brainSpin">
+            <Image
+              src="/brain-10813_256.gif"
+              alt="Bit Brains — Genesis Brain"
+              width={256}
+              height={256}
+              priority
+              unoptimized
+            />
+          </div>
+        </div>
 
-      {/* ========================= */}
-      {/* Slow rotation (inner only) */}
-      {/* ========================= */}
-      <style jsx>{`
-        .rotatingBrain {
-          animation: slowSpin 120s linear infinite; /* slowed one notch */
+        {/* TEXT BLOCK */}
+        <div style={styles.textBlock}>
+          <h1 style={styles.h1}>Proof of Care comes first.</h1>
+
+          <p style={styles.p}>
+            Bit Brains is a protocol for NFTs, ENS-based identity, zero-knowledge
+            eligibility, and real-world asset integration — beginning on Ethereum.
+          </p>
+
+          <a href="/proof-of-care" style={styles.cta}>
+            Enter Proof of Care →
+          </a>
+        </div>
+      </section>
+
+      {/* GLOBAL CSS */}
+      <style jsx global>{`
+        .brainSpin {
+          display: inline-block;
+          animation: brain-rotate 36s linear infinite;
           transform-origin: center center;
+          will-change: transform;
         }
 
-        @keyframes slowSpin {
+        @keyframes brain-rotate {
           from {
             transform: rotate(0deg);
           }
@@ -59,61 +54,71 @@ export default function Home() {
         }
 
         @media (prefers-reduced-motion: reduce) {
-          .rotatingBrain {
+          .brainSpin {
             animation: none;
           }
         }
       `}</style>
-
-      {/* ========================= */}
-      {/* Title */}
-      {/* ========================= */}
-      <h1
-        style={{
-          fontSize: "2.5rem",
-          marginBottom: "1.25rem",
-          fontWeight: 600,
-        }}
-      >
-        Proof of Care
-      </h1>
-
-      {/* ========================= */}
-      {/* Core Message */}
-      {/* ========================= */}
-      <p
-        style={{
-          maxWidth: "720px",
-          fontSize: "1.15rem",
-          lineHeight: 1.6,
-          opacity: 0.9,
-          marginBottom: "2.25rem",
-        }}
-      >
-        A new protocol standard for intelligence, stewardship,
-        <br />
-        and value rooted in verifiable care.
-        <br />
-        <br />
-        <strong>Everything else emerges from it.</strong>
-      </p>
-
-      {/* ========================= */}
-      {/* CTA */}
-      {/* ========================= */}
-      <a
-        href="/proof-of-care"
-        style={{
-          textDecoration: "none",
-          padding: "0.8rem 1.75rem",
-          border: "1px solid currentColor",
-          borderRadius: "999px",
-          fontSize: "0.95rem",
-          opacity: 0.85,
-        }}
-      >
-        Explore Proof of Care →
-      </a>
     </main>
   );
 }
+
+const styles: Record<string, React.CSSProperties> = {
+  page: {
+    minHeight: "100vh",
+    padding: "40px 20px",
+    display: "flex",
+    justifyContent: "center",
+    background:
+      "radial-gradient(circle at 50% 30%, #0b1022 0%, #05060a 55%, #000 100%)",
+    color: "white",
+  },
+  hero: {
+    width: "min(1100px, 100%)",
+    display: "grid",
+    gridTemplateColumns: "320px 1fr",
+    gap: "28px",
+    alignItems: "center",
+  },
+  brainBox: {
+    width: 320,
+    height: 320,
+    display: "grid",
+    placeItems: "center",
+    borderRadius: 18,
+    border: "1px solid rgba(255,255,255,0.14)",
+    background: "rgba(255,255,255,0.04)",
+    backdropFilter: "blur(8px)",
+    boxShadow: "0 18px 60px rgba(0,0,0,0.55)",
+    overflow: "hidden",
+  },
+  textBlock: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 14,
+  },
+  h1: {
+    fontSize: 46,
+    lineHeight: 1.05,
+    margin: 0,
+    letterSpacing: "-0.02em",
+  },
+  p: {
+    fontSize: 18,
+    lineHeight: 1.5,
+    margin: 0,
+    maxWidth: 640,
+    opacity: 0.9,
+  },
+  cta: {
+    width: "fit-content",
+    marginTop: 8,
+    padding: "12px 16px",
+    borderRadius: 12,
+    border: "1px solid rgba(255,255,255,0.18)",
+    background: "rgba(255,255,255,0.06)",
+    color: "white",
+    textDecoration: "none",
+    fontSize: 16,
+  },
+};
