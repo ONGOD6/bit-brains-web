@@ -197,16 +197,19 @@ export default function Page() {
         /* -------------------------
            PAGE / BACKGROUND
         ------------------------- */
-        .page {
-          min-height: 100vh;
-          background: radial-gradient(1200px 800px at 50% 20%, rgba(58, 108, 255, 0.18), rgba(0, 0, 0, 0) 60%),
-            radial-gradient(900px 600px at 20% 40%, rgba(124, 58, 237, 0.12), rgba(0, 0, 0, 0) 60%),
-            linear-gradient(180deg, #050712 0%, #03040c 45%, #02030a 100%);
-          color: rgba(255, 255, 255, 0.92);
-          position: relative;
-          overflow-x: hidden;
-        }
-
+     .page {
+  display: flex;
+flex-direction: column;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: radial-gradient(1200px 800px at 50% 20%, rgba(58, 108, 255, 0.18), rgba(0,0,0,0)),
+              radial-gradient(900px 600px at 20% 40%, rgba(124, 58, 237, 0.12), rgba(0,0,0,0)),
+              linear-gradient(180deg, #050712 0%, #03040c 45%, #02030a 100%);
+  color: rgba(255, 255, 255, 0.92);
+  position: relative;
+  overflow-x: hidden;
+}
         /* Decorative glows (subtle, behind everything) */
         .bgGlowA {
           position: absolute;
@@ -259,17 +262,17 @@ export default function Page() {
           opacity: 0.9;
           transform: translateY(-1px);
         }
-
-        /* -------------------------
-           HERO CARD
-        ------------------------- */
-        .heroWrap {
-          position: relative;
-          z-index: 5;
-          display: flex;
-          justify-content: center;
-          padding: 36px 18px 64px;
-        }
+64px;
+.heroWrap {
+  position: relative;
+  z-index: 5;
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 36px 18px 64px;
+}
+        
 
         .heroCard {
           width: min(980px, 100%);
