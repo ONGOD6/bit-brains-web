@@ -1,0 +1,256 @@
+"use client";
+
+import Image from "next/image";
+import { useEffect, useRef, useState } from "react";
+
+export default function HomePage() {
+  // --- Brain rotation (no styled-jsx, Vercel-safe)
+  const brainRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    let angle = 0;
+    let frame: number;
+
+    const rotate = () => {
+      angle += 0.05; // slower = smaller number
+      if (brainRef.current) {
+        brainRef.current.style.transform = `rotate(${angle}deg)`;
+      }
+      frame = requestAnimationFrame(rotate);
+    };
+
+    frame = requestAnimationFrame(rotate);
+    return () => cancelAnimationFrame(frame);
+  }, []);
+
+  // --- Audio (starts on first user interaction)
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const [isReady, setIsReady] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
+
+  const startAudio = async () => {
+    const a = audioRef.current;
+    if (!a) return;
+
+    try {
+      setIsReady(true);
+
+      // make sure audio can play on iOS: must be triggered by gesture
+      a.muted = false;
+      a.loop = true;
+
+      // start from silence and fade in
+      a.volume = 0;
+      await a.play();
+      setIsPlaying(true);
+
+      // soft fade-in
+      const target = 0.25; // ritual-level volume (0.0 - 1.0)
+      const step = 0.01;
+      const intervalMs = 60;
+
+      const fade = setInterval(() => {
+        const curr = a.volume ?? 0;
+        if (curr >= target) {
+          a.volume = target;
+          clearInterval(fade);
+          return;
+        }
+        a.volume = Math.min(target, curr + step);
+      }, intervalMs);
+    } catch {
+      // If iOS blocks it for any reason, user can tap the button again.
+      setIsPlaying(false);
+    }
+  };
+
+  const toggleMute = () => {
+    const a = audioRef.current;
+    if (!a) return;
+    const next = !isMuted;
+    setIsMuted(next);
+    a.muted = next;
+  };
+
+  const togglePlayPause = async () => {
+    const a = audioRef.current;
+    if (!a) return;
+
+    // If not started yet, start it (gesture-based)
+    if (!isReady) {
+      await startAudio();
+      return;
+    }
+
+    if (a.paused) {
+      try {
+        await a.play();
+        setIsPlaying(true);
+      } catch {
+        setIsPlaying(false);
+      }
+    } else {
+      a.pause();
+      setIsPlaying(false);
+    }
+  };
+
+  // Start audio on FIRST tap anywhere on page (optional but matches your ritual tap concept)
+  const handleFirstInteraction = async () => {
+    if (isReady) return;
+    await startAudio();
+  };
+
+  return (
+    <main style={styles.page} onPointerDown={handleFirstInteraction}>
+      {/* Hidden audio element (controlled by taps / button) */}
+      <audio ref={audioRef} preload="auto" src="/audio/ambient.mp3" />
+
+      {/* Top-right controls */}
+      <div style={styles.audioControls}>
+        <button style={styles.audioBtn} onClick={togglePlayPause}>
+          {isPlaying ? "Pause" : "Play"}
+        </button>
+        <button style={styles.audioBtn} onClick={toggleMute}>
+          {isMuted ? "Unmute" : "Mute"}
+        </button>
+      </div>
+
+      <section style={styles.hero}>
+        {/* STATIC CONTAINER */}
+        <div style={styles.brainBox}>
+          {/* ONLY THE BRAIN ROTATES */}
+          <div ref={brainRef} style={styles.brainSpin}>
+            <Image
+              src="/brain-10813_256.gif"
+              alt="Bit Brains — Genesis Brain"
+              width={256}
+              height={256}
+              priority
+              unoptimized
+            />
+          </div>
+        </div>
+
+        {/* TEXT BLOCK */}
+        <div style={styles.textBlock}>
+          <h1 style={styles.h1}>Proof of Care comes first.</h1>
+
+          <p style={styles.p}>
+            Bit Brains is a protocol for NFTs, ENS-based identity, zero-knowledge
+            eligibility, and real-world asset integration — beginning on Ethereum.
+          </p>
+
+          <a href="/proof-of-care" style={styles.cta}>
+            Enter Proof of Care →
+          </a>
+
+          {/* Optional gentle hint until audio starts */}
+          {!isReady && (
+            <p style={styles.hint}>
+              Tap anywhere to begin the initiation tone.
+            </p>
+          )}
+        </div>
+      </section>
+    </main>
+  );
+}
+
+const styles: Record<string, React.CSSProperties> = {
+  page: {
+    minHeight: "100vh",
+    padding: "40px 20px",
+    display: "flex",
+    justifyContent: "center",
+    background:
+      "radial-gradient(circle at 50% 30%, #0b1022 0%, #05060a 55%, #000 100%)",
+    color: "white",
+    position: "relative",
+  },
+
+  audioControls: {
+    position: "fixed",
+    top: 14,
+    right: 14,
+    display: "flex",
+    gap: 10,
+    zIndex: 50,
+  },
+
+  audioBtn: {
+    padding: "10px 12px",
+    borderRadius: 12,
+    border: "1px solid rgba(255,255,255,0.18)",
+    background: "rgba(255,255,255,0.06)",
+    color: "white",
+    fontSize: 14,
+  },
+
+  hero: {
+    width: "min(1100px, 100%)",
+    display: "grid",
+    gridTemplateColumns: "320px 1fr",
+    gap: "28px",
+    alignItems: "center",
+  },
+
+  brainBox: {
+    width: 320,
+    height: 320,
+    display: "grid",
+    placeItems: "center",
+    borderRadius: 18,
+    border: "1px solid rgba(255,255,255,0.14)",
+    background: "rgba(255,255,255,0.04)",
+    backdropFilter: "blur(8px)",
+    boxShadow: "0 18px 60px rgba(0,0,0,0.55)",
+    overflow: "hidden",
+  },
+
+  brainSpin: {
+    display: "inline-block",
+    transformOrigin: "center center",
+    willChange: "transform",
+  },
+
+  textBlock: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 14,
+  },
+
+  h1: {
+    fontSize: 46,
+    lineHeight: 1.05,
+    margin: 0,
+    letterSpacing: "-0.02em",
+  },
+
+  p: {
+    fontSize: 18,
+    lineHeight: 1.5,
+    margin: 0,
+    maxWidth: 640,
+    opacity: 0.9,
+  },
+
+  cta: {
+    width: "fit-content",
+    marginTop: 8,
+    padding: "12px 16px",
+    borderRadius: 12,
+    border: "1px solid rgba(255,255,255,0.18)",
+    background: "rgba(255,255,255,0.06)",
+    color: "white",
+    textDecoration: "none",
+    fontSize: 16,
+  },
+
+  hint: {
+    marginTop: 10,
+    fontSize: 13,
+    opacity: 0.65,
+  },
+};
