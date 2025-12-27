@@ -4,8 +4,9 @@ import Image from "next/image";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 
 export default function HomePage() {
-  /* ================= AUDIO ================= */
   const audioRef = useRef<HTMLAudioElement>(null);
+  const glowRef = useRef<HTMLDivElement>(null);
+
   const [started, setStarted] = useState(false);
   const [muted, setMuted] = useState(false);
 
@@ -15,14 +16,12 @@ export default function HomePage() {
 
     try {
       a.loop = true;
-      a.muted = false;
       a.volume = 0.25;
-      a.load();
+      a.muted = true;
       await a.play();
+      a.muted = false;
       setStarted(true);
-    } catch {
-      // iOS can block first attempt — user can tap again
-    }
+    } catch {}
   };
 
   const toggleMute = () => {
@@ -32,9 +31,6 @@ export default function HomePage() {
     setMuted(a.muted);
   };
 
-  /* ================= PULSE GLOW ================= */
-  const glowRef = useRef<HTMLDivElement>(null);
-
   useEffect(() => {
     let frame = 0;
     const start = performance.now();
@@ -42,16 +38,14 @@ export default function HomePage() {
     const animate = (now: number) => {
       const t = (now - start) * 0.001;
       const pulse = (Math.sin(t * Math.PI * 2) + 1) / 2;
-
-      const glowStrength = 0.22 + pulse * 0.35;
-      const glowSize = 70 + pulse * 70;
+      const glowSize = 80 + pulse * 60;
+      const glowStrength = 0.18 + pulse * 0.25;
 
       if (glowRef.current) {
         glowRef.current.style.boxShadow = `
-          0 30px 90px rgba(0,0,0,0.70),
+          0 30px 90px rgba(0,0,0,0.7),
           0 0 ${glowSize}px rgba(140,160,255,${glowStrength})
         `;
-        glowRef.current.style.borderColor = `rgba(255,255,255,${0.10 + pulse * 0.10})`;
       }
 
       frame = requestAnimationFrame(animate);
@@ -61,23 +55,18 @@ export default function HomePage() {
     return () => cancelAnimationFrame(frame);
   }, []);
 
-  /* ================= PARTICLES ================= */
   const particles = useMemo(() => {
-    const arr = [];
-    for (let i = 0; i < 18; i++) {
-      const angle = (i / 18) * Math.PI * 2;
-      const r = 120 + (i % 6) * 14;
-      arr.push({
+    return Array.from({ length: 16 }).map((_, i) => {
+      const angle = (i / 16) * Math.PI * 2;
+      const r = 140;
+      return {
         id: i,
         x: Math.cos(angle) * r,
         y: Math.sin(angle) * r,
-        d: 4 + (i % 5) * 0.6,
-        delay: (i % 9) * 0.25,
-        dur: 3.5 + (i % 7) * 0.35,
-        alpha: 0.18 + (i % 6) * 0.03,
-      });
-    }
-    return arr;
+        d: 4,
+        delay: i * 0.2,
+      };
+    });
   }, []);
 
   return (
@@ -85,56 +74,12 @@ export default function HomePage() {
       <audio ref={audioRef} preload="auto" playsInline src="/Audio/Ambient.mp3" />
 
       <section style={styles.hero}>
-        {/* ✅ FIX 1: IMAGE BOX FIRST (TOP) */}
-        <div ref={glowRef} style={styles.brainBox}>
-          <div style={styles.brainInner}>
-            {/* Neural shimmer overlays */}
-            <div style={styles.neuralLayer} aria-hidden="true" />
-            <div style={styles.neuralLayer2} aria-hidden="true" />
-
-            {/* Orbital particles */}
-            <div style={styles.particles} aria-hidden="true">
-              {particles.map((p) => (
-                <span
-                  key={p.id}
-                  style={
-                    {
-                      ...styles.particle,
-                      width: p.d,
-                      height: p.d,
-                      opacity: p.alpha,
-                      animationDelay: `${p.delay}s`,
-                      animationDuration: `${p.dur}s`,
-                      ["--x" as any]: `${p.x}px`,
-                      ["--y" as any]: `${p.y}px`,
-                    } as React.CSSProperties
-                  }
-                />
-              ))}
-            </div>
-
-            {/* ✅ FIX 2: MAKE THE GIF FILL THE WHOLE INNER AREA */}
-            <div style={styles.brainMedia}>
-              <Image
-                src="/brain-10813_256.gif"
-                alt="Bit Brains — Genesis Brain"
-                fill
-                sizes="(max-width: 900px) 92vw, 820px"
-                priority
-                unoptimized
-                style={{ objectFit: "contain" }}
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* ✅ TEXT UNDER IMAGE */}
         <div style={styles.textBlock}>
           <h1 style={styles.h1}>Proof of Care comes first.</h1>
 
           <p style={styles.p}>
-            Bit Brains is a protocol for NFTs, ENS-based identity, zero-knowledge eligibility, and
-            real-world asset integration — beginning on Ethereum.
+            Bit Brains is a protocol for NFTs, ENS-based identity, zero-knowledge
+            eligibility, and real-world asset integration — beginning on Ethereum.
           </p>
 
           <div style={styles.buttons}>
@@ -153,6 +98,40 @@ export default function HomePage() {
             )}
           </div>
         </div>
+
+        <div ref={glowRef} style={styles.brainBox}>
+          <div style={styles.brainInner}>
+            <div style={styles.neuralLayer} />
+            <div style={styles.neuralLayer2} />
+
+            <div style={styles.particles}>
+              {particles.map((p) => (
+                <span
+                  key={p.id}
+                  style={{
+                    ...styles.particle,
+                    width: p.d,
+                    height: p.d,
+                    animationDelay: `${p.delay}s`,
+                    ["--x" as any]: `${p.x}px`,
+                    ["--y" as any]: `${p.y}px`,
+                  }}
+                />
+              ))}
+            </div>
+
+            <div style={styles.brainMedia}>
+              <Image
+                src="/brain-10813_256.gif"
+                alt="Bit Brains — Genesis Brain"
+                fill
+                priority
+                unoptimized
+                style={{ objectFit: "contain" }}
+              />
+            </div>
+          </div>
+        </div>
       </section>
 
       <style>{keyframes}</style>
@@ -164,13 +143,12 @@ const styles: Record<string, React.CSSProperties> = {
   page: {
     minHeight: "100vh",
     display: "flex",
-    alignItems: "center",
     justifyContent: "center",
-    padding: "28px 16px",
+    alignItems: "center",
     background:
       "radial-gradient(circle at 50% 30%, #0b1022 0%, #05060a 55%, #000 100%)",
+    padding: "24px 16px",
     color: "white",
-    overflow: "hidden",
   },
 
   hero: {
@@ -185,91 +163,82 @@ const styles: Record<string, React.CSSProperties> = {
   brainBox: {
     width: "min(820px, 92vw)",
     height: 380,
-    display: "grid",
-    placeItems: "center",
+    position: "relative",
     borderRadius: 24,
+    overflow: "hidden",
     border: "1px solid rgba(255,255,255,0.14)",
     background: "rgba(0,0,0,0.38)",
     backdropFilter: "blur(10px)",
-    boxShadow: "0 30px 90px rgba(0,0,0,0.70)",
-    overflow: "hidden",
-    position: "relative",
-    transition: "box-shadow 0.1s linear, border-color 0.1s linear",
+    boxShadow: "0 30px 90px rgba(0,0,0,0.7)",
   },
 
   brainInner: {
-    width: "100%",
-    height: "100%",
+    position: "absolute",
+    inset: 0,
+    borderRadius: "inherit",
+    overflow: "hidden",
     display: "grid",
     placeItems: "center",
-    position: "relative",
-    background:
-      "radial-gradient(circle at 50% 45%, rgba(140,160,255,0.12) 0%, rgba(0,0,0,0) 42%, rgba(0,0,0,0.55) 100%)",
   },
 
-  // ✅ This makes the Image fill the entire inner box
   brainMedia: {
     position: "absolute",
     inset: 0,
-    display: "grid",
-    placeItems: "center",
+    borderRadius: "inherit",
+    overflow: "hidden",
   },
 
   neuralLayer: {
     position: "absolute",
-    inset: -80,
+    inset: 0,
+    borderRadius: "inherit",
     background:
-      "radial-gradient(circle at 30% 40%, rgba(120,170,255,0.18) 0%, rgba(0,0,0,0) 45%)," +
-      "radial-gradient(circle at 70% 55%, rgba(200,140,255,0.12) 0%, rgba(0,0,0,0) 45%)," +
-      "radial-gradient(circle at 50% 55%, rgba(120,255,220,0.10) 0%, rgba(0,0,0,0) 40%)",
+      "radial-gradient(circle at 30% 40%, rgba(120,170,255,0.18), transparent 55%), radial-gradient(circle at 70% 60%, rgba(200,140,255,0.12), transparent 55%)",
     filter: "blur(10px)",
-    opacity: 0.9,
     animation: "neuralDrift 6s ease-in-out infinite",
     pointerEvents: "none",
   },
 
   neuralLayer2: {
     position: "absolute",
-    inset: -120,
+    inset: 0,
+    borderRadius: "inherit",
     background:
-      "conic-gradient(from 90deg at 50% 50%, rgba(120,170,255,0.0), rgba(120,170,255,0.12), rgba(120,170,255,0.0), rgba(120,255,220,0.10), rgba(120,170,255,0.0))",
-    mixBlendMode: "screen",
+      "conic-gradient(from 90deg, rgba(140,160,255,0.12), transparent, rgba(120,255,220,0.1), transparent)",
     filter: "blur(14px)",
-    opacity: 0.55,
-    animation: "neuralSpin 10s linear infinite",
+    animation: "neuralSpin 12s linear infinite",
     pointerEvents: "none",
   },
 
   particles: {
     position: "absolute",
     inset: 0,
-    display: "grid",
-    placeItems: "center",
+    borderRadius: "inherit",
     pointerEvents: "none",
   },
 
   particle: {
     position: "absolute",
-    borderRadius: 999,
+    left: "50%",
+    top: "50%",
+    borderRadius: "50%",
     background: "rgba(170,190,255,1)",
-    boxShadow: "0 0 18px rgba(140,160,255,0.55)",
-    animationName: "sparkOrbit",
-    animationTimingFunction: "ease-in-out",
-    animationIterationCount: "infinite",
+    boxShadow: "0 0 14px rgba(140,160,255,0.5)",
+    animation: "sparkOrbit 4s ease-in-out infinite",
   },
 
   textBlock: {
+    maxWidth: 900,
     display: "flex",
     flexDirection: "column",
-    alignItems: "center",
     gap: 12,
-    maxWidth: 900,
+    alignItems: "center",
   },
 
   h1: {
     fontSize: 46,
-    lineHeight: 1.05,
     margin: 0,
+    lineHeight: 1.05,
     letterSpacing: "-0.02em",
   },
 
@@ -277,7 +246,6 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: 18,
     lineHeight: 1.55,
     margin: 0,
-    maxWidth: 820,
     opacity: 0.9,
   },
 
@@ -312,20 +280,19 @@ const styles: Record<string, React.CSSProperties> = {
 
 const keyframes = `
 @keyframes neuralDrift {
-  0%   { transform: translate3d(-8px, -6px, 0) scale(1.00); opacity: 0.75; }
-  50%  { transform: translate3d(10px, 8px, 0) scale(1.03); opacity: 0.95; }
-  100% { transform: translate3d(-8px, -6px, 0) scale(1.00); opacity: 0.75; }
+  0% { opacity: 0.6; transform: translate(-6px,-4px); }
+  50% { opacity: 0.9; transform: translate(6px,4px); }
+  100% { opacity: 0.6; transform: translate(-6px,-4px); }
 }
 
 @keyframes neuralSpin {
-  0% { transform: rotate(0deg) scale(1.0); }
-  50% { transform: rotate(180deg) scale(1.02); }
-  100% { transform: rotate(360deg) scale(1.0); }
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 @keyframes sparkOrbit {
-  0%   { transform: translate(var(--x, 0px), var(--y, 0px)) scale(0.90); opacity: 0.12; filter: blur(0px); }
-  50%  { transform: translate(var(--x, 0px), var(--y, 0px)) scale(1.20); opacity: 0.30; filter: blur(0.2px); }
-  100% { transform: translate(var(--x, 0px), var(--y, 0px)) scale(0.90); opacity: 0.12; filter: blur(0px); }
+  0% { transform: translate(var(--x), var(--y)) scale(0.8); opacity: 0.15; }
+  50% { transform: translate(var(--x), var(--y)) scale(1.2); opacity: 0.35; }
+  100% { transform: translate(var(--x), var(--y)) scale(0.8); opacity: 0.15; }
 }
 `;
