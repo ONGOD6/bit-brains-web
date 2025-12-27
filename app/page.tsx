@@ -40,8 +40,8 @@ export default function HomePage() {
     const start = performance.now();
 
     const animate = (now: number) => {
-      const t = (now - start) * 0.001; // seconds
-      const pulse = (Math.sin(t * Math.PI * 2) + 1) / 2; // 0..1
+      const t = (now - start) * 0.001;
+      const pulse = (Math.sin(t * Math.PI * 2) + 1) / 2;
 
       const glowStrength = 0.22 + pulse * 0.35;
       const glowSize = 70 + pulse * 70;
@@ -82,11 +82,53 @@ export default function HomePage() {
 
   return (
     <main style={styles.page}>
-      {/* AUDIO */}
       <audio ref={audioRef} preload="auto" playsInline src="/Audio/Ambient.mp3" />
 
       <section style={styles.hero}>
-        {/* TEXT */}
+        {/* ✅ FIX 1: IMAGE BOX FIRST (TOP) */}
+        <div ref={glowRef} style={styles.brainBox}>
+          <div style={styles.brainInner}>
+            {/* Neural shimmer overlays */}
+            <div style={styles.neuralLayer} aria-hidden="true" />
+            <div style={styles.neuralLayer2} aria-hidden="true" />
+
+            {/* Orbital particles */}
+            <div style={styles.particles} aria-hidden="true">
+              {particles.map((p) => (
+                <span
+                  key={p.id}
+                  style={
+                    {
+                      ...styles.particle,
+                      width: p.d,
+                      height: p.d,
+                      opacity: p.alpha,
+                      animationDelay: `${p.delay}s`,
+                      animationDuration: `${p.dur}s`,
+                      ["--x" as any]: `${p.x}px`,
+                      ["--y" as any]: `${p.y}px`,
+                    } as React.CSSProperties
+                  }
+                />
+              ))}
+            </div>
+
+            {/* ✅ FIX 2: MAKE THE GIF FILL THE WHOLE INNER AREA */}
+            <div style={styles.brainMedia}>
+              <Image
+                src="/brain-10813_256.gif"
+                alt="Bit Brains — Genesis Brain"
+                fill
+                sizes="(max-width: 900px) 92vw, 820px"
+                priority
+                unoptimized
+                style={{ objectFit: "contain" }}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* ✅ TEXT UNDER IMAGE */}
         <div style={styles.textBlock}>
           <h1 style={styles.h1}>Proof of Care comes first.</h1>
 
@@ -111,55 +153,12 @@ export default function HomePage() {
             )}
           </div>
         </div>
-
-        {/* BRAIN BOX */}
-        <div ref={glowRef} style={styles.brainBox}>
-          <div style={styles.brainInner}>
-            {/* Neural shimmer overlays */}
-            <div style={styles.neuralLayer} aria-hidden="true" />
-            <div style={styles.neuralLayer2} aria-hidden="true" />
-
-            {/* Orbital particles */}
-            <div style={styles.particles} aria-hidden="true">
-              {particles.map((p) => (
-                <span
-                  key={p.id}
-                  style={
-                    {
-                      ...styles.particle,
-                      width: p.d,
-                      height: p.d,
-                      opacity: p.alpha,
-                      animationDelay: `${p.delay}s`,
-                      animationDuration: `${p.dur}s`,
-                      // ✅ FIX: use CSS variables for position (transform is now owned by keyframes)
-                      ["--x" as any]: `${p.x}px`,
-                      ["--y" as any]: `${p.y}px`,
-                    } as React.CSSProperties
-                  }
-                />
-              ))}
-            </div>
-
-            {/* CENTER BRAIN GIF (NO ROTATION — GIF ROTATES ITSELF) */}
-            <Image
-              src="/brain-10813_256.gif"
-              alt="Bit Brains — Genesis Brain"
-              width={256}
-              height={256}
-              priority
-              unoptimized
-            />
-          </div>
-        </div>
       </section>
 
       <style>{keyframes}</style>
     </main>
   );
 }
-
-/* ================= STYLES ================= */
 
 const styles: Record<string, React.CSSProperties> = {
   page: {
@@ -185,7 +184,7 @@ const styles: Record<string, React.CSSProperties> = {
 
   brainBox: {
     width: "min(820px, 92vw)",
-    height: 360,
+    height: 380,
     display: "grid",
     placeItems: "center",
     borderRadius: 24,
@@ -206,6 +205,14 @@ const styles: Record<string, React.CSSProperties> = {
     position: "relative",
     background:
       "radial-gradient(circle at 50% 45%, rgba(140,160,255,0.12) 0%, rgba(0,0,0,0) 42%, rgba(0,0,0,0.55) 100%)",
+  },
+
+  // ✅ This makes the Image fill the entire inner box
+  brainMedia: {
+    position: "absolute",
+    inset: 0,
+    display: "grid",
+    placeItems: "center",
   },
 
   neuralLayer: {
@@ -316,7 +323,6 @@ const keyframes = `
   100% { transform: rotate(360deg) scale(1.0); }
 }
 
-/* ✅ FIX: keep particle position via CSS vars, animate only scale/opacity */
 @keyframes sparkOrbit {
   0%   { transform: translate(var(--x, 0px), var(--y, 0px)) scale(0.90); opacity: 0.12; filter: blur(0px); }
   50%  { transform: translate(var(--x, 0px), var(--y, 0px)) scale(1.20); opacity: 0.30; filter: blur(0.2px); }
