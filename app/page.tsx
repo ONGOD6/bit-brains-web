@@ -61,18 +61,17 @@ export default function HomePage() {
     return () => cancelAnimationFrame(frame);
   }, []);
 
-  /* ================= PARTICLES (LIGHTWEIGHT) ================= */
+  /* ================= PARTICLES ================= */
   const particles = useMemo(() => {
-    // deterministic-ish for stable look
     const arr = [];
     for (let i = 0; i < 18; i++) {
       const angle = (i / 18) * Math.PI * 2;
-      const r = 120 + (i % 6) * 14; // orbit radius
+      const r = 120 + (i % 6) * 14;
       arr.push({
         id: i,
         x: Math.cos(angle) * r,
         y: Math.sin(angle) * r,
-        d: 4 + (i % 5) * 0.6, // size
+        d: 4 + (i % 5) * 0.6,
         delay: (i % 9) * 0.25,
         dur: 3.5 + (i % 7) * 0.35,
         alpha: 0.18 + (i % 6) * 0.03,
@@ -116,7 +115,7 @@ export default function HomePage() {
         {/* BRAIN BOX */}
         <div ref={glowRef} style={styles.brainBox}>
           <div style={styles.brainInner}>
-            {/* Neural shimmer overlay */}
+            {/* Neural shimmer overlays */}
             <div style={styles.neuralLayer} aria-hidden="true" />
             <div style={styles.neuralLayer2} aria-hidden="true" />
 
@@ -125,20 +124,24 @@ export default function HomePage() {
               {particles.map((p) => (
                 <span
                   key={p.id}
-                  style={{
-                    ...styles.particle,
-                    width: p.d,
-                    height: p.d,
-                    opacity: p.alpha,
-                    transform: `translate(${p.x}px, ${p.y}px)`,
-                    animationDelay: `${p.delay}s`,
-                    animationDuration: `${p.dur}s`,
-                  }}
+                  style={
+                    {
+                      ...styles.particle,
+                      width: p.d,
+                      height: p.d,
+                      opacity: p.alpha,
+                      animationDelay: `${p.delay}s`,
+                      animationDuration: `${p.dur}s`,
+                      // ✅ FIX: use CSS variables for position (transform is now owned by keyframes)
+                      ["--x" as any]: `${p.x}px`,
+                      ["--y" as any]: `${p.y}px`,
+                    } as React.CSSProperties
+                  }
                 />
               ))}
             </div>
 
-            {/* CENTER BRAIN GIF (DO NOT ROTATE — GIF ROTATES ITSELF) */}
+            {/* CENTER BRAIN GIF (NO ROTATION — GIF ROTATES ITSELF) */}
             <Image
               src="/brain-10813_256.gif"
               alt="Bit Brains — Genesis Brain"
@@ -146,13 +149,11 @@ export default function HomePage() {
               height={256}
               priority
               unoptimized
-              className="select-none"
             />
           </div>
         </div>
       </section>
 
-      {/* Keyframes (scoped) */}
       <style>{keyframes}</style>
     </main>
   );
@@ -207,7 +208,6 @@ const styles: Record<string, React.CSSProperties> = {
       "radial-gradient(circle at 50% 45%, rgba(140,160,255,0.12) 0%, rgba(0,0,0,0) 42%, rgba(0,0,0,0.55) 100%)",
   },
 
-  // Neural activity layers (animated shimmer)
   neuralLayer: {
     position: "absolute",
     inset: -80,
@@ -316,9 +316,10 @@ const keyframes = `
   100% { transform: rotate(360deg) scale(1.0); }
 }
 
+/* ✅ FIX: keep particle position via CSS vars, animate only scale/opacity */
 @keyframes sparkOrbit {
-  0%   { filter: blur(0px); transform: translate(var(--tx, 0px), var(--ty, 0px)) scale(0.9); opacity: 0.12; }
-  50%  { filter: blur(0.2px); transform: translate(var(--tx, 0px), var(--ty, 0px)) scale(1.15); opacity: 0.30; }
-  100% { filter: blur(0px); transform: translate(var(--tx, 0px), var(--ty, 0px)) scale(0.9); opacity: 0.12; }
+  0%   { transform: translate(var(--x, 0px), var(--y, 0px)) scale(0.90); opacity: 0.12; filter: blur(0px); }
+  50%  { transform: translate(var(--x, 0px), var(--y, 0px)) scale(1.20); opacity: 0.30; filter: blur(0.2px); }
+  100% { transform: translate(var(--x, 0px), var(--y, 0px)) scale(0.90); opacity: 0.12; filter: blur(0px); }
 }
 `;
