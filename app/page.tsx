@@ -51,7 +51,7 @@ export default function HomePage() {
               <div className="brainCenter">
                 <img
                   className="brainGif"
-                  src={brainGifSrc}
+                 src="/images/brain-10813_256.gif" 
                   alt="Rotating brain"
                   draggable={false}
                 />
