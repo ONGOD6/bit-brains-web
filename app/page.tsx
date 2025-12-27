@@ -1,245 +1,325 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import Link from 'next/link';
-import Image from 'next/image';
+/**
+ * Author: OnGod
+ * File: app/page.tsx
+ * Project: bit-brains-web
+ *
+ * Notes:
+ * - GIF must exist at: /public/brain-evolution.gif
+ * - Audio must exist at: /public/Audio/Ambient.mp3  (case-sensitive)
+ * - iOS/iPad requires user gesture to start audio. We attach click/touch listeners.
+ */
+
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 
 export default function Page() {
-  const AUDIO_SRC = '/audio/initiation-tone.mp3';
-
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [audioReady, setAudioReady] = useState(false);
 
-  const startAudio = async () => {
-    const a = audioRef.current;
-    if (!a) return;
+  const [isMuted, setIsMuted] = useState(false);
+  const [hasStarted, setHasStarted] = useState(false);
+  const [audioError, setAudioError] = useState<string | null>(null);
 
+  // Simple random "neural spark" dots (visual polish; no extra assets needed)
+  const sparks = useMemo(() => {
+    const arr = Array.from({ length: 18 }).map((_, i) => {
+      const top = Math.random() * 100;
+      const left = Math.random() * 100;
+      const size = 6 + Math.random() * 10;
+      const blur = 6 + Math.random() * 12;
+      const opacity = 0.12 + Math.random() * 0.25;
+      const duration = 2.8 + Math.random() * 3.2;
+      const delay = Math.random() * 2.5;
+      return { key: `spark-${i}`, top, left, size, blur, opacity, duration, delay };
+    });
+    return arr;
+  }, []);
+
+  const safePlay = async () => {
     try {
-      a.load();
-      a.currentTime = 0;
-      await a.play();
-      setIsPlaying(true);
-      setAudioReady(true);
-    } catch {
-      setIsPlaying(false);
-      setAudioReady(false);
+      setAudioError(null);
+      if (!audioRef.current) return;
+
+      // Keep muted state consistent
+      audioRef.current.muted = isMuted;
+      audioRef.current.volume = 0.85;
+
+      // Attempt playback
+      await audioRef.current.play();
+      setHasStarted(true);
+    } catch (e: any) {
+      // iOS will throw until there is a valid gesture; we'll keep listeners
+      setAudioError('Audio blocked until tap/click (iPad/iOS policy). Tap once anywhere.');
     }
   };
 
-  const toggleAudio = async () => {
-    const a = audioRef.current;
-    if (!a) return;
-
-    try {
-      if (isPlaying) {
-        a.pause();
-        setIsPlaying(false);
-      } else {
-        await a.play();
-        setIsPlaying(true);
-        setAudioReady(true);
-      }
-    } catch {
-      setIsPlaying(false);
-    }
-  };
-
+  // Start audio on first user interaction (iOS safe)
   useEffect(() => {
-    const unlock = async () => {
-      if (audioReady) return;
-      const a = audioRef.current;
-      if (!a) return;
-      try {
-        await a.play();
-        a.pause();
-        a.currentTime = 0;
-        setAudioReady(true);
-      } catch {}
+    const onGesture = () => {
+      // try to play; if it works we can remove listeners
+      safePlay().finally(() => {
+        // If it started, remove listeners. If not, keep them (user may need another tap).
+        if (audioRef.current && !audioRef.current.paused) {
+          window.removeEventListener('click', onGesture);
+          window.removeEventListener('touchstart', onGesture);
+          window.removeEventListener('pointerdown', onGesture);
+        }
+      });
     };
 
-    window.addEventListener('pointerdown', unlock, { once: true });
-    return () => window.removeEventListener('pointerdown', unlock);
-  }, [audioReady]);
+    window.addEventListener('click', onGesture, { passive: true });
+    window.addEventListener('touchstart', onGesture, { passive: true });
+    window.addEventListener('pointerdown', onGesture, { passive: true });
+
+    return () => {
+      window.removeEventListener('click', onGesture);
+      window.removeEventListener('touchstart', onGesture);
+      window.removeEventListener('pointerdown', onGesture);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isMuted]);
+
+  // Keep element muted in sync
+  useEffect(() => {
+    if (audioRef.current) audioRef.current.muted = isMuted;
+  }, [isMuted]);
+
+  const toggleMute = () => {
+    setIsMuted((m) => !m);
+    // If user unmutes and audio never started, try again (gesture still valid)
+    if (!hasStarted) safePlay();
+  };
+
+  const manualStart = () => {
+    // A visible button also counts as a user gesture
+    safePlay();
+  };
 
   return (
-    <main className="page">
-      <audio
-        ref={audioRef}
-        src={AUDIO_SRC}
-        preload="auto"
-        playsInline
-        loop
-      />
+    <main
+      style={{
+        minHeight: '100vh',
+        width: '100%',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '28px 18px',
+        background:
+          'radial-gradient(circle at 50% 35%, rgba(85,120,255,0.22) 0%, rgba(10,12,22,1) 48%, rgba(0,0,0,1) 100%)',
+        color: '#fff',
+        overflow: 'hidden',
+      }}
+    >
+      {/* Ambient audio (must be initiated by user gesture on iOS) */}
+      <audio ref={audioRef} loop preload="auto">
+        <source src="/Audio/Ambient.mp3" type="audio/mpeg" />
+      </audio>
 
-      <section className="hero">
-        <h1 className="title">Proof of Care comes first.</h1>
+      {/* Floating neural sparks */}
+      <div
+        aria-hidden
+        style={{
+          position: 'fixed',
+          inset: 0,
+          pointerEvents: 'none',
+          zIndex: 0,
+        }}
+      >
+        {sparks.map((s) => (
+          <span
+            key={s.key}
+            style={{
+              position: 'absolute',
+              top: `${s.top}%`,
+              left: `${s.left}%`,
+              width: `${s.size}px`,
+              height: `${s.size}px`,
+              borderRadius: 999,
+              background: 'rgba(170, 220, 255, 1)',
+              filter: `blur(${s.blur}px)`,
+              opacity: s.opacity,
+              animation: `pulse ${s.duration}s ease-in-out ${s.delay}s infinite`,
+              transform: 'translate(-50%, -50%)',
+            }}
+          />
+        ))}
+      </div>
 
-        <p className="subtitle">
-          Bit Brains is a protocol for NFTs, ENS-based identity, zero-knowledge
-          eligibility, and real-world asset integration — beginning on Ethereum.
-        </p>
-
-        <div className="ctaRow">
-          <Link href="/proof-of-care" className="btn">
-            Enter Proof of Care →
-          </Link>
-
-          <button
-            className="btn btnGhost"
-            onClick={audioReady ? toggleAudio : startAudio}
-          >
-            {isPlaying ? 'Mute Sound' : 'Begin Sound'}
-          </button>
-        </div>
-
-        <div className="card">
-          <div className="brainRow">
-            <button
-              className="brainTap"
-              onClick={audioReady ? toggleAudio : startAudio}
-              aria-label="Toggle sound"
+      {/* OUTER container */}
+      <section
+        style={{
+          position: 'relative',
+          zIndex: 1,
+          width: 'min(920px, 100%)',
+          borderRadius: 28,
+          padding: 18,
+          background:
+            'linear-gradient(145deg, rgba(120,160,255,0.20), rgba(130,255,220,0.08))',
+          boxShadow: '0 0 90px rgba(120,160,255,0.28)',
+        }}
+      >
+        {/* INNER container (flush, no overlap) */}
+        <div
+          style={{
+            width: '100%',
+            borderRadius: 22,
+            padding: '28px 20px',
+            background: 'rgba(6, 10, 18, 0.86)',
+            boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.06)',
+            textAlign: 'center',
+          }}
+        >
+          {/* Top text (above brain, per your request) */}
+          <div style={{ marginBottom: 18 }}>
+            <h1
+              style={{
+                margin: 0,
+                fontSize: 'clamp(28px, 4.2vw, 44px)',
+                letterSpacing: '0.08em',
+                textTransform: 'uppercase',
+              }}
             >
-              <div className="brainWrapper">
-                <Image
-                  src="/images/brain-10813_256.gif"
-                  alt="Rotating brain"
-                  fill
-                  priority
-                  unoptimized
-                  className="brainImage"
+              Bit Brains
+            </h1>
+
+            <p
+              style={{
+                margin: '12px auto 0',
+                maxWidth: 760,
+                lineHeight: 1.65,
+                opacity: 0.9,
+                fontSize: 'clamp(14px, 1.7vw, 16px)',
+              }}
+            >
+              Proof of Care (PoC) is the genesis signal. Brains evolve through continuity, verification,
+              and time—anchored by ENS identity and secured by zero-knowledge proof systems—until
+              autonomous, intelligent technology emerges.
+            </p>
+          </div>
+
+          {/* Brain ring stage */}
+          <div
+            style={{
+              display: 'grid',
+              placeItems: 'center',
+              margin: '18px auto 18px',
+            }}
+          >
+            {/* Outer ring */}
+            <div
+              style={{
+                width: 'min(420px, 78vw)',
+                aspectRatio: '1 / 1',
+                borderRadius: '50%',
+                display: 'grid',
+                placeItems: 'center',
+                background:
+                  'radial-gradient(circle at 50% 50%, rgba(120,160,255,0.25) 0%, rgba(120,160,255,0.08) 45%, rgba(0,0,0,0) 70%)',
+                boxShadow: '0 0 80px rgba(140,180,255,0.28)',
+                padding: 18,
+              }}
+            >
+              {/* Inner ring (flush) */}
+              <div
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  borderRadius: '50%',
+                  display: 'grid',
+                  placeItems: 'center',
+                  background:
+                    'radial-gradient(circle at 50% 50%, rgba(0,0,0,0.0) 0%, rgba(110,255,220,0.08) 52%, rgba(0,0,0,0) 78%)',
+                  boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.06)',
+                }}
+              >
+                {/* The GIF */}
+                <img
+                  src="/brain-evolution.gif"
+                  alt="Brain Evolution"
+                  style={{
+                    width: 'min(280px, 60vw)',
+                    height: 'auto',
+                    borderRadius: '50%',
+                    boxShadow: '0 0 60px rgba(140,180,255,0.45)',
+                  }}
                 />
               </div>
+            </div>
+          </div>
+
+          {/* Controls */}
+          <div
+            style={{
+              display: 'flex',
+              gap: 10,
+              justifyContent: 'center',
+              flexWrap: 'wrap',
+              marginTop: 12,
+            }}
+          >
+            <button
+              type="button"
+              onClick={manualStart}
+              style={{
+                borderRadius: 999,
+                padding: '10px 16px',
+                border: '1px solid rgba(255,255,255,0.16)',
+                background: 'rgba(120,160,255,0.18)',
+                color: '#fff',
+                fontWeight: 600,
+                letterSpacing: '0.04em',
+              }}
+            >
+              Tap to Start Ambience
+            </button>
+
+            <button
+              type="button"
+              onClick={toggleMute}
+              style={{
+                borderRadius: 999,
+                padding: '10px 16px',
+                border: '1px solid rgba(255,255,255,0.16)',
+                background: 'rgba(110,255,220,0.12)',
+                color: '#fff',
+                fontWeight: 600,
+                letterSpacing: '0.04em',
+              }}
+            >
+              {isMuted ? 'Unmute' : 'Mute'}
             </button>
           </div>
 
-          <p className="hint">
-            Tip: on iPad, tap “Begin Sound” or the brain to start ambience.
-          </p>
+          {/* iOS note */}
+          <div style={{ marginTop: 12, opacity: 0.78, fontSize: 13 }}>
+            {audioError ? (
+              <span>{audioError}</span>
+            ) : (
+              <span>
+                iPad/iOS requires a user tap to begin audio. If you don’t hear it, tap once on the page.
+              </span>
+            )}
+          </div>
         </div>
+
+        {/* Keyframes */}
+        <style jsx global>{`
+          @keyframes pulse {
+            0% {
+              transform: translate(-50%, -50%) scale(0.9);
+              opacity: 0.08;
+            }
+            50% {
+              transform: translate(-50%, -50%) scale(1.15);
+              opacity: 0.32;
+            }
+            100% {
+              transform: translate(-50%, -50%) scale(0.9);
+              opacity: 0.08;
+            }
+          }
+        `}</style>
       </section>
-
-      <style jsx>{`
-        .page {
-          min-height: 100vh;
-          padding: 44px 18px 64px;
-          display: flex;
-          justify-content: center;
-          background:
-            radial-gradient(1200px 700px at 50% 10%, rgba(130,170,255,.22), transparent 60%),
-            radial-gradient(900px 600px at 50% 100%, rgba(185,120,255,.18), transparent 60%),
-            #05060a;
-          color: #fff;
-        }
-
-        .hero {
-          width: min(980px, 100%);
-          text-align: center;
-        }
-
-        .title {
-          font-size: clamp(40px, 6vw, 64px);
-          font-weight: 800;
-          letter-spacing: -0.02em;
-          margin-bottom: 14px;
-        }
-
-        .subtitle {
-          max-width: 900px;
-          margin: 0 auto 18px;
-          font-size: clamp(14px, 2.3vw, 18px);
-          line-height: 1.55;
-          color: rgba(255,255,255,.75);
-        }
-
-        .ctaRow {
-          display: flex;
-          justify-content: center;
-          gap: 14px;
-          margin: 18px 0 22px;
-          flex-wrap: wrap;
-        }
-
-        .btn {
-          padding: 12px 18px;
-          border-radius: 12px;
-          font-weight: 700;
-          border: 1px solid rgba(255,255,255,.16);
-          background: rgba(255,255,255,.08);
-          color: #fff;
-          text-decoration: none;
-          transition: all .15s ease;
-        }
-
-        .btn:hover {
-          transform: translateY(-1px);
-          background: rgba(255,255,255,.12);
-        }
-
-        .btnGhost {
-          background: rgba(255,255,255,.06);
-        }
-
-        .card {
-          border-radius: 20px;
-          border: 1px solid rgba(255,255,255,.12);
-          background: rgba(255,255,255,.04);
-          box-shadow: 0 30px 90px rgba(0,0,0,.55);
-          padding: 22px 16px 14px;
-        }
-
-        .brainRow {
-          display: flex;
-          justify-content: center;
-        }
-
-        .brainTap {
-          background: transparent;
-          border: none;
-          padding: 0;
-          cursor: pointer;
-        }
-
-        /* ✅ ONE TRUE CIRCLE — NO DOUBLE FRAME */
-        .brainWrapper {
-          position: relative;
-          width: min(360px, 78vw);
-          aspect-ratio: 1 / 1;
-          border-radius: 50%;
-          overflow: hidden;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          background: rgba(255,255,255,.03);
-          border: 1px solid rgba(255,255,255,.12);
-        }
-
-        .brainWrapper::before {
-          content: '';
-          position: absolute;
-          inset: 0;
-          border-radius: 50%;
-          filter: blur(28px);
-          background: radial-gradient(
-            circle,
-            rgba(130,170,255,.45),
-            transparent 70%
-          );
-          z-index: 0;
-        }
-
-        .brainImage {
-          object-fit: contain;
-          border-radius: 50%;
-          z-index: 1;
-        }
-
-        .hint {
-          margin-top: 10px;
-          font-size: 12px;
-          color: rgba(255,255,255,.6);
-        }
-      `}</style>
     </main>
   );
 }
