@@ -38,7 +38,6 @@ export default function Page() {
     a.preload = 'auto';
     a.crossOrigin = 'anonymous';
     a.volume = ambienceVolume;
-    a.muted = true; // start muted until user explicitly unmutes
     audioRef.current = a;
 
     const onError = () => setAudioError('Audio failed to load. Check the file path in /public.');
@@ -65,13 +64,14 @@ export default function Page() {
     // Ensure we mark "started" after a successful play attempt
     try {
       // iOS often requires muted play first, then unmute on another gesture
-      a.muted = true;
-      await a.play();
-      setHasStarted(true);
+      // iOS-safe: play AND unmute in the SAME user gesture
+a.volume = ambienceVolume;
+a.muted = false;
 
-      // Keep it muted until user hits Unmute
-      setIsMuted(true);
-      a.muted = true;
+await a.play();
+
+setHasStarted(true);
+setIsMuted(false);
     } catch (err) {
       // If play fails, iOS likely blocked it or file missing
       setHasStarted(false);
@@ -163,11 +163,17 @@ export default function Page() {
             {/* Outer ring (layer 1) */}
             <div className="outerRing" aria-hidden="true" />
 
-            {/* Inner field (layer 2) — TRUE CIRCLE */}
             <div className="innerField">
-              <img className="brainGif" src={brainGifSrc} alt="Rotating brain" draggable={false} />
-              <div className="fieldGlow" aria-hidden="true" />
-            </div>
+  <div className="brainCenter">
+    <img
+      className="brainGif"
+      src={brainGifSrc}
+      alt="Rotating brain"
+      draggable={false}
+    />
+  </div>
+  <div className="fieldGlow" aria-hidden="true" />
+</div>
           </div>
 
           {/* Controls */}
@@ -385,8 +391,14 @@ flex-direction: column;
             width: 78%;
           }
           .brainGif {
-            width: 80%;
-            height: 80%;
+  display: block;
+  margin: 0 auto;
+  width: 100%;
+  height: auto;
+  max-width: 280px;
+}
+
+          
           }
         }
       `}</style>
