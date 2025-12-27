@@ -1,126 +1,10 @@
-'use client';
+import Link from "next/link";
 
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import Link from 'next/link';
-
-/**
- * BIT BRAINS — Homepage (app/page.tsx)
- * GitHub-ready single-file page with:
- * - True circular inner field (no oval mask)
- * - Reduced to 2 primary layers (outer ring + inner field)
- * - Brain scaled up ~18%
- * - iPad/iOS-friendly audio start (requires user gesture)
- *
- * ✅ IMPORTANT PATHS (edit if needed):
- *   - Brain GIF: /brain-10813_256.gif
- *   - Audio file: /audio/ambience.mp3   (put in /public/audio/ambience.mp3)
- */
-
-export default function Page() {
-  // ----- CONFIG (edit these if your filenames differ) -----
-  const brainGifSrc = '/brain-10813_256.gif';
-  const ambienceSrc = '/audio/ambience.mp3';
-
-  // ----- AUDIO STATE -----
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const [hasStarted, setHasStarted] = useState(false);
-  const [isMuted, setIsMuted] = useState(true);
-  const [audioError, setAudioError] = useState<string | null>(null);
-
-  // optional: keep volume subtle for ritual ambience
-  const ambienceVolume = useMemo(() => 0.25, []);
-
-  // Create the audio element once on client
-  useEffect(() => {
-    // Create on mount (but don't autoplay)
-    const a = new Audio(ambienceSrc);
-    a.loop = true;
-    a.preload = 'auto';
-    a.crossOrigin = 'anonymous';
-    a.volume = ambienceVolume;
-    audioRef.current = a;
-
-    const onError = () => setAudioError('Audio failed to load. Check the file path in /public.');
-    a.addEventListener('error', onError);
-
-    return () => {
-      a.removeEventListener('error', onError);
-      try {
-        a.pause();
-      } catch {}
-      audioRef.current = null;
-    };
-  }, [ambienceSrc, ambienceVolume]);
-
-  // Core iOS-safe start: must be called from a user gesture (tap/click)
-  const startAmbience = async () => {
-    setAudioError(null);
-    const a = audioRef.current;
-    if (!a) {
-      setAudioError('Audio not initialized.');
-      return;
-    }
-
-    // Ensure we mark "started" after a successful play attempt
-    try {
-      // iOS often requires muted play first, then unmute on another gesture
-      // iOS-safe: play AND unmute in the SAME user gesture
-a.volume = ambienceVolume;
-a.muted = false;
-
-await a.play();
-
-setHasStarted(true);
-setIsMuted(false);
-    } catch (err) {
-      // If play fails, iOS likely blocked it or file missing
-      setHasStarted(false);
-      setAudioError(
-        'iPad/iOS blocked audio or the file is missing. Confirm /public/audio/ambience.mp3 exists and tap the button again.'
-      );
-    }
-  };
-
-  const toggleMute = async () => {
-    setAudioError(null);
-    const a = audioRef.current;
-    if (!a) {
-      setAudioError('Audio not initialized.');
-      return;
-    }
-
-    // If user hits unmute before starting, start first
-    if (!hasStarted) {
-      await startAmbience();
-      // If start failed, bail
-      if (!audioRef.current) return;
-    }
-
-    const nextMuted = !isMuted;
-    setIsMuted(nextMuted);
-
-    try {
-      // Changing muted state must be triggered by a user gesture on iOS — this handler is
-      a.muted = nextMuted;
-      if (!nextMuted) {
-        // some browsers pause silently; ensure play continues
-        await a.play();
-      }
-    } catch {
-      setAudioError('Audio could not be toggled. Tap once on the page, then try again.');
-    }
-  };
-
-  // Optional: one-tap anywhere to help iOS users
-  const onPageTap = async () => {
-    // If user taps the page (not a button) and audio hasn't started, attempt start.
-    if (!hasStarted) {
-      await startAmbience();
-    }
-  };
+export default function HomePage() {
+  const brainGifSrc = "/images/brain-10813_256.gif";
 
   return (
-    <main className="page" onPointerDown={onPageTap}>
+    <main className="page">
       {/* Top Nav */}
       <header className="topNav">
         <nav className="navLinks">
@@ -148,50 +32,32 @@ setIsMuted(false);
         </nav>
       </header>
 
-      {/* Hero / Ritual Frame */}
+      {/* Hero */}
       <section className="heroWrap" aria-label="Bit Brains hero">
         <div className="heroCard">
           <div className="heroTitle">BIT BRAINS</div>
 
           <p className="heroSubtitle">
-            Proof of Care (PoC) is the genesis signal. Brains evolve through continuity, verification, and time—anchored by
-            ENS identity and secured by zero-knowledge proof systems—until autonomous, intelligent technology emerges.
+            Proof of Care (PoC) is the genesis signal. Brains evolve through continuity,
+            verification, and time—anchored by ENS identity and secured by zero-knowledge
+            proof systems—until autonomous, intelligent technology emerges.
           </p>
 
-          {/* Ceremonial Field */}
+          {/* Brain Field */}
           <div className="fieldWrap">
-            {/* Outer ring (layer 1) */}
             <div className="outerRing" aria-hidden="true" />
-
             <div className="innerField">
-  <div className="brainCenter">
-    <img
-      className="brainGif"
-      src={brainGifSrc}
-      alt="Rotating brain"
-      draggable={false}
-    />
-  </div>
-  <div className="fieldGlow" aria-hidden="true" />
-</div>
+              <div className="brainCenter">
+                <img
+                  className="brainGif"
+                  src={brainGifSrc}
+                  alt="Rotating brain"
+                  draggable={false}
+                />
+              </div>
+              <div className="fieldGlow" aria-hidden="true" />
+            </div>
           </div>
-
-          {/* Controls */}
-          <div className="controlsRow">
-            <button className="pillBtn" onClick={startAmbience} type="button">
-              Tap to Start Ambience
-            </button>
-
-            <button className="pillBtn pillBtnAlt" onClick={toggleMute} type="button">
-              {isMuted ? 'Unmute' : 'Mute'}
-            </button>
-          </div>
-
-          <div className="helperText">
-            iPad/iOS requires a user tap to begin audio. If you don&apos;t hear it, tap once on the page.
-          </div>
-
-          {audioError ? <div className="errorText">{audioError}</div> : null}
         </div>
       </section>
 
@@ -200,23 +66,24 @@ setIsMuted(false);
       <div className="bgGlowB" aria-hidden="true" />
 
       <style jsx>{`
-        /* -------------------------
+        /* ----------------------------
            PAGE / BACKGROUND
-        ------------------------- */
-     .page {
-  display: flex;
-flex-direction: column;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  background: radial-gradient(1200px 800px at 50% 20%, rgba(58, 108, 255, 0.18), rgba(0,0,0,0)),
-              radial-gradient(900px 600px at 20% 40%, rgba(124, 58, 237, 0.12), rgba(0,0,0,0)),
-              linear-gradient(180deg, #050712 0%, #03040c 45%, #02030a 100%);
-  color: rgba(255, 255, 255, 0.92);
-  position: relative;
-  overflow-x: hidden;
-}
-        /* Decorative glows (subtle, behind everything) */
+        ---------------------------- */
+        .page {
+          min-height: 100vh;
+          display: flex;
+          flex-direction: column;
+          position: relative;
+          overflow-x: hidden;
+
+          /* background */
+          background: radial-gradient(1200px 800px at 50% 20%, rgba(58, 108, 255, 0.18), rgba(0, 0, 0, 0)),
+            radial-gradient(900px 600px at 20% 40%, rgba(124, 58, 237, 0.12), rgba(0, 0, 0, 0)),
+            linear-gradient(180deg, #050712 0%, #03040c 45%, #02030a 100%);
+          color: rgba(255, 255, 255, 0.92);
+        }
+
+        /* Decorative glows (behind everything) */
         .bgGlowA {
           position: absolute;
           inset: -200px -200px auto -200px;
@@ -226,6 +93,7 @@ flex-direction: column;
           pointer-events: none;
           z-index: 0;
         }
+
         .bgGlowB {
           position: absolute;
           inset: auto -200px -260px -200px;
@@ -236,9 +104,9 @@ flex-direction: column;
           z-index: 0;
         }
 
-        /* -------------------------
+        /* ----------------------------
            TOP NAV
-        ------------------------- */
+        ---------------------------- */
         .topNav {
           position: sticky;
           top: 0;
@@ -249,177 +117,146 @@ flex-direction: column;
         }
 
         .navLinks {
-          max-width: 1100px;
+          max-width: 1200px;
           margin: 0 auto;
           padding: 14px 18px;
           display: flex;
           gap: 18px;
           flex-wrap: wrap;
+          align-items: center;
         }
 
         .navLink {
+          color: rgba(255, 255, 255, 0.78);
           text-decoration: none;
-          font-size: 15px;
+          font-size: 14px;
           letter-spacing: 0.2px;
-          color: rgba(160, 130, 255, 0.95);
-          transition: opacity 120ms ease, transform 120ms ease;
         }
+
         .navLink:hover {
-          opacity: 0.9;
-          transform: translateY(-1px);
+          color: rgba(255, 255, 255, 0.95);
+          text-decoration: underline;
+          text-underline-offset: 4px;
         }
-64px;
-.heroWrap {
-  position: relative;
-  z-index: 5;
-  flex: 1;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 36px 18px 64px;
-}
-        
+
+        /* ----------------------------
+           HERO LAYOUT
+        ---------------------------- */
+        .heroWrap {
+          flex: 1;
+          display: flex;
+          align-items: flex-start;
+          justify-content: center;
+          padding: 38px 18px 60px;
+          position: relative;
+          z-index: 1; /* above bg glows */
+        }
 
         .heroCard {
-          width: min(980px, 100%);
-          border-radius: 28px;
-          background: radial-gradient(700px 360px at 50% 20%, rgba(72, 111, 255, 0.22), rgba(0, 0, 0, 0) 65%),
-            linear-gradient(180deg, rgba(10, 18, 40, 0.72), rgba(6, 10, 22, 0.78));
-          border: 1px solid rgba(255, 255, 255, 0.07);
-          box-shadow: 0 24px 90px rgba(0, 0, 0, 0.55);
-          padding: 34px 22px 28px;
-          position: relative;
+          width: min(1200px, 100%);
+          border-radius: 22px;
+          padding: 34px 26px 30px;
+          background: rgba(8, 12, 28, 0.62);
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          box-shadow: 0 18px 60px rgba(0, 0, 0, 0.42);
+          backdrop-filter: blur(10px);
+
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          text-align: center;
+          gap: 14px;
         }
 
         .heroTitle {
-          text-align: center;
+          font-size: clamp(28px, 4vw, 44px);
           font-weight: 800;
-          letter-spacing: 3px;
-          font-size: clamp(28px, 3.2vw, 44px);
-          margin-top: 4px;
-          margin-bottom: 10px;
+          letter-spacing: 6px;
+          line-height: 1.1;
+          margin-top: 2px;
         }
 
         .heroSubtitle {
-          text-align: center;
-          max-width: 860px;
-          margin: 0 auto;
+          max-width: 920px;
+          margin: 0;
           font-size: 16px;
           line-height: 1.65;
-          color: rgba(255, 255, 255, 0.84);
-          padding: 0 6px;
+          color: rgba(255, 255, 255, 0.82);
         }
 
-        /* -------------------------
-           CEREMONIAL FIELD
-           Fixes:
-           - True circle inner field (no oval clipping)
-           - Only 2 layers: outer ring + inner field
-        ------------------------- */
-        .
-
-        /* -------------------------
-           CONTROLS
-        ------------------------- */
-        .controlsRow {
+        /* ----------------------------
+           BRAIN FIELD (NO OVERLAP)
+        ---------------------------- */
+        .fieldWrap {
+          width: 100%;
           display: flex;
+          align-items: center;
           justify-content: center;
-          gap: 12px;
           margin-top: 10px;
-          margin-bottom: 8px;
-          flex-wrap: wrap;
+          position: relative;
         }
 
-        .pillBtn {
-          appearance: none;
-          border: 1px solid rgba(255, 255, 255, 0.14);
-          background: rgba(255, 255, 255, 0.06);
-          color: rgba(255, 255, 255, 0.9);
+        .outerRing {
+          position: absolute;
+          width: min(760px, 92vw);
+          height: min(420px, 55vw);
           border-radius: 999px;
-          padding: 10px 16px;
-          font-size: 14px;
-          letter-spacing: 0.3px;
-          cursor: pointer;
-          transition: transform 120ms ease, background 120ms ease, border-color 120ms ease;
-        }
-        .pillBtn:hover {
-          transform: translateY(-1px);
-          background: rgba(255, 255, 255, 0.08);
-          border-color: rgba(255, 255, 255, 0.18);
-        }
-        .pillBtn:active {
-          transform: translateY(0px);
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+          background: radial-gradient(closest-side, rgba(255, 255, 255, 0.05), rgba(0, 0, 0, 0));
+          filter: blur(0px);
         }
 
-        .pillBtnAlt {
-          background: rgba(120, 160, 255, 0.10);
-          border-color: rgba(120, 160, 255, 0.24);
+        .innerField {
+          width: min(760px, 92vw);
+          height: min(420px, 55vw);
+          border-radius: 20px;
+          border: 1px solid rgba(255, 255, 255, 0.09);
+          background: rgba(0, 0, 0, 0.22);
+          position: relative;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          overflow: hidden;
         }
 
-        .helperText {
-          text-align: center;
-          font-size: 13px;
-          color: rgba(255, 255, 255, 0.62);
-          margin-top: 6px;
+        .brainCenter {
+          width: min(520px, 72vw);
+          aspect-ratio: 16 / 9;
+          border-radius: 14px;
+          background: rgba(0, 0, 0, 0.28);
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          overflow: hidden;
+          z-index: 2;
         }
 
-        .errorText {
-          text-align: center;
-          margin-top: 10px;
-          font-size: 13px;
-          color: rgba(255, 120, 120, 0.95);
+        .brainGif {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          display: block;
         }
 
-        /* -------------------------
-           RESPONSIVE TUNING
-        ------------------------- */
-        @media (max-width: 520px) {
+        .fieldGlow {
+          position: absolute;
+          inset: -40%;
+          background: radial-gradient(circle at 50% 45%, rgba(96, 165, 250, 0.22), rgba(0, 0, 0, 0) 55%);
+          filter: blur(22px);
+          z-index: 1;
+          pointer-events: none;
+        }
+
+        /* Mobile tweaks */
+        @media (max-width: 640px) {
           .heroCard {
             padding: 26px 16px 22px;
-            border-radius: 22px;
           }
           .navLinks {
             gap: 12px;
           }
-          .navLink {
-            font-size: 14px;
-          }
-          .heroSubtitle {
-            font-size: 15px;
-          }
-          .innerField {
-  width: 100%;
-  max-width: 720px;
-  margin-left: auto;
-  margin-right: auto;
-}
-            
-          }
-          .brainGif {
-  display: block;
-  margin: 0 auto;
-  width: 100%;
-  height: auto;
-  max-width: 280px;
-}
-
-          
-          }
-          /* iPad fix: force hero to single centered column */
-@media (max-width: 1024px) {
-  .heroLayout,
-  .heroGrid,
-  .heroContent,
-  .heroRow {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-  }
-
-  
-}
         }
       `}</style>
     </main>
