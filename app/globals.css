@@ -72,10 +72,9 @@ nav a {
   font-weight: 600;
   text-decoration: underline;
 }
-
-/* =========================
-   BRAIN (CENTERED, NEVER OFFSCREEN)
-   ========================= */
+/* ==========================
+   BRAIN (BIGGER HERO, CENTERED, NEVER OFFSCREEN)
+========================== */
 
 .home-right {
   margin-top: 2.5rem;
@@ -83,21 +82,35 @@ nav a {
   justify-content: center;
 }
 
+/* BIGGER brain frame (responsive) */
 .brain-wrapper {
+  position: relative;
   width: 100%;
-  max-width: 360px;
+  max-width: 780px;            /* was 360px — this is the main fix */
+  aspect-ratio: 16 / 9;        /* keeps a cinematic frame */
+  border-radius: 18px;
+  overflow: hidden;
 }
 
+/* Keep your layers exactly, just make sure they fill the bigger frame */
+.neuron-layer,
+.spark-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* Make the brain fill the frame */
 .brain-image {
   width: 100%;
-  height: auto;
+  height: 100%;
   display: block;
+  object-fit: cover;           /* fills the bigger frame */
 }
 
-/* =========================
-   MOBILE SAFETY
-   ========================= */
-
+/* ==========================
+   MOBILE SAFETY (iPad/phone)
+========================== */
 @media (max-width: 768px) {
   .home-title {
     font-size: 2rem;
@@ -105,5 +118,11 @@ nav a {
 
   .page-shell {
     padding: 1.5rem;
+  }
+
+  .brain-wrapper {
+    max-width: 100%;
+    aspect-ratio: 4 / 3;       /* taller on mobile so it feels bigger */
+    border-radius: 16px;
   }
 }
