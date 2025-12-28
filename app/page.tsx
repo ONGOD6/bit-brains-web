@@ -8,8 +8,9 @@ export default function HomePage() {
           <h1 className="home-title">Proof of Care comes first.</h1>
 
           <p className="home-subtitle">
-            Bit Brains is a protocol for NFTs, ENS-based identity, zero-knowledge eligibility,
-            and real-world asset integration — beginning on Ethereum.
+            Bit Brains is a protocol for NFTs, ENS-based identity,
+            zero-knowledge eligibility, and real-world asset integration —
+            beginning on Ethereum.
           </p>
 
           <Link className="home-link" href="/proof-of-care">
@@ -24,7 +25,7 @@ export default function HomePage() {
 
             <img
               className="brain-image"
-              src="/images/brain-10813_256.gif"
+              src="/brain-evolution.gif"
               alt="Bit Brains"
             />
           </div>
