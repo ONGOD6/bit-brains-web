@@ -1,29 +1,30 @@
-"use client";
-
 export default function MusicPage() {
   return (
-    <div style={{ maxWidth: "800px", margin: "0 auto" }}>
-      <h1>Community Music — Digibeats</h1>
+    <main
+      style={{
+        minHeight: "100vh",
+        padding: "2.5rem 1.25rem",
+        maxWidth: "960px",
+        margin: "0 auto",
+        lineHeight: 1.65,
+      }}
+    >
+      <h1 style={{ fontSize: "2.4rem", marginBottom: "0.75rem" }}>
+        Community Music — Digibeats
+      </h1>
 
-      <p style={{ opacity: 0.85, lineHeight: 1.6 }}>
-        Digibeats tracks are curated from the GetHype community.
-        <br />
-        Music playback and drops are coming soon.
+      <p style={{ opacity: 0.9, fontSize: "1.1rem", marginBottom: "1.25rem" }}>
+        Digibeats tracks are curated from the GetHype community. Music playback and drops are coming soon.
       </p>
 
       <a
-        href="https://gethype.digital"
+        href="https://gethype.com"
         target="_blank"
-        rel="noopener noreferrer"
-        style={{
-          display: "inline-block",
-          marginTop: "1.5rem",
-          color: "#60a5fa",
-          textDecoration: "underline",
-        }}
+        rel="noreferrer"
+        style={{ fontSize: "1.05rem", textDecoration: "underline" }}
       >
         Visit Digibeats on GetHype →
       </a>
-    </div>
+    </main>
   );
 }
