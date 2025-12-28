@@ -1,5 +1,3 @@
-import Image from "next/image";
-
 export default function StakePage() {
   return (
     <main
@@ -65,7 +63,7 @@ export default function StakePage() {
       {/* PUSH IMAGE TO BOTTOM */}
       <div style={{ flexGrow: 1 }} />
 
-      {/* IMAGE ANCHOR */}
+      {/* STAKING BRAIN IMAGE (NEW CANONICAL FILE) */}
       <div
         style={{
           marginTop: "2.5rem",
@@ -75,21 +73,20 @@ export default function StakePage() {
       >
         <div
           style={{
-            width: "min(520px, 90vw)",
+            width: "min(960px, 96vw)",
             position: "relative",
+            overflow: "hidden",
+            borderRadius: "18px",
           }}
         >
-          <Image
-            src="/images/IMG_0617.jpg"
-            alt="Bit Brains — Proof of Care"
-            width={900}
-            height={900}
-            priority
+          <img
+            src="/stake-brain-vertical.jpg"
+            alt="Bit Brains — Staking"
             style={{
               width: "100%",
               height: "auto",
-              borderRadius: "18px",
-              filter: "drop-shadow(0 0 28px rgba(160,120,255,0.35))",
+              display: "block",
+              filter: "drop-shadow(0 0 36px rgba(160,120,255,0.45))",
             }}
           />
         </div>
