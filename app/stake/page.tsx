@@ -63,7 +63,7 @@ export default function StakePage() {
       {/* PUSH IMAGE TO BOTTOM */}
       <div style={{ flexGrow: 1 }} />
 
-      {/* STAKING BRAIN IMAGE (NEW CANONICAL FILE) */}
+      {/* STAKING BRAIN IMAGE (ALIVE MOTION) */}
       <div
         style={{
           marginTop: "2.5rem",
@@ -79,6 +79,21 @@ export default function StakePage() {
             borderRadius: "18px",
           }}
         >
+          {/* Soft glow layer behind image */}
+          <div
+            style={{
+              position: "absolute",
+              inset: "-18%",
+              background:
+                "radial-gradient(circle at 30% 55%, rgba(80,200,255,0.25), rgba(0,0,0,0) 55%), radial-gradient(circle at 70% 45%, rgba(255,160,80,0.22), rgba(0,0,0,0) 55%)",
+              filter: "blur(22px)",
+              opacity: 0.9,
+              animation: "bbGlow 6.5s ease-in-out infinite",
+              pointerEvents: "none",
+            }}
+          />
+
+          {/* Image with gentle sway + float */}
           <img
             src="/stake-brain-vertical.jpg"
             alt="Bit Brains — Staking"
@@ -86,10 +101,38 @@ export default function StakePage() {
               width: "100%",
               height: "auto",
               display: "block",
+              transformOrigin: "50% 55%",
+              animation: "bbSway 7.5s ease-in-out infinite",
               filter: "drop-shadow(0 0 36px rgba(160,120,255,0.45))",
+              position: "relative",
+              zIndex: 1,
             }}
           />
         </div>
+
+        <style>{`
+          /* Gentle side-to-side + slight up/down float (alive, not spinner) */
+          @keyframes bbSway {
+            0%   { transform: translateY(0px) rotate(-0.6deg); }
+            25%  { transform: translateY(-6px) rotate(0.7deg); }
+            50%  { transform: translateY(0px) rotate(-0.4deg); }
+            75%  { transform: translateY(6px) rotate(0.6deg); }
+            100% { transform: translateY(0px) rotate(-0.6deg); }
+          }
+
+          /* Subtle breathing glow behind the image */
+          @keyframes bbGlow {
+            0%   { opacity: 0.75; transform: scale(0.98); }
+            50%  { opacity: 1.0;  transform: scale(1.02); }
+            100% { opacity: 0.75; transform: scale(0.98); }
+          }
+
+          /* Respect users who prefer reduced motion */
+          @media (prefers-reduced-motion: reduce) {
+            img { animation: none !important; }
+            div { animation: none !important; }
+          }
+        `}</style>
       </div>
     </main>
   );
