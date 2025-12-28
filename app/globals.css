@@ -1,25 +1,21 @@
 /* ================================
    Bit Brains Global Styles
-   (Nav spacing + typography + colors)
-   + Homepage Brain (bigger + neurons sparking)
+   - Global: clean typography, nav spacing
+   - Homepage ONLY: purple/blue hero colors + brain aura/sparks
 ================================== */
 
-/* ===== Color System (two-tone to match the brain) ===== */
+/* ===== Base ===== */
 :root {
-  /* Purple-violet (header/nav/title) */
-  --bb-purple: #7a4dff;
-  --bb-purple-dark: #5a2fe6;
-
-  /* Bluish-purple (hero/subtitle text above brain) */
-  --bb-blue: #79b7ff;
-  --bb-blue-soft: rgba(121, 183, 255, 0.85);
-
+  --bb-bg: #ffffff;
   --bb-text: #101114;
   --bb-border: #e7e7ee;
-  --bb-bg: #ffffff;
+
+  /* Homepage-only accents (match the brain) */
+  --home-purple: #7a4dff;
+  --home-purple-dark: #5a2fe6;
+  --home-blue: rgba(121, 183, 255, 0.85);
 }
 
-/* ===== Base ===== */
 html,
 body {
   padding: 0;
@@ -34,59 +30,27 @@ body {
   box-sizing: border-box;
 }
 
+/* Keep global links neutral (so other pages don’t go purple) */
 a {
-  color: var(--bb-purple);
+  color: inherit;
 }
 
 a:hover {
-  color: var(--bb-purple-dark);
+  opacity: 0.92;
 }
 
-/* ===== Layout Shell (keeps content from stretching too wide) ===== */
+/* ===== Layout Shell ===== */
 .page-shell {
   max-width: 1100px;
   margin: 0 auto;
   padding: 2.25rem 1.5rem;
 }
 
-.content-shell {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-/* ===== Typography ===== */
-.page-title {
-  margin: 0;
-  font-size: 2.4rem;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  color: var(--bb-purple); /* header/title purple-violet */
-}
-
-.page-subtitle {
-  margin: 0;
-  font-size: 1.05rem;
-  line-height: 1.55;
-  max-width: 760px;
-  color: var(--bb-blue-soft); /* bluish-purple for text above brain */
-}
-
-/* If you have normal paragraphs elsewhere, keep them readable */
-p {
-  color: var(--bb-text);
-}
-
-/* Optional: any “subtitle” class stays bluish */
-p.page-subtitle {
-  color: var(--bb-blue-soft);
-}
-
-/* ===== NAV (broken up + spaced + wraps cleanly) ===== */
+/* ===== NAV (spaced + wraps cleanly) ===== */
 .nav {
   display: flex;
-  flex-wrap: wrap; /* allows wrapping instead of one long line */
-  gap: 0.9rem 1.25rem; /* row gap + column gap */
+  flex-wrap: wrap;
+  gap: 0.9rem 1.25rem;
   align-items: center;
   padding: 1rem 1.5rem;
   border-bottom: 1px solid var(--bb-border);
@@ -95,13 +59,13 @@ p.page-subtitle {
 
 .nav a {
   text-decoration: none;
-  color: var(--bb-purple); /* header/nav purple-violet */
+  color: var(--home-purple); /* NAV can stay purple globally */
   font-weight: 600;
 }
 
 .nav a:hover {
   text-decoration: underline;
-  color: var(--bb-purple-dark);
+  color: var(--home-purple-dark);
 }
 
 /* iPad / smaller screens nav comfort */
@@ -115,22 +79,85 @@ p.page-subtitle {
   .page-shell {
     padding: 1.75rem 1rem;
   }
+}
 
-  .page-title {
-    font-size: 2.05rem;
+/* =========================================================
+   HOMEPAGE ONLY STYLES
+   (so other pages don’t get purple titles / blue subtitles)
+========================================================= */
+
+.home-hero {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 2.25rem;
+  margin-top: 1.75rem;
+}
+
+.home-left {
+  flex: 1;
+  min-width: 280px;
+}
+
+.home-right {
+  width: 520px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* Title purple-violet (HOMEPAGE ONLY) */
+.home-title {
+  margin: 0;
+  font-size: 2.6rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--home-purple);
+}
+
+/* Bluish-purple text above the brain (HOMEPAGE ONLY) */
+.home-subtitle {
+  margin: 0.9rem 0 0;
+  font-size: 1.08rem;
+  line-height: 1.6;
+  max-width: 760px;
+  color: var(--home-blue);
+}
+
+/* Homepage CTA link */
+.home-link {
+  display: inline-block;
+  margin-top: 1rem;
+  color: var(--home-purple);
+  text-decoration: underline;
+  font-weight: 700;
+}
+
+.home-link:hover {
+  color: var(--home-purple-dark);
+}
+
+/* Responsive hero: stack on iPad/phones */
+@media (max-width: 900px) {
+  .home-hero {
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+
+  .home-right {
+    width: 100%;
+    justify-content: flex-start;
   }
 }
 
 /* =========================================================
-   ====== Homepage Brain (bigger + neurons sparking) ======
-   (Your existing block preserved)
+   Homepage Brain (bigger + neurons sparking)
+   (Your original effect preserved)
 ========================================================= */
 
 .brain-wrapper {
   position: relative;
   width: 520px;
   height: 520px;
-  margin: 3rem auto 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -179,54 +206,26 @@ p.page-subtitle {
 
 @keyframes brainPulse {
   0%,
-  100% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.055);
-  }
+  100% { transform: scale(1); }
+  50% { transform: scale(1.055); }
 }
 
 @keyframes neuronFlash {
   0%,
-  100% {
-    opacity: 0.35;
-  }
-  50% {
-    opacity: 0.85;
-  }
+  100% { opacity: 0.35; }
+  50% { opacity: 0.85; }
 }
 
 @keyframes sparkFlicker {
-  0% {
-    opacity: 0.15;
-    transform: scale(0.98);
-  }
-  25% {
-    opacity: 0.65;
-    transform: scale(1.01);
-  }
-  55% {
-    opacity: 0.25;
-    transform: scale(0.99);
-  }
-  75% {
-    opacity: 0.75;
-    transform: scale(1.02);
-  }
-  100% {
-    opacity: 0.18;
-    transform: scale(0.985);
-  }
+  0% { opacity: 0.15; transform: scale(0.98); }
+  25% { opacity: 0.65; transform: scale(1.01); }
+  55% { opacity: 0.25; transform: scale(0.99); }
+  75% { opacity: 0.75; transform: scale(1.02); }
+  100% { opacity: 0.18; transform: scale(0.985); }
 }
 
 /* iPad / mobile safety */
 @media (max-width: 768px) {
-  .brain-wrapper {
-    width: 340px;
-    height: 340px;
-  }
-  .brain-image {
-    width: 300px;
-  }
+  .brain-wrapper { width: 340px; height: 340px; }
+  .brain-image { width: 300px; }
 }
