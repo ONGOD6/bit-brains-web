@@ -1,37 +1,35 @@
-// app/page.tsx
-import Image from "next/image";
 import Link from "next/link";
 
-export default function Home() {
+export default function HomePage() {
   return (
-    <section className="hero">
-      <div className="heroInner">
-        <h1 className="heroTitle">Proof of Care comes first.</h1>
+    <main className="page-shell">
+      <section className="home-hero">
+        <div className="home-left">
+          <h1 className="home-title">Proof of Care comes first.</h1>
 
-        <p className="heroSub">
-          Bit Brains is a protocol for NFTs, ENS-based identity, zero-knowledge
-          eligibility, and real-world asset integration — beginning on Ethereum.
-        </p>
+          <p className="home-subtitle">
+            Bit Brains is a protocol for NFTs, ENS-based identity, zero-knowledge eligibility,
+            and real-world asset integration — beginning on Ethereum.
+          </p>
 
-        <Link href="/proof-of-care" className="heroCta">
-          Enter Proof of Care →
-        </Link>
+          <Link className="home-link" href="/proof-of-care">
+            Enter Proof of Care →
+          </Link>
+        </div>
 
-        <div className="brainWrap">
-          <div className="brainOuter">
-            <div className="brainInner">
-              <Image
-                src="/brain-10813_256.gif"
-                alt="Rotating Brain"
-                width={256}
-                height={256}
-                priority
-                unoptimized
-              />
-            </div>
+        <div className="home-right">
+          <div className="brain-wrapper">
+            <div className="neuron-layer" />
+            <div className="spark-layer" />
+
+            <img
+              className="brain-image"
+              src="/images/brain-10813_256.gif"
+              alt="Bit Brains"
+            />
           </div>
         </div>
-      </div>
-    </section>
+      </section>
+    </main>
   );
 }
