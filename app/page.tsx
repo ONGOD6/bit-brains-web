@@ -28,6 +28,13 @@ export default function HomePage() {
               src="/brain-evolution.gif"
               alt="Bit Brains"
             />
+
+            {/* UNDER CONSTRUCTION NOTICE */}
+            <div className="construction-notice">
+              <p><strong>Website & GitHub</strong></p>
+              <p>Under Construction</p>
+              <p>Launching Soon</p>
+            </div>
           </div>
         </div>
       </section>
