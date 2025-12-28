@@ -4,10 +4,10 @@ export default function MintPage() {
   return (
     <main className="page-shell">
       <section className="content-shell">
-        <h1 className="page-title">Mint Bit Brains</h1>
+        <h1 className="page-title">Genesis Mint</h1>
 
         <p className="page-subtitle">
-          Welcome to the Bit Brains mint interface.
+          Welcome to the Bit Brains Genesis mint interface.
         </p>
 
         <p className="page-subtitle">
