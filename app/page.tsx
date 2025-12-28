@@ -21,7 +21,7 @@ export default function Home() {
           <div className="brainOuter">
             <div className="brainInner">
               <Image
-                src="/images/brain-10813_256.gif"
+                src="/brain-10813_256.gif"
                 alt="Rotating Brain"
                 width={256}
                 height={256}
