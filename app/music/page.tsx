@@ -17,7 +17,6 @@ export default function MusicPage() {
         Lantern sessions — soft ambience, community sound, and future drops.
       </p>
 
-      {/* External link MUST be <a> for off-site routing */}
       <a
         href="https://gethype.digital"
         target="_blank"
@@ -44,7 +43,7 @@ export default function MusicPage() {
           boxShadow: "0 16px 44px rgba(0,0,0,0.35)",
         }}
       >
-        {/* Soft dark glass overlay so content is readable */}
+        {/* Soft dark overlay */}
         <div
           style={{
             position: "absolute",
@@ -54,7 +53,6 @@ export default function MusicPage() {
           }}
         />
 
-        {/* Content card */}
         <div
           style={{
             position: "relative",
@@ -65,19 +63,25 @@ export default function MusicPage() {
             justifyItems: "center",
           }}
         >
-          {/* Optional cover art */}
+          {/* OPTIONAL COVER IMAGE (only shows if file exists) */}
           <img
             src="/music-cover.jpg"
             alt="Digibeats Cover"
+            loading="lazy"
+            onError={(e) => {
+              const img = e.currentTarget;
+              img.style.display = "none";
+            }}
             style={{
               width: "min(680px, 92vw)",
               borderRadius: 14,
               border: "1px solid rgba(255,255,255,0.10)",
               boxShadow: "0 10px 28px rgba(0,0,0,0.25)",
+              display: "block",
             }}
           />
 
-          {/* YouTube embed */}
+          {/* YOUTUBE EMBED */}
           <div
             style={{
               width: "min(680px, 92vw)",
@@ -106,7 +110,7 @@ export default function MusicPage() {
             />
           </div>
 
-          {/* Local Ambient player (iPad-safe: user taps play) */}
+          {/* LOCAL AUDIO PLAYER */}
           <div
             style={{
               width: "min(680px, 92vw)",
@@ -127,11 +131,6 @@ export default function MusicPage() {
           </div>
         </div>
       </section>
-
-      <p style={{ marginTop: "1.25rem", opacity: 0.85 }}>
-        Tip: if the cover image doesn’t exist yet, it will show a broken image.
-        Upload <code>/public/music-cover.jpg</code> or tell me and I’ll make it optional.
-      </p>
     </main>
   );
 }
