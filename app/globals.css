@@ -1,231 +1,77 @@
-/* ================================
-   Bit Brains Global Styles
-   - Global: clean typography, nav spacing
-   - Homepage ONLY: purple/blue hero colors + brain aura/sparks
-================================== */
+/* =========================
+   HOMEPAGE HERO — RESPONSIVE BRAIN
+   Paste at bottom of globals.css
+   ========================= */
 
-/* ===== Base ===== */
-:root {
-  --bb-bg: #ffffff;
-  --bb-text: #101114;
-  --bb-border: #e7e7ee;
-
-  /* Homepage-only accents (match the brain) */
-  --home-purple: #7a4dff;
-  --home-purple-dark: #5a2fe6;
-  --home-blue: rgba(121, 183, 255, 0.85);
-}
-
-html,
-body {
-  padding: 0;
-  margin: 0;
-  background: var(--bb-bg);
-  color: var(--bb-text);
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial,
-    "Apple Color Emoji", "Segoe UI Emoji";
-}
-
-* {
-  box-sizing: border-box;
-}
-
-/* Keep global links neutral (so other pages don’t go purple) */
-a {
-  color: inherit;
-}
-
-a:hover {
-  opacity: 0.92;
-}
-
-/* ===== Layout Shell ===== */
-.page-shell {
-  max-width: 1100px;
-  margin: 0 auto;
-  padding: 2.25rem 1.5rem;
-}
-
-/* ===== NAV (spaced + wraps cleanly) ===== */
-.nav {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.9rem 1.25rem;
-  align-items: center;
-  padding: 1rem 1.5rem;
-  border-bottom: 1px solid var(--bb-border);
-  font-size: 1rem;
-}
-
-.nav a {
-  text-decoration: none;
-  color: var(--home-purple); /* NAV can stay purple globally */
-  font-weight: 600;
-}
-
-.nav a:hover {
-  text-decoration: underline;
-  color: var(--home-purple-dark);
-}
-
-/* iPad / smaller screens nav comfort */
-@media (max-width: 900px) {
-  .nav {
-    padding: 0.9rem 1rem;
-    gap: 0.75rem 1rem;
-    font-size: 1.05rem;
-  }
-
-  .page-shell {
-    padding: 1.75rem 1rem;
-  }
-}
-
-/* =========================================================
-   HOMEPAGE ONLY STYLES
-   (so other pages don’t get purple titles / blue subtitles)
-========================================================= */
-
+/* Layout: left text + right brain */
 .home-hero {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
-  gap: 2.25rem;
-  margin-top: 1.75rem;
+  gap: 3rem;
 }
 
-.home-left {
-  flex: 1;
-  min-width: 280px;
-}
-
+/* Right column holds the brain */
 .home-right {
-  width: 520px;
   display: flex;
-  justify-content: flex-end;
+  justify-content: flex-end; /* pushes brain to the right on desktop */
+  align-items: center;
+  flex: 1;
 }
 
-/* Title purple-violet (HOMEPAGE ONLY) */
-.home-title {
-  margin: 0;
-  font-size: 2.6rem;
-  font-weight: 800;
-  letter-spacing: -0.02em;
-  color: var(--home-purple);
+/* Brain card / wrapper sizing */
+.brain-wrapper {
+  width: 100%;
+  max-width: 520px; /* DESKTOP size */
+  aspect-ratio: 16 / 10;
+  border-radius: 20px;
+  overflow: hidden;
+  position: relative;
+
+  /* Gradient background behind brain (purple + blue) */
+  background:
+    radial-gradient(circle at 25% 25%, rgba(140, 90, 255, 0.35), transparent 55%),
+    radial-gradient(circle at 70% 65%, rgba(90, 200, 255, 0.25), transparent 60%),
+    rgba(255, 255, 255, 0.65);
+
+  border: 1px solid rgba(0, 0, 0, 0.08);
 }
 
-/* Bluish-purple text above the brain (HOMEPAGE ONLY) */
-.home-subtitle {
-  margin: 0.9rem 0 0;
-  font-size: 1.08rem;
-  line-height: 1.6;
-  max-width: 760px;
-  color: var(--home-blue);
+/* Brain image fills wrapper */
+.brain-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  filter: drop-shadow(0 18px 45px rgba(120, 80, 255, 0.25));
 }
 
-/* Homepage CTA link */
-.home-link {
-  display: inline-block;
-  margin-top: 1rem;
-  color: var(--home-purple);
-  text-decoration: underline;
-  font-weight: 700;
+/* Tablet sizing */
+@media (max-width: 1024px) {
+  .home-hero {
+    gap: 2rem;
+  }
+
+  .brain-wrapper {
+    max-width: 440px;
+  }
 }
 
-.home-link:hover {
-  color: var(--home-purple-dark);
-}
-
-/* Responsive hero: stack on iPad/phones */
-@media (max-width: 900px) {
+/* Mobile: stack + center */
+@media (max-width: 768px) {
   .home-hero {
     flex-direction: column;
-    gap: 1.25rem;
+    align-items: flex-start;
+    gap: 1.5rem;
   }
 
   .home-right {
     width: 100%;
-    justify-content: flex-start;
+    justify-content: center; /* center brain on mobile */
   }
-}
 
-/* =========================================================
-   Homepage Brain (bigger + neurons sparking)
-   (Your original effect preserved)
-========================================================= */
-
-.brain-wrapper {
-  position: relative;
-  width: 520px;
-  height: 520px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.brain-image {
-  width: 460px;
-  height: auto;
-  z-index: 3;
-  animation: brainPulse 5.5s ease-in-out infinite;
-  filter:
-    drop-shadow(0 0 35px rgba(140, 140, 255, 0.45))
-    drop-shadow(0 0 95px rgba(200, 120, 255, 0.35));
-}
-
-/* Soft neural aura */
-.neuron-layer {
-  position: absolute;
-  inset: 0;
-  z-index: 2;
-  border-radius: 50%;
-  background:
-    radial-gradient(circle at 18% 28%, rgba(180, 180, 255, 0.35), transparent 42%),
-    radial-gradient(circle at 72% 58%, rgba(220, 140, 255, 0.38), transparent 46%),
-    radial-gradient(circle at 50% 82%, rgba(150, 220, 255, 0.25), transparent 55%);
-  filter: blur(16px);
-  animation: neuronFlash 4.2s ease-in-out infinite;
-}
-
-/* Spark "neurons" */
-.spark-layer {
-  position: absolute;
-  inset: -6%;
-  z-index: 1;
-  border-radius: 50%;
-  background:
-    radial-gradient(circle at 25% 35%, rgba(255, 255, 255, 0.35), transparent 22%),
-    radial-gradient(circle at 62% 30%, rgba(180, 200, 255, 0.28), transparent 24%),
-    radial-gradient(circle at 70% 70%, rgba(220, 160, 255, 0.30), transparent 26%),
-    radial-gradient(circle at 35% 78%, rgba(170, 230, 255, 0.22), transparent 26%),
-    radial-gradient(circle at 50% 55%, rgba(255, 255, 255, 0.18), transparent 30%);
-  filter: blur(2px);
-  opacity: 0.55;
-  animation: sparkFlicker 1.35s steps(2, end) infinite;
-}
-
-@keyframes brainPulse {
-  0%,
-  100% { transform: scale(1); }
-  50% { transform: scale(1.055); }
-}
-
-@keyframes neuronFlash {
-  0%,
-  100% { opacity: 0.35; }
-  50% { opacity: 0.85; }
-}
-
-@keyframes sparkFlicker {
-  0% { opacity: 0.15; transform: scale(0.98); }
-  25% { opacity: 0.65; transform: scale(1.01); }
-  55% { opacity: 0.25; transform: scale(0.99); }
-  75% { opacity: 0.75; transform: scale(1.02); }
-  100% { opacity: 0.18; transform: scale(0.985); }
-}
-
-/* iPad / mobile safety */
-@media (max-width: 768px) {
-  .brain-wrapper { width: 340px; height: 340px; }
-  .brain-image { width: 300px; }
+  .brain-wrapper {
+    max-width: 340px; /* MOBILE size */
+    margin: 0 auto;
+  }
 }
