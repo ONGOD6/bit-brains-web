@@ -11,11 +11,11 @@ export const metadata: Metadata = {
 const NAV_LINKS = [
   { href: "/", label: "Home" },
   { href: "/proof-of-care", label: "Proof of Care" },
-  { href: "/protocol-standards", label: "Protocol Standards" },
-  { href: "/about", label: "About" },
-  { href: "/roadmap", label: "Roadmap" },
-  { href: "/genesis", label: "Genesis" },
-  { href: "/faq", label: "FAQ" },
+  { href: "/manifesto", label: "Protocol Standards" },
+  { href: "/ens", label: "ENS" },
+  { href: "/mint", label: "Genesis" },
+  { href: "/stake", label: "Stake" },
+  { href: "/music", label: "Music" },
 ];
 
 export default function RootLayout({
