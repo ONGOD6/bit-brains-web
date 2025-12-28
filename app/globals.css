@@ -1,156 +1,76 @@
-/* app/globals.css */
+/* ===== Homepage Brain (bigger + neurons sparking) ===== */
 
-:root {
-  --bg0: #020314;
-  --bg1: #070a22;
-  --text: #ffffff;
-  --muted: rgba(255, 255, 255, 0.75);
-  --line: rgba(255, 255, 255, 0.12);
-  --line2: rgba(255, 255, 255, 0.18);
-}
-
-* {
-  box-sizing: border-box;
-}
-
-html,
-body {
-  padding: 0;
-  margin: 0;
-  background: radial-gradient(1200px 700px at 50% -10%, #1b2b5a 0%, transparent 60%),
-    radial-gradient(900px 600px at 50% 10%, #12163f 0%, transparent 65%),
-    linear-gradient(180deg, var(--bg1), var(--bg0));
-  color: var(--text);
-}
-
-a {
-  color: inherit;
-  text-decoration: none;
-}
-
-/* HEADER / NAV */
-.siteHeader {
-  position: sticky;
-  top: 0;
-  z-index: 50;
-  background: rgba(0, 0, 0, 0.65);
-  backdrop-filter: blur(10px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.siteHeaderInner {
-  max-width: 1100px;
-  margin: 0 auto;
-  padding: 14px 18px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.brand {
-  font-family: ui-serif, Georgia, "Times New Roman", Times, serif;
-  font-weight: 700;
-  letter-spacing: 0.2px;
-}
-
-.siteNav {
-  display: flex;
-  gap: 18px;
-}
-
-.navLink {
-  font-family: ui-serif, Georgia, "Times New Roman", Times, serif;
-  opacity: 0.92;
-}
-
-.navLink:hover {
-  opacity: 1;
-  text-decoration: underline;
-}
-
-/* HERO */
-.hero {
-  padding: 54px 18px 80px;
-}
-
-.heroInner {
-  max-width: 1100px;
-  margin: 0 auto;
-  text-align: center;
-}
-
-.heroTitle {
-  font-family: ui-serif, Georgia, "Times New Roman", Times, serif;
-  font-size: 44px;
-  line-height: 1.1;
-  margin: 18px 0 12px;
-}
-
-.heroSub {
-  max-width: 860px;
-  margin: 0 auto 22px;
-  font-size: 18px;
-  line-height: 1.6;
-  color: var(--muted);
-}
-
-.heroCta {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 12px 18px;
-  border: 1px solid var(--line2);
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.06);
-  font-family: ui-serif, Georgia, "Times New Roman", Times, serif;
-  transition: transform 0.08s ease, background 0.15s ease;
-}
-
-.heroCta:hover {
-  background: rgba(255, 255, 255, 0.09);
-}
-
-.heroCta:active {
-  transform: translateY(1px);
-}
-
-/* BRAIN SECTION (FIXES OVERLAP + BROKEN BOX) */
-.brainWrap {
-  margin-top: 46px;
-  display: flex;
-  justify-content: center;
-}
-
-.brainOuter {
-  width: 420px;
-  height: 420px;
-  border-radius: 22px;
+.brain-wrapper {
+  position: relative;
+  width: 520px;
+  height: 520px;
+  margin: 3rem auto 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: radial-gradient(circle at 50% 55%, rgba(140, 90, 255, 0.22), rgba(20, 10, 55, 0.25) 55%, transparent 75%);
-  border: 1px solid rgba(255, 255, 255, 0.10);
 }
 
-.brainInner {
-  width: 420px; /* SAME as outer => no overlap */
-  height: 420px; /* SAME as outer => no overlap */
-  border-radius: 22px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  outline: 1px solid rgba(255, 255, 255, 0.10);
+.brain-image {
+  width: 460px;
+  height: auto;
+  z-index: 3;
+  animation: brainPulse 5.5s ease-in-out infinite;
+  filter:
+    drop-shadow(0 0 35px rgba(140,140,255,0.45))
+    drop-shadow(0 0 95px rgba(200,120,255,0.35));
 }
 
-/* Make it fit on iPad/mobile */
-@media (max-width: 520px) {
-  .heroTitle {
-    font-size: 36px;
-  }
+/* Soft neural aura */
+.neuron-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 18% 28%, rgba(180,180,255,0.35), transparent 42%),
+    radial-gradient(circle at 72% 58%, rgba(220,140,255,0.38), transparent 46%),
+    radial-gradient(circle at 50% 82%, rgba(150,220,255,0.25), transparent 55%);
+  filter: blur(16px);
+  animation: neuronFlash 4.2s ease-in-out infinite;
+}
 
-  .brainOuter,
-  .brainInner {
-    width: 320px;
-    height: 320px;
-  }
+/* Spark “neurons” */
+.spark-layer {
+  position: absolute;
+  inset: -6%;
+  z-index: 1;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 25% 35%, rgba(255,255,255,0.35), transparent 22%),
+    radial-gradient(circle at 62% 30%, rgba(180,200,255,0.28), transparent 24%),
+    radial-gradient(circle at 70% 70%, rgba(220,160,255,0.30), transparent 26%),
+    radial-gradient(circle at 35% 78%, rgba(170,230,255,0.22), transparent 26%),
+    radial-gradient(circle at 50% 55%, rgba(255,255,255,0.18), transparent 30%);
+  filter: blur(2px);
+  opacity: 0.55;
+  animation: sparkFlicker 1.35s steps(2, end) infinite;
+}
+
+@keyframes brainPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.055); }
+}
+
+@keyframes neuronFlash {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 0.85; }
+}
+
+@keyframes sparkFlicker {
+  0%   { opacity: 0.15; transform: scale(0.98); }
+  25%  { opacity: 0.65; transform: scale(1.01); }
+  55%  { opacity: 0.25; transform: scale(0.99); }
+  75%  { opacity: 0.75; transform: scale(1.02); }
+  100% { opacity: 0.18; transform: scale(0.985); }
+}
+
+/* iPad / mobile safety */
+@media (max-width: 768px) {
+  .brain-wrapper { width: 340px; height: 340px; }
+  .brain-image { width: 300px; }
 }
