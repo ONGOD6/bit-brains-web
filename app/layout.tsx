@@ -8,21 +8,14 @@ export const metadata: Metadata = {
   description: "Proof of Care comes first.",
 };
 
-<header className="siteHeader">
-  <div className="siteHeaderInner">
-    <div className="brand">Bit Brains</div>
-
-    <nav className="nav">
-      <span className="navItem">Home</span>
-      <span className="navItem">Proof of Care</span>
-      <span className="navItem">Protocol Standards</span>
-      <span className="navItem">About</span>
-      <span className="navItem">Roadmap</span>
-      <span className="navItem">Genesis</span>
-      <span className="navItem">FAQ</span>
-    </nav>
-  </div>
-</header>
+const NAV_LINKS = [
+  { href: "/", label: "Home" },
+  { href: "/proof-of-care", label: "Proof of Care" },
+  { href: "/protocol-standards", label: "Protocol Standards" },
+  { href: "/about", label: "About" },
+  { href: "/roadmap", label: "Roadmap" },
+  { href: "/genesis", label: "Genesis" },
+  { href: "/faq", label: "FAQ" },
 ];
 
 export default function RootLayout({
