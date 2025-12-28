@@ -1,4 +1,4 @@
-export default function MusicPage() {
+ export default function MusicPage() {
   return (
     <main
       style={{
@@ -28,109 +28,59 @@ export default function MusicPage() {
 
       <div style={{ height: "2rem" }} />
 
-      {/* LANTERN FRAME STAGE */}
-      <section
+      {/* YOUTUBE EMBED (Lanterns) */}
+      <div
         style={{
+          width: "min(720px, 95vw)",
+          margin: "0 auto",
           position: "relative",
-          width: "100%",
-          borderRadius: 18,
+          paddingBottom: "56.25%", // 16:9
+          height: 0,
+          borderRadius: 14,
           overflow: "hidden",
-          border: "1px solid rgba(255,255,255,0.10)",
-          backgroundImage: 'url("/music-frame.jpg")',
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          minHeight: 520,
-          boxShadow: "0 16px 44px rgba(0,0,0,0.35)",
+          border: "1px solid rgba(0,0,0,0.10)",
+          boxShadow: "0 10px 28px rgba(0,0,0,0.12)",
+          background: "rgba(0,0,0,0.04)",
         }}
       >
-        {/* Soft dark overlay */}
-        <div
+        <iframe
+          src="https://www.youtube.com/embed/4ROrW727q_s"
+          title="Floating Lanterns — Ambient"
+          frameBorder="0"
+          allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          allowFullScreen
           style={{
             position: "absolute",
             inset: 0,
-            background:
-              "radial-gradient(circle at 50% 40%, rgba(0,0,0,0.15), rgba(0,0,0,0.65) 70%)",
+            width: "100%",
+            height: "100%",
           }}
         />
+      </div>
 
-        <div
-          style={{
-            position: "relative",
-            zIndex: 1,
-            padding: "1.25rem",
-            display: "grid",
-            gap: "1rem",
-            justifyItems: "center",
-          }}
-        >
-          {/* OPTIONAL COVER IMAGE (only shows if file exists) */}
-          <img
-            src="/music-cover.jpg"
-            alt="Digibeats Cover"
-            loading="lazy"
-            onError={(e) => {
-              const img = e.currentTarget;
-              img.style.display = "none";
-            }}
-            style={{
-              width: "min(680px, 92vw)",
-              borderRadius: 14,
-              border: "1px solid rgba(255,255,255,0.10)",
-              boxShadow: "0 10px 28px rgba(0,0,0,0.25)",
-              display: "block",
-            }}
-          />
+      <div style={{ height: "1rem" }} />
 
-          {/* YOUTUBE EMBED */}
-          <div
-            style={{
-              width: "min(680px, 92vw)",
-              position: "relative",
-              paddingBottom: "56.25%",
-              height: 0,
-              borderRadius: 14,
-              overflow: "hidden",
-              border: "1px solid rgba(255,255,255,0.10)",
-              boxShadow: "0 10px 28px rgba(0,0,0,0.25)",
-              background: "rgba(0,0,0,0.25)",
-            }}
-          >
-            <iframe
-              src="https://www.youtube.com/embed/4ROrW727q_s"
-              title="Digibeats — Community Track"
-              frameBorder="0"
-              allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-              style={{
-                position: "absolute",
-                inset: 0,
-                width: "100%",
-                height: "100%",
-              }}
-            />
-          </div>
-
-          {/* LOCAL AUDIO PLAYER */}
-          <div
-            style={{
-              width: "min(680px, 92vw)",
-              padding: "0.85rem 0.9rem",
-              borderRadius: 14,
-              border: "1px solid rgba(255,255,255,0.10)",
-              background: "rgba(0,0,0,0.30)",
-              boxShadow: "0 10px 28px rgba(0,0,0,0.20)",
-            }}
-          >
-            <div style={{ marginBottom: "0.5rem", opacity: 0.9 }}>
-              Soft Ambient (Local)
-            </div>
-            <audio controls style={{ width: "100%" }}>
-              <source src="/Audio/Ambient.mp3" type="audio/mpeg" />
-              Your browser does not support the audio element.
-            </audio>
-          </div>
+      {/* LOCAL AUDIO PLAYER */}
+      <div
+        style={{
+          width: "min(720px, 95vw)",
+          margin: "0 auto",
+          padding: "0.85rem 0.9rem",
+          borderRadius: 14,
+          border: "1px solid rgba(0,0,0,0.10)",
+          background: "rgba(0,0,0,0.04)",
+          boxShadow: "0 10px 28px rgba(0,0,0,0.08)",
+        }}
+      >
+        <div style={{ marginBottom: "0.5rem", opacity: 0.9 }}>
+          Soft Ambient (Local)
         </div>
-      </section>
+
+        <audio controls style={{ width: "100%" }}>
+          <source src="/Audio/Ambient.mp3" type="audio/mpeg" />
+          Your browser does not support the audio element.
+        </audio>
+      </div>
     </main>
   );
 }
