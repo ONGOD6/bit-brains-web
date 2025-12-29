@@ -1,55 +1,50 @@
-import Link from "next/link";
+{/* =========================
+     BRAIN HERO (RIGHT SIDE)
+========================= */}
+<div className="home-right">
+  <div className="brain-wrapper">
+    
+    {/* BIT — top right */}
+    <div
+      style={{
+        position: "absolute",
+        top: "-26px",
+        right: "14px",
+        fontSize: "28px",
+        fontWeight: 900,
+        letterSpacing: "2px",
+        color: "#000",
+        zIndex: 10,
+        pointerEvents: "none",
+      }}
+    >
+      BIT
+    </div>
 
-export default function HomePage() {
-  return (
-    <main className="page-shell">
-      <section className="home-hero">
-        <div className="home-left">
-          <h1 className="home-title">Proof of Care comes first.</h1>
+    {/* Brain Image */}
+    <img
+      src="/images/brain.gif"   {/* 🔁 change ONLY if filename differs */}
+      alt="Brain Intelligence"
+      className="brain-image"
+    />
 
-          <p className="home-subtitle">
-            Bit Brains is a protocol for NFTs, ENS-based identity, zero-knowledge
-            eligibility, and real-world asset integration — beginning on Ethereum.
-          </p>
+    {/* Brain Intelligence Token — bottom right */}
+    <div
+      style={{
+        position: "absolute",
+        right: "24px",
+        bottom: "18px",
+        fontSize: "36px",
+        fontWeight: 900,
+        textAlign: "right",
+        color: "#ffffff",
+        textShadow: "0 2px 14px rgba(0,0,0,0.75)",
+        zIndex: 10,
+        pointerEvents: "none",
+      }}
+    >
+      Brain Intelligence Token
+    </div>
 
-          <Link className="home-link" href="/proof-of-care">
-            Enter Proof of Care →
-          </Link>
-        </div>
-
-        <div className="home-right">
-          {/* Construction Notice */}
-          <div className="construction-notice">
-            <p><strong>Website &amp; GitHub</strong></p>
-            <p>Under Construction</p>
-            <p>Launching Soon</p>
-          </div>
-
-          {/* Brain Container */}
-          <div className="brain-wrapper">
-            {/* TOP-RIGHT BIT */}
-            <div className="bit-label">
-              BIT
-            </div>
-
-            <div className="neuron-layer" />
-            <div className="spark-layer" />
-
-            <img
-              className="brain-image"
-              src="/brain-evolution.gif"
-              alt="Bit Brains"
-            />
-
-            {/* BOTTOM-RIGHT TEXT */}
-            <div className="brain-text">
-              <div>BRAIN</div>
-              <div>INTELLIGENCE</div>
-              <div>TOKEN</div>
-            </div>
-          </div>
-        </div>
-      </section>
-    </main>
-  );
-}
+  </div>
+</div>
