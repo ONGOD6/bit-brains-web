@@ -10,7 +10,9 @@ export default function StakePage() {
         flexDirection: "column",
       }}
     >
-      {/* TOP CONTENT */}
+      {/* =========================
+          TOP CONTENT
+      ========================= */}
       <div>
         <h1 style={{ fontSize: "2.4rem", marginBottom: "0.75rem" }}>
           Stake Bit Brains
@@ -30,9 +32,9 @@ export default function StakePage() {
         <section
           style={{
             padding: "1.25rem",
-            border: "1px solid rgba(255,255,255,0.15)",
+            border: "1px solid rgba(0,0,0,0.1)",
             borderRadius: "14px",
-            marginBottom: "1.5rem",
+            marginBottom: "1.25rem",
           }}
         >
           <h2 style={{ fontSize: "1.6rem", marginBottom: "0.75rem" }}>
@@ -54,16 +56,40 @@ export default function StakePage() {
             borderRadius: "999px",
             opacity: 0.7,
             cursor: "not-allowed",
+            marginBottom: "1.5rem",
           }}
         >
           Stake (Coming Soon)
         </button>
+
+        {/* =========================
+            ENS + ZK STAKING NOTE
+            (NO OVERLAY, SHORT)
+        ========================= */}
+        <div
+          style={{
+            maxWidth: "720px",
+            fontSize: "0.95rem",
+            lineHeight: 1.5,
+            opacity: 0.85,
+            marginBottom: "2rem",
+          }}
+        >
+          <strong>ENS-Verified Staking.</strong> No wallet connection required.
+          <br />
+          Eligibility for Proof of Care is verified through ENS ownership and
+          zero-knowledge proofs, without exposing wallet data or requiring
+          persistent connections.
+        </div>
       </div>
 
       {/* PUSH IMAGE TO BOTTOM */}
       <div style={{ flexGrow: 1 }} />
 
-      {/* STAKING BRAIN IMAGE (ALIVE MOTION) */}
+      {/* =========================
+          STAKING BRAIN IMAGE
+          (UNTOUCHED)
+      ========================= */}
       <div
         style={{
           marginTop: "2.5rem",
@@ -79,13 +105,13 @@ export default function StakePage() {
             borderRadius: "18px",
           }}
         >
-          {/* Soft glow layer behind image */}
+          {/* Soft glow layer */}
           <div
             style={{
               position: "absolute",
               inset: "-18%",
               background:
-                "radial-gradient(circle at 30% 55%, rgba(80,200,255,0.25), rgba(0,0,0,0) 55%), radial-gradient(circle at 70% 45%, rgba(255,160,80,0.22), rgba(0,0,0,0) 55%)",
+                "radial-gradient(circle at 50% 50%, rgba(80,200,255,0.25), rgba(0,0,0,0) 55%)",
               filter: "blur(22px)",
               opacity: 0.9,
               animation: "bbGlow 6.5s ease-in-out infinite",
@@ -93,7 +119,7 @@ export default function StakePage() {
             }}
           />
 
-          {/* Image with gentle sway + float */}
+          {/* Image */}
           <img
             src="/stake-brain-vertical.jpg"
             alt="Bit Brains — Staking"
@@ -109,31 +135,31 @@ export default function StakePage() {
             }}
           />
         </div>
-
-        <style>{`
-          /* Gentle side-to-side + slight up/down float (alive, not spinner) */
-          @keyframes bbSway {
-            0%   { transform: translateY(0px) rotate(-0.6deg); }
-            25%  { transform: translateY(-6px) rotate(0.7deg); }
-            50%  { transform: translateY(0px) rotate(-0.4deg); }
-            75%  { transform: translateY(6px) rotate(0.6deg); }
-            100% { transform: translateY(0px) rotate(-0.6deg); }
-          }
-
-          /* Subtle breathing glow behind the image */
-          @keyframes bbGlow {
-            0%   { opacity: 0.75; transform: scale(0.98); }
-            50%  { opacity: 1.0;  transform: scale(1.02); }
-            100% { opacity: 0.75; transform: scale(0.98); }
-          }
-
-          /* Respect users who prefer reduced motion */
-          @media (prefers-reduced-motion: reduce) {
-            img { animation: none !important; }
-            div { animation: none !important; }
-          }
-        `}</style>
       </div>
+
+      {/* =========================
+          MOTION STYLES
+      ========================= */}
+      <style>{`
+        @keyframes bbSway {
+          0%   { transform: translateY(0px) rotate(-0.6deg); }
+          25%  { transform: translateY(-6px) rotate(0.7deg); }
+          50%  { transform: translateY(0px) rotate(-0.4deg); }
+          75%  { transform: translateY(6px) rotate(0.6deg); }
+          100% { transform: translateY(0px) rotate(-0.6deg); }
+        }
+
+        @keyframes bbGlow {
+          0%   { opacity: 0.75; transform: scale(0.98); }
+          50%  { opacity: 1; transform: scale(1.02); }
+          100% { opacity: 0.75; transform: scale(0.98); }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          img { animation: none !important; }
+          div { animation: none !important; }
+        }
+      `}</style>
     </main>
   );
 }
