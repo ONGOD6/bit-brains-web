@@ -1,12 +1,10 @@
-  default function Home() {
+  export default function Home() {
   return (
     <div className="page-shell">
       <div className="home-hero">
-        {/* ==========================
+        {/* ======================
             LEFT SIDE TEXT
-        ========================== */}
-       
-</div>
+        ====================== */}
         <div className="home-left">
           <h1 className="home-title">Proof of Care comes first.</h1>
 
@@ -27,9 +25,9 @@
           </div>
         </div>
 
-        {/* ==========================
+        {/* ======================
             RIGHT SIDE — BRAIN
-        ========================== */}
+        ====================== */}
         <div className="home-right">
           <div className="brain-header">
             <div className="bit-tag">BIT</div>
