@@ -1,4 +1,4 @@
- default function Home() {
+ export default function Home() {
   return (
     <div className="page-shell">
       <div className="home-hero">
@@ -18,7 +18,6 @@
             Enter Proof of Care →
           </a>
 
-          {/* Under construction notice */}
           <div className="home-notice">
             <div>Website &amp; GitHub</div>
             <div>Under Construction</div>
@@ -30,13 +29,11 @@
             RIGHT SIDE — BRAIN
         ========================== */}
         <div className="home-right">
-          {/* Labels ABOVE the image (not inside it) */}
           <div className="brain-header">
             <div className="bit-tag">BIT</div>
             <div className="bit-title">Brain Intelligence Token</div>
           </div>
 
-          {/* Brain image (big + pushed down by CSS) */}
           <div className="brain-wrapper">
             <img
               src="/brain-evolution.gif"
