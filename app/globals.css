@@ -169,7 +169,49 @@ nav a {
   display: block;
   object-fit: cover;
 }
+/* ===== Force Dark Mode (Global) ===== */
+:root {
+  color-scheme: dark;          /* tells the browser we're dark (forms, scrollbars, etc.) */
+  --bg: #070812;
+  --fg: #e9e9f2;
+  --muted: rgba(233, 233, 242, 0.7);
 
+  --panel: rgba(255, 255, 255, 0.06);
+  --panelBorder: rgba(255, 255, 255, 0.12);
+  --shadow: 0 14px 40px rgba(0, 0, 0, 0.45);
+}
+
+html,
+body {
+  background: var(--bg);
+  color: var(--fg);
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+}
+
+/* links */
+a {
+  color: var(--fg);
+  text-decoration: none;
+}
+a:hover {
+  opacity: 0.85;
+}
+
+/* common “box/card” styling if you want consistent dark panels */
+.dark-panel {
+  background: var(--panel);
+  border: 1px solid var(--panelBorder);
+  box-shadow: var(--shadow);
+  border-radius: 16px;
+}
+
+/* optional: tone down default hr */
+hr {
+  border: 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
 /* ===============================
    MOBILE / iPAD SAFETY
 ================================ */
