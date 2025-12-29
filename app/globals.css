@@ -43,18 +43,17 @@ nav a {
 }
 
 /* =========================
-   HOME HERO (SAFE + SIMPLE)
+   HOME HERO LAYOUT
    ========================= */
 
-/* ✅ FIX: Make it a 2-column layout on desktop */
 .home-hero {
   display: flex;
-  gap: 2rem;
+  gap: 2.5rem;
   align-items: flex-start;
   justify-content: space-between;
 }
 
-/* LEFT TEXT */
+/* LEFT SIDE */
 .home-left {
   flex: 1;
   min-width: 320px;
@@ -64,13 +63,13 @@ nav a {
 .home-title {
   font-size: 2.5rem;
   font-weight: 700;
-  margin-bottom: 1rem;
+  margin: 0 0 1rem 0;
 }
 
 .home-subtitle {
   font-size: 1.1rem;
   line-height: 1.6;
-  margin-bottom: 1.25rem;
+  margin: 0 0 1.25rem 0;
 }
 
 .home-link {
@@ -79,7 +78,6 @@ nav a {
   text-decoration: underline;
 }
 
-/* Optional: under construction block spacing */
 .home-notice {
   margin-top: 2.5rem;
   font-weight: 600;
@@ -91,71 +89,58 @@ nav a {
 }
 
 /* =========================
-   BRAIN (BIGGER HERO, CENTERED, NEVER OFFSCREEN)
+   RIGHT SIDE (BRAIN)
    ========================= */
 
+/* ✅ Make the right side behave like a tall column so we can push image down */
 .home-right {
   flex: 1;
   min-width: 320px;
   display: flex;
-  justify-content: flex-end; /* keeps it on the right on desktop */
-  margin-top: 0; /* ✅ FIX: don’t push it down on desktop */
+  flex-direction: column;
+  align-items: flex-end;
+  min-height: 640px; /* key: creates vertical space so brain can sit lower */
 }
 
-/* BIGGER brain frame (responsive) */
-.brain-wrapper {
-  position: relative;
+/* ✅ Labels should be BLACK and above the image */
+.brain-header {
   width: 100%;
-  max-width: 780px; /* was 360px — this is the main fix */
-  aspect-ratio: 16 / 9; /* keeps a cinematic frame */
+  text-align: right;
+  margin-bottom: 0.75rem;
+}
+
+.bit-tag {
+  color: #000;
+  font-size: 34px;
+  font-weight: 900;
+  letter-spacing: 2px;
+  line-height: 1;
+}
+
+.bit-title {
+  color: #000;
+  font-size: 34px;
+  font-weight: 900;
+  line-height: 1.1;
+}
+
+/* ✅ Push the image DOWN to fill the empty space */
+.brain-wrapper {
+  width: 100%;              /* 100% of the right column */
+  max-width: 900px;         /* makes it BIGGER */
+  margin-top: auto;         /* THIS pushes it to the bottom of the column */
+  aspect-ratio: 16 / 9;     /* wide cinematic */
   border-radius: 18px;
   overflow: hidden;
   border: 1px solid rgba(0, 0, 0, 0.08);
   background: #fff;
 }
 
-/* Keep your layers exactly, just make sure they fill the bigger frame */
-.neuron-layer,
-.spark-layer {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-}
-
-/* Make the brain fill the frame */
 .brain-image {
   width: 100%;
   height: 100%;
   display: block;
-  object-fit: cover; /* fills the bigger frame */
-}
-
-/* ✅ NEW: BIT tag (top-right) */
-.bit-tag {
-  position: absolute;
-  top: 10px;
-  right: 14px;
-  font-size: 28px;
-  font-weight: 900;
-  letter-spacing: 2px;
-  color: #000;
-  z-index: 10;
-  pointer-events: none;
-  text-shadow: 0 2px 12px rgba(255, 255, 255, 0.65);
-}
-
-/* ✅ NEW: Brain Intelligence Token (bottom-right) */
-.bit-title {
-  position: absolute;
-  right: 18px;
-  bottom: 16px;
-  font-size: 36px;
-  font-weight: 900;
-  text-align: right;
-  color: #ffffff;
-  z-index: 10;
-  pointer-events: none;
-  text-shadow: 0 2px 16px rgba(0, 0, 0, 0.75);
+  object-fit: cover;
 }
 
 /* =========================
@@ -163,35 +148,36 @@ nav a {
    ========================= */
 
 @media (max-width: 768px) {
-  /* stack on mobile */
   .home-hero {
     display: block;
-  }
-
-  .home-title {
-    font-size: 2rem;
   }
 
   .page-shell {
     padding: 1.5rem;
   }
 
+  .home-title {
+    font-size: 2rem;
+  }
+
   .home-right {
+    min-height: unset;
     margin-top: 2.5rem;
-    justify-content: center;
+    align-items: center;
+  }
+
+  .brain-header {
+    text-align: center;
+  }
+
+  .bit-tag,
+  .bit-title {
+    font-size: 28px;
   }
 
   .brain-wrapper {
     max-width: 100%;
-    aspect-ratio: 4 / 3; /* taller on mobile so it feels bigger */
+    aspect-ratio: 4 / 3; /* taller on mobile */
     border-radius: 16px;
-  }
-
-  .bit-tag {
-    font-size: 22px;
-  }
-
-  .bit-title {
-    font-size: 26px;
   }
 }
