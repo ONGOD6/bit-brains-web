@@ -10,8 +10,8 @@ html,
 body {
   margin: 0;
   padding: 0;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-    Roboto, Helvetica, Arial, sans-serif;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    Helvetica, Arial, sans-serif;
   background: #ffffff;
   color: #000000;
 }
@@ -46,12 +46,18 @@ nav a {
    HOME HERO (SAFE + SIMPLE)
    ========================= */
 
+/* ✅ FIX: Make it a 2-column layout on desktop */
 .home-hero {
-  display: block;
+  display: flex;
+  gap: 2rem;
+  align-items: flex-start;
+  justify-content: space-between;
 }
 
 /* LEFT TEXT */
 .home-left {
+  flex: 1;
+  min-width: 320px;
   max-width: 640px;
 }
 
@@ -72,24 +78,40 @@ nav a {
   font-weight: 600;
   text-decoration: underline;
 }
-/* ==========================
+
+/* Optional: under construction block spacing */
+.home-notice {
+  margin-top: 2.5rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.home-notice-sub {
+  margin-top: 0.5rem;
+}
+
+/* =========================
    BRAIN (BIGGER HERO, CENTERED, NEVER OFFSCREEN)
-========================== */
+   ========================= */
 
 .home-right {
-  margin-top: 2.5rem;
+  flex: 1;
+  min-width: 320px;
   display: flex;
-  justify-content: center;
+  justify-content: flex-end; /* keeps it on the right on desktop */
+  margin-top: 0; /* ✅ FIX: don’t push it down on desktop */
 }
 
 /* BIGGER brain frame (responsive) */
 .brain-wrapper {
   position: relative;
   width: 100%;
-  max-width: 780px;            /* was 360px — this is the main fix */
-  aspect-ratio: 16 / 9;        /* keeps a cinematic frame */
+  max-width: 780px; /* was 360px — this is the main fix */
+  aspect-ratio: 16 / 9; /* keeps a cinematic frame */
   border-radius: 18px;
   overflow: hidden;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: #fff;
 }
 
 /* Keep your layers exactly, just make sure they fill the bigger frame */
@@ -105,13 +127,47 @@ nav a {
   width: 100%;
   height: 100%;
   display: block;
-  object-fit: cover;           /* fills the bigger frame */
+  object-fit: cover; /* fills the bigger frame */
 }
 
-/* ==========================
+/* ✅ NEW: BIT tag (top-right) */
+.bit-tag {
+  position: absolute;
+  top: 10px;
+  right: 14px;
+  font-size: 28px;
+  font-weight: 900;
+  letter-spacing: 2px;
+  color: #000;
+  z-index: 10;
+  pointer-events: none;
+  text-shadow: 0 2px 12px rgba(255, 255, 255, 0.65);
+}
+
+/* ✅ NEW: Brain Intelligence Token (bottom-right) */
+.bit-title {
+  position: absolute;
+  right: 18px;
+  bottom: 16px;
+  font-size: 36px;
+  font-weight: 900;
+  text-align: right;
+  color: #ffffff;
+  z-index: 10;
+  pointer-events: none;
+  text-shadow: 0 2px 16px rgba(0, 0, 0, 0.75);
+}
+
+/* =========================
    MOBILE SAFETY (iPad/phone)
-========================== */
+   ========================= */
+
 @media (max-width: 768px) {
+  /* stack on mobile */
+  .home-hero {
+    display: block;
+  }
+
   .home-title {
     font-size: 2rem;
   }
@@ -120,9 +176,22 @@ nav a {
     padding: 1.5rem;
   }
 
+  .home-right {
+    margin-top: 2.5rem;
+    justify-content: center;
+  }
+
   .brain-wrapper {
     max-width: 100%;
-    aspect-ratio: 4 / 3;       /* taller on mobile so it feels bigger */
+    aspect-ratio: 4 / 3; /* taller on mobile so it feels bigger */
     border-radius: 16px;
+  }
+
+  .bit-tag {
+    font-size: 22px;
+  }
+
+  .bit-title {
+    font-size: 26px;
   }
 }
