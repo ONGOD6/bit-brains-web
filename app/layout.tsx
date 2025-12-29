@@ -17,6 +17,7 @@ export default function RootLayout({
         <nav className="nav">
           <Link href="/">Home</Link>
           <Link href="/proof-of-care">Proof of Care</Link>
+          <Link href="/pocc">POCC</Link>
           <Link href="/manifesto">Protocol Standards</Link>
           <Link href="/ens">ENS</Link>
           <Link href="/mint">Genesis</Link>
