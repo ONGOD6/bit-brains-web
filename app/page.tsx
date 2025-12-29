@@ -5,6 +5,12 @@
         {/* ==========================
             LEFT SIDE TEXT
         ========================== */}
+       <div className="bit-stack">
+  <span>BIT.</span>
+  <span>Brain</span>
+  <span>Intelligence</span>
+  <span>Token</span>
+</div>
         <div className="home-left">
           <h1 className="home-title">Proof of Care comes first.</h1>
 
