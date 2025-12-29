@@ -18,16 +18,20 @@ export default function HomePage() {
         </div>
 
         <div className="home-right">
-          {/* MOVE THIS ABOVE THE BRAIN (so the image can be bigger) */}
+          {/* Construction Notice */}
           <div className="construction-notice">
-            <p>
-              <strong>Website &amp; GitHub</strong>
-            </p>
+            <p><strong>Website &amp; GitHub</strong></p>
             <p>Under Construction</p>
             <p>Launching Soon</p>
           </div>
 
+          {/* Brain Container */}
           <div className="brain-wrapper">
+            {/* TOP-RIGHT BIT */}
+            <div className="bit-label">
+              BIT
+            </div>
+
             <div className="neuron-layer" />
             <div className="spark-layer" />
 
@@ -36,6 +40,13 @@ export default function HomePage() {
               src="/brain-evolution.gif"
               alt="Bit Brains"
             />
+
+            {/* BOTTOM-RIGHT TEXT */}
+            <div className="brain-text">
+              <div>BRAIN</div>
+              <div>INTELLIGENCE</div>
+              <div>TOKEN</div>
+            </div>
           </div>
         </div>
       </section>
