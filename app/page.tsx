@@ -30,20 +30,20 @@ export default function Home() {
             RIGHT SIDE — BRAIN
         ========================== */}
         <div className="home-right">
-          <div className="brain-wrapper">
-            {/* BIT — top right */}
+          {/* Labels ABOVE the image (not inside it) */}
+          <div className="brain-header">
             <div className="bit-tag">BIT</div>
+            <div className="bit-title">Brain Intelligence Token</div>
+          </div>
 
-            {/* Brain image */}
+          {/* Brain image (big + pushed down by CSS) */}
+          <div className="brain-wrapper">
             <img
               src="/brain-evolution.gif"
               alt="Brain Intelligence"
               className="brain-image"
               loading="eager"
             />
-
-            {/* Brain Intelligence Token — bottom right */}
-            <div className="bit-title">Brain Intelligence Token</div>
           </div>
         </div>
       </div>
