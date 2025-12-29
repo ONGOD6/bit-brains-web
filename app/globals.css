@@ -1,6 +1,37 @@
-/* =========================
-   GLOBAL BASE
-   ========================= */
+/* ===============================
+   BASE RESET & VARIABLES
+================================ */
+
+:root {
+  --bg: #ffffff;
+  --text: #000000;
+  --muted: rgba(0, 0, 0, 0.7);
+  --border: rgba(0, 0, 0, 0.08);
+  --link: #000000;
+  --card-bg: #ffffff;
+}
+
+/* Dark mode variables */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0b0b0d;
+    --text: #f5f5f7;
+    --muted: rgba(255, 255, 255, 0.7);
+    --border: rgba(255, 255, 255, 0.12);
+    --link: #ffffff;
+    --card-bg: #111114;
+  }
+}
+
+/* Optional manual override later */
+html[data-theme="dark"] {
+  --bg: #0b0b0d;
+  --text: #f5f5f7;
+  --muted: rgba(255, 255, 255, 0.7);
+  --border: rgba(255, 255, 255, 0.12);
+  --link: #ffffff;
+  --card-bg: #111114;
+}
 
 * {
   box-sizing: border-box;
@@ -8,43 +39,44 @@
 
 html,
 body {
-  margin: 0;
   padding: 0;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-    Helvetica, Arial, sans-serif;
-  background: #ffffff;
-  color: #000000;
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+    Roboto, Helvetica, Arial, sans-serif;
 }
 
-/* =========================
+/* ===============================
    NAV
-   ========================= */
+================================ */
 
 nav {
   display: flex;
   gap: 1.5rem;
-  padding: 1.25rem 2rem;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--border);
 }
 
 nav a {
-  color: #000;
+  color: var(--text);
+  font-weight: 600;
   text-decoration: none;
-  font-weight: 500;
 }
 
-/* =========================
+/* ===============================
    PAGE SHELL
-   ========================= */
+================================ */
 
 .page-shell {
+  padding: 2.5rem 1.25rem;
   max-width: 1200px;
   margin: 0 auto;
-  padding: 2rem;
 }
 
-/* =========================
+/* ===============================
    HOME HERO LAYOUT
-   ========================= */
+================================ */
 
 .home-hero {
   display: flex;
@@ -52,10 +84,6 @@ nav a {
   align-items: flex-start;
   justify-content: space-between;
 }
-
-/* =========================
-   LEFT SIDE
-   ========================= */
 
 .home-left {
   flex: 1;
@@ -72,11 +100,12 @@ nav a {
 .home-subtitle {
   font-size: 1.1rem;
   line-height: 1.6;
-  margin: 0 0 1.25rem 0;
+  margin-bottom: 1.25rem;
+  color: var(--muted);
 }
 
 .home-link {
-  color: #000;
+  color: var(--link);
   font-weight: 600;
   text-decoration: underline;
 }
@@ -85,15 +114,12 @@ nav a {
   margin-top: 2.5rem;
   font-weight: 600;
   line-height: 1.35;
+  color: var(--muted);
 }
 
-.home-notice-sub {
-  margin-top: 0.5rem;
-}
-
-/* =========================
+/* ===============================
    RIGHT SIDE — BRAIN
-   ========================= */
+================================ */
 
 .home-right {
   flex: 1;
@@ -101,10 +127,9 @@ nav a {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  min-height: 680px; /* creates vertical space so image sits lower */
+  min-height: 680px; /* pushes image lower */
 }
 
-/* Labels ABOVE image (black text) */
 .brain-header {
   width: 100%;
   text-align: right;
@@ -112,30 +137,30 @@ nav a {
 }
 
 .bit-tag {
-  color: #000;
   font-size: 34px;
   font-weight: 900;
   letter-spacing: 2px;
   line-height: 1;
+  color: var(--text);
 }
 
 .bit-title {
-  color: #000;
   font-size: 34px;
   font-weight: 900;
   line-height: 1.1;
+  color: var(--text);
 }
 
-/* BIG, WIDE brain image pushed to bottom */
+/* BIG, WIDE BRAIN IMAGE */
 .brain-wrapper {
   width: 100%;
-  max-width: 1200px;   /* 🔥 wide — fills bottom space */
-  margin-top: auto;    /* 🔥 pushes image DOWN */
+  max-width: 1200px;
+  margin-top: auto; /* pushes image DOWN */
   aspect-ratio: 16 / 9;
   border-radius: 18px;
   overflow: hidden;
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  background: #fff;
+  border: 1px solid var(--border);
+  background: var(--card-bg);
 }
 
 .brain-image {
@@ -145,9 +170,9 @@ nav a {
   object-fit: cover;
 }
 
-/* =========================
+/* ===============================
    MOBILE / iPAD SAFETY
-   ========================= */
+================================ */
 
 @media (max-width: 768px) {
   .home-hero {
@@ -172,14 +197,8 @@ nav a {
     text-align: center;
   }
 
-  .bit-tag,
-  .bit-title {
-    font-size: 28px;
-  }
-
   .brain-wrapper {
     max-width: 100%;
     aspect-ratio: 4 / 3;
-    border-radius: 16px;
   }
 }
