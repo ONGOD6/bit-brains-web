@@ -1,4 +1,4 @@
-export default function Home() {
+ default function Home() {
   return (
     <div className="page-shell">
       <div className="home-hero">
