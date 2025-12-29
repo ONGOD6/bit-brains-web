@@ -180,6 +180,21 @@ nav a {
   --panelBorder: rgba(255, 255, 255, 0.12);
   --shadow: 0 14px 40px rgba(0, 0, 0, 0.45);
 }
+.bit-stack {
+  position: absolute;        /* keeps it in same spot */
+  top: 140px;                /* keep your current values */
+  right: 60px;
+  text-align: right;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #ffffff;
+}
+
+.bit-stack span {
+  display: block;
+  font-size: 42px;           /* adjust if needed */
+  line-height: 1.05;
+}
 
 html,
 body {
