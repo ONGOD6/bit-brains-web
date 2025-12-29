@@ -36,7 +36,7 @@ export default function Home() {
 
             {/* Brain image */}
             <img
-              src="/images/brain.gif"
+              src="/brain-evolution.gif"
               alt="Brain Intelligence"
               className="brain-image"
               loading="eager"
