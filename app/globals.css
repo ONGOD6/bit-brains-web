@@ -53,7 +53,10 @@ nav a {
   justify-content: space-between;
 }
 
-/* LEFT SIDE */
+/* =========================
+   LEFT SIDE
+   ========================= */
+
 .home-left {
   flex: 1;
   min-width: 320px;
@@ -89,20 +92,19 @@ nav a {
 }
 
 /* =========================
-   RIGHT SIDE (BRAIN)
+   RIGHT SIDE — BRAIN
    ========================= */
 
-/* ✅ Make the right side behave like a tall column so we can push image down */
 .home-right {
   flex: 1;
   min-width: 320px;
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  min-height: 640px; /* key: creates vertical space so brain can sit lower */
+  min-height: 680px; /* creates vertical space so image sits lower */
 }
 
-/* ✅ Labels should be BLACK and above the image */
+/* Labels ABOVE image (black text) */
 .brain-header {
   width: 100%;
   text-align: right;
@@ -124,12 +126,12 @@ nav a {
   line-height: 1.1;
 }
 
-/* ✅ Push the image DOWN to fill the empty space */
+/* BIG, WIDE brain image pushed to bottom */
 .brain-wrapper {
-  width: 100%;              /* 100% of the right column */
-  max-width: 900px;         /* makes it BIGGER */
-  margin-top: auto;         /* THIS pushes it to the bottom of the column */
-  aspect-ratio: 16 / 9;     /* wide cinematic */
+  width: 100%;
+  max-width: 1200px;   /* 🔥 wide — fills bottom space */
+  margin-top: auto;    /* 🔥 pushes image DOWN */
+  aspect-ratio: 16 / 9;
   border-radius: 18px;
   overflow: hidden;
   border: 1px solid rgba(0, 0, 0, 0.08);
@@ -144,7 +146,7 @@ nav a {
 }
 
 /* =========================
-   MOBILE SAFETY (iPad/phone)
+   MOBILE / iPAD SAFETY
    ========================= */
 
 @media (max-width: 768px) {
@@ -177,7 +179,7 @@ nav a {
 
   .brain-wrapper {
     max-width: 100%;
-    aspect-ratio: 4 / 3; /* taller on mobile */
+    aspect-ratio: 4 / 3;
     border-radius: 16px;
   }
 }
