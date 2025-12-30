@@ -7,7 +7,6 @@ export default function HomePage() {
   return (
     <main className="page-shell">
       <section className="content-shell">
-        {/* TOP GRID (text left + BIT stack right) */}
         <div
           style={{
             display: "grid",
@@ -45,11 +44,27 @@ export default function HomePage() {
               <div style={{ fontWeight: 700 }}>Under Construction</div>
               <div style={{ fontWeight: 700 }}>Launching Soon</div>
             </div>
+
+            {/* Centered Genesis Preview (hero centerpiece) */}
+            <div
+              style={{
+                marginTop: "2.25rem",
+                display: "flex",
+                justifyContent: "center",
+              }}
+            >
+              <div style={{ width: "100%", maxWidth: 520 }}>
+                <GenesisExampleCard
+                  frontSrc="/images/IMG_1090.jpeg"
+                  rotateFront={true}
+                  rotateSeconds={26}
+                />
+              </div>
+            </div>
           </div>
 
           {/* RIGHT COLUMN */}
           <div style={{ textAlign: "right" }}>
-            {/* Keep your BIT stacked text look */}
             <div
               style={{
                 fontSize: "2.4rem",
@@ -63,20 +78,7 @@ export default function HomePage() {
               <div>Token</div>
             </div>
 
-            {/* (Removed brain-evolution.gif from homepage as requested) */}
-          </div>
-        </div>
-
-        {/* CENTERPIECE CARD (full width, centered) */}
-        <div
-          style={{
-            marginTop: "2.5rem",
-            display: "flex",
-            justifyContent: "center",
-          }}
-        >
-          <div style={{ width: "min(520px, 92vw)" }}>
-            <GenesisExampleCard frontSrc="/images/IMG_1090.jpeg" width={520} />
+            {/* brain-evolution.gif removed from homepage as requested */}
           </div>
         </div>
       </section>
