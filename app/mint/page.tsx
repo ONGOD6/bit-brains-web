@@ -1,4 +1,4 @@
-// app/mint/page.tsx
+ app/mint/page.tsx
 
 import GenesisExampleCard from "../components/GenesisExampleCard";
 
