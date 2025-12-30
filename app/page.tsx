@@ -45,9 +45,11 @@ export default function HomePage() {
               <div style={{ fontWeight: 700 }}>Launching Soon</div>
             </div>
 
-            {/* ✅ Bottom-left Genesis Preview Card */}
-            <div style={{ marginTop: "2.25rem", maxWidth: 420 }}>
-              <GenesisExampleCard frontSrc="/images/IMG_1090.jpeg" />
+            {/* Centerpiece Genesis Preview Card (left side, larger) */}
+            <div style={{ marginTop: "2.25rem" }}>
+              <div className="genesisFloatWrap">
+                <GenesisExampleCard frontSrc="/images/IMG_1090.jpeg" width={520} />
+              </div>
             </div>
           </div>
 
@@ -66,30 +68,37 @@ export default function HomePage() {
               <div>Brain Intelligence</div>
               <div>Token</div>
             </div>
-
-            {/* ✅ RESTORED HERO BRAIN GIF */}
-            <div
-              style={{
-                marginTop: "2.5rem",
-                display: "flex",
-                justifyContent: "flex-end",
-              }}
-            >
-              <img
-                src="/brain-evolution.gif"
-                alt="Bit Brains — Evolution"
-                style={{
-                  width: 360,
-                  maxWidth: "100%",
-                  height: "auto",
-                  borderRadius: 16,
-                  border: "1px solid rgba(255,255,255,0.12)",
-                  boxShadow: "0 0 42px rgba(160,120,255,0.16)",
-                }}
-              />
-            </div>
           </div>
         </div>
+
+        {/* Local animation styles (no Global CSS needed) */}
+        <style jsx>{`
+          @media (prefers-reduced-motion: reduce) {
+            .genesisFloatWrap {
+              animation: none !important;
+              transform: none !important;
+            }
+          }
+
+          .genesisFloatWrap {
+            width: fit-content;
+            max-width: 100%;
+            animation: genesisFloat 8s ease-in-out infinite;
+            transform-origin: center;
+          }
+
+          @keyframes genesisFloat {
+            0% {
+              transform: translateY(0px) rotate(-0.6deg);
+            }
+            50% {
+              transform: translateY(-10px) rotate(0.6deg);
+            }
+            100% {
+              transform: translateY(0px) rotate(-0.6deg);
+            }
+          }
+        `}</style>
       </section>
     </main>
   );
