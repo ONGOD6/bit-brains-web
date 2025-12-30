@@ -3,23 +3,30 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
 type Props = {
-  frontSrc: string;            // "/images/genesis-brain-example-blue.png"
-  width?: number;              // desktop width
-  flipBackHoldMs?: number;     // hold after typing completes
-  typingMsPerChar?: number;    // typing speed
-  lineDelayMs?: number;        // delay between lines
-  accentColor?: string;        // text accent (match canister glow)
+  frontSrc: string; // "/images/IMG_1090.jpeg"
+  width?: number; // desktop width
+  flipBackHoldMs?: number; // hold after typing completes
+  typingMsPerChar?: number; // typing speed
+  lineDelayMs?: number; // delay between lines
+  accentColor?: string; // text accent (match canister glow)
   autoReturnToFront?: boolean; // auto flip back after hold
+
+  // NEW: subtle front-image rotation
+  rotateFront?: boolean;
+  rotateSeconds?: number;
 };
 
 export default function GenesisExampleCard({
   frontSrc,
   width = 380,
   flipBackHoldMs = 10_000,
-  typingMsPerChar = 50,   // 40–60ms sweet spot
-  lineDelayMs = 350,      // 300–400ms sweet spot
+  typingMsPerChar = 50, // 40–60ms sweet spot
+  lineDelayMs = 350, // 300–400ms sweet spot
   accentColor = "rgba(120,185,255,0.95)",
   autoReturnToFront = true,
+
+  rotateFront = true,
+  rotateSeconds = 26,
 }: Props) {
   const [flipped, setFlipped] = useState(false);
   const [reduceMotion, setReduceMotion] = useState(false);
@@ -99,12 +106,8 @@ export default function GenesisExampleCard({
       // Ensure we have space in renderedLines
       setRenderedLines((prev) => {
         const next = [...prev];
-        // pad with empty lines up to lineIndex
         while (next.length < lineIndex) next.push("");
-        seen: {
-          if (next.length === lineIndex) next.push("");
-        }
-        // update current line substring
+        if (next.length === lineIndex) next.push("");
         next[lineIndex] = currentLine.slice(0, charIndex);
         return next;
       });
@@ -154,6 +157,8 @@ export default function GenesisExampleCard({
 
   const caretVisible = flipped && !reduceMotion && isTyping;
 
+  const canRotate = rotateFront && !reduceMotion && !flipped;
+
   return (
     <div style={{ display: "grid", placeItems: "center" }}>
       <button
@@ -194,7 +199,15 @@ export default function GenesisExampleCard({
               <img
                 src={frontSrc}
                 alt="Genesis Brain example card (front)"
-                style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "cover",
+                  transformOrigin: "50% 55%",
+                  animation: canRotate
+                    ? `slowSpin ${rotateSeconds}s linear infinite`
+                    : undefined,
+                }}
               />
               <div
                 style={{
@@ -206,7 +219,7 @@ export default function GenesisExampleCard({
                   justifyContent: "space-between",
                   alignItems: "center",
                   fontFamily:
-                    'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+                    "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace",
                   fontSize: 12,
                   letterSpacing: 0.6,
                   color: "rgba(255,255,255,0.72)",
@@ -243,7 +256,7 @@ export default function GenesisExampleCard({
                   justifyContent: "center",
                   gap: 10,
                   fontFamily:
-                    'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+                    "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace",
                   letterSpacing: 0.7,
                 }}
               >
@@ -287,7 +300,7 @@ export default function GenesisExampleCard({
                         animation: "blink 1.1s steps(2, start) infinite",
                       }}
                     >
-                      ▍
+                      |
                     </span>
                   ) : null}
                 </div>
@@ -310,28 +323,33 @@ export default function GenesisExampleCard({
                     50% { opacity: 1; }
                     100% { opacity: 0; }
                   }
+                  @keyframes slowSpin {
+                    0%   { transform: rotate(-1.2deg) scale(1.01); }
+                    50%  { transform: rotate( 1.2deg) scale(1.01); }
+                    100% { transform: rotate(-1.2deg) scale(1.01); }
+                  }
                 `}</style>
               </div>
             </div>
           </div>
         </div>
-      </button>
 
-      {/* Optional caption under the card */}
-      <div
-        style={{
-          marginTop: 12,
-          fontSize: 14,
-          textAlign: "center",
-          maxWidth: "92vw",
-          color: "rgba(255,255,255,0.75)",
-        }}
-      >
-        <div style={{ fontWeight: 600 }}>Genesis Brain — Example</div>
-        <div style={{ marginTop: 6, color: "rgba(255,255,255,0.62)" }}>
-          Tap the card to view the back inscription.
+        {/* Optional caption under the card */}
+        <div
+          style={{
+            marginTop: 12,
+            fontSize: 14,
+            textAlign: "center",
+            maxWidth: "92vw",
+            color: "rgba(255,255,255,0.75)",
+          }}
+        >
+          <div style={{ fontWeight: 600 }}>Genesis Brain — Example</div>
+          <div style={{ marginTop: 6, color: "rgba(255,255,255,0.62)" }}>
+            Tap the card to view the back inscription.
+          </div>
         </div>
-      </div>
+      </button>
     </div>
   );
 }
