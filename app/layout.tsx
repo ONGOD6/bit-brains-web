@@ -21,6 +21,10 @@ export default function RootLayout({
           <Link href="/manifesto">Protocol Standards</Link>
           <Link href="/ens">ENS</Link>
           <Link href="/mint">Genesis</Link>
+
+          {/* NEW */}
+          <Link href="/ethscriptions/mint">Ethscriptions</Link>
+
           <Link href="/stake">Stake</Link>
           <Link href="/music">Music</Link>
         </nav>
