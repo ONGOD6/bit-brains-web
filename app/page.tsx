@@ -7,7 +7,6 @@ export default function HomePage() {
   return (
     <main className="page-shell">
       <section className="content-shell">
-        {/* Top headline + right-side BIT block is assumed to be handled by your existing CSS */}
         <div
           style={{
             display: "grid",
@@ -68,11 +67,26 @@ export default function HomePage() {
               <div>Token</div>
             </div>
 
-            {/* If you already have a brain GIF/image here, KEEP IT.
-                This placeholder is only here so the layout doesn't break if nothing exists. */}
-            <div style={{ marginTop: "2.5rem", display: "flex", justifyContent: "flex-end" }}>
-              {/* Replace this block with your existing brain GIF/image block if you already have it */}
-              <div style={{ width: 360, maxWidth: "100%" }} />
+            {/* ✅ RESTORED HERO BRAIN GIF */}
+            <div
+              style={{
+                marginTop: "2.5rem",
+                display: "flex",
+                justifyContent: "flex-end",
+              }}
+            >
+              <img
+                src="/brain-evolution.gif"
+                alt="Bit Brains — Evolution"
+                style={{
+                  width: 360,
+                  maxWidth: "100%",
+                  height: "auto",
+                  borderRadius: 16,
+                  border: "1px solid rgba(255,255,255,0.12)",
+                  boxShadow: "0 0 42px rgba(160,120,255,0.16)",
+                }}
+              />
             </div>
           </div>
         </div>
