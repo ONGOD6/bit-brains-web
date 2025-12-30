@@ -81,6 +81,8 @@ export default function EthscriptionsMintPage() {
         method: "eth_chainId",
       });
       setChainId(cid ?? "");
+
+      setStatus("Wallet connected.");
     } catch (e: any) {
       setStatus(e?.message || "Wallet connection failed.");
     }
@@ -97,7 +99,9 @@ export default function EthscriptionsMintPage() {
     }
 
     if (file.size > maxBytes) {
-      setStatus(`File too large: ${formatBytes(file.size)} (max ${formatBytes(maxBytes)})`);
+      setStatus(
+        `File too large: ${formatBytes(file.size)} (max ${formatBytes(maxBytes)})`
+      );
       return;
     }
 
@@ -108,8 +112,8 @@ export default function EthscriptionsMintPage() {
       const enc = new TextEncoder();
       const bytes = enc.encode(uri);
       const hex = bytesToHex(bytes);
-      setHexData(hex);
 
+      setHexData(hex);
       setStatus("Payload ready. Next: send 0 ETH inscription transaction.");
     } catch (e: any) {
       setStatus(e?.message || "Failed to build payload.");
@@ -156,18 +160,70 @@ export default function EthscriptionsMintPage() {
     }
   }
 
-  /* ---------- render ---------- */
+  /* ---------- styles (kept local so you don’t have to touch globals) ---------- */
+  const previewCard: React.CSSProperties = {
+    width: "100%",
+    maxWidth: 360,
+  };
+
+  const squareFrame: React.CSSProperties = {
+    width: "100%",
+    aspectRatio: "1 / 1",
+    borderRadius: 16,
+    overflow: "hidden",
+    border: "1px solid rgba(255,255,255,0.15)",
+    background: "rgba(255,255,255,0.04)",
+  };
+
+  const squareImg: React.CSSProperties = {
+    width: "100%",
+    height: "100%",
+    objectFit: "cover",
+    display: "block",
+  };
+
   return (
     <main className="page-shell">
       <section className="content-shell">
         <div style={{ maxWidth: 860 }}>
-          <h1 className="page-title">Ethscriptions Mint</h1>
+          {/* Title row: Ethscriptions Mint + badge */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "baseline",
+              gap: "0.75rem",
+              flexWrap: "wrap",
+            }}
+          >
+            <h1 className="page-title" style={{ margin: 0 }}>
+              Ethscriptions Mint
+            </h1>
+
+            {/* badge NEXT to title (fix) */}
+            <span
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                padding: "0.2rem 0.55rem",
+                borderRadius: 999,
+                border: "1px solid rgba(255,255,255,0.18)",
+                background: "rgba(255,255,255,0.06)",
+                fontWeight: 800,
+                letterSpacing: "0.06em",
+                textTransform: "uppercase",
+                fontSize: 12,
+                opacity: 0.9,
+              }}
+            >
+              Pickle Punks
+            </span>
+          </div>
 
           <p className="page-subtitle" style={{ maxWidth: 820 }}>
             Free Ethscriptions for the community.
           </p>
 
-          {/* ---------- PICKLE PREVIEWS ---------- */}
+          {/* ---------- PICKLE PREVIEWS (same-size cards) ---------- */}
           <div
             style={{
               display: "flex",
@@ -178,54 +234,29 @@ export default function EthscriptionsMintPage() {
             }}
           >
             {/* LEFT (blue) */}
-            <div style={{ width: "100%", maxWidth: 360 }}>
-              <img
-                src="/images/IMG_6299.jpeg"
-                alt="Pickle Punk Blue"
-                style={{
-                  width: "100%",
-                  borderRadius: 12,
-                  border: "1px solid rgba(255,255,255,0.15)",
-                  display: "block",
-                }}
-              />
+            <div style={previewCard}>
+              <div style={squareFrame}>
+                <img
+                  src="/images/IMG_6299.jpeg"
+                  alt="Pickle Punk Blue"
+                  style={squareImg}
+                />
+              </div>
             </div>
 
-            {/* RIGHT (green) + label ABOVE the image (NOT inside it) */}
-            <div style={{ width: "100%", maxWidth: 360 }}>
-              {/* Gold label above container */}
-              <div
-                style={{
-                  width: "100%",
-                  marginBottom: 10,
-                  padding: "0.35rem 0.6rem",
-                  borderRadius: 10,
-                  background: "rgba(255, 215, 0, 0.92)",
-                  color: "#000",
-                  fontWeight: 900,
-                  letterSpacing: "0.08em",
-                  textTransform: "uppercase",
-                  textAlign: "center",
-                  border: "1px solid rgba(0,0,0,0.25)",
-                }}
-              >
-                Pickle Punks
+            {/* RIGHT (green/gold) */}
+            <div style={previewCard}>
+              <div style={squareFrame}>
+                <img
+                  src="/images/IMG_6300.jpeg"
+                  alt="Pickle Punk Green"
+                  style={squareImg}
+                />
               </div>
-
-              <img
-                src="/images/IMG_6300.jpeg"
-                alt="Pickle Punk Green"
-                style={{
-                  width: "100%",
-                  borderRadius: 12,
-                  border: "1px solid rgba(255,255,255,0.15)",
-                  display: "block",
-                }}
-              />
             </div>
           </div>
 
-          {/* ---------- COPY (fixed) ---------- */}
+          {/* ---------- COPY (kept clean) ---------- */}
           <p style={{ opacity: 0.85, marginTop: "1rem" }}>
             • Free Ethscriptions are included with the purchase of a Brain mint
             <br />
@@ -268,7 +299,7 @@ export default function EthscriptionsMintPage() {
                   </div>
                 </>
               ) : (
-                <div>{hasProvider ? "Wallet detected." : "No wallet detected."}</div>
+                <div>{hasProvider ? "No wallet connected." : "No wallet detected."}</div>
               )}
             </div>
           </div>
@@ -314,7 +345,9 @@ export default function EthscriptionsMintPage() {
                     value={maxBytes}
                     min={1024}
                     step={1024}
-                    onChange={(e) => setMaxBytes(Number(e.target.value || MAX_BYTES_DEFAULT))}
+                    onChange={(e) =>
+                      setMaxBytes(Number(e.target.value || MAX_BYTES_DEFAULT))
+                    }
                     style={{
                       width: 120,
                       marginLeft: 8,
@@ -334,74 +367,80 @@ export default function EthscriptionsMintPage() {
                   {fileSizeOk ? "✅ Size OK" : "⚠️ Too large"}
                 </div>
               )}
-            </div>
 
-            {/* ---------- ACTIONS ---------- */}
-            <div
-              style={{
-                display: "flex",
-                gap: "0.75rem",
-                flexWrap: "wrap",
-                marginTop: "1rem",
-              }}
-            >
-              <button
-                onClick={buildPayload}
-                style={{
-                  padding: "0.65rem 0.95rem",
-                  borderRadius: 10,
-                  border: "1px solid rgba(255,255,255,0.22)",
-                  background: "rgba(255,255,255,0.06)",
-                  color: "rgba(255,255,255,0.92)",
-                  fontWeight: 700,
-                  cursor: "pointer",
-                }}
-              >
-                2) Build Data URI → Hex Calldata
-              </button>
-
-              <button
-                onClick={submitInscriptionTx}
-                disabled={!account || !hexData}
-                style={{
-                  padding: "0.65rem 0.95rem",
-                  borderRadius: 10,
-                  border: "1px solid rgba(255,255,255,0.22)",
-                  background: !account || !hexData ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.06)",
-                  color: !account || !hexData ? "rgba(255,255,255,0.45)" : "rgba(255,255,255,0.92)",
-                  fontWeight: 700,
-                  cursor: !account || !hexData ? "not-allowed" : "pointer",
-                }}
-              >
-                3) Send 0 ETH Inscription Tx
-              </button>
-            </div>
-
-            {/* ---------- STATUS ---------- */}
-            {status && (
+              {/* ---------- ACTIONS ---------- */}
               <div
                 style={{
-                  marginTop: 10,
-                  padding: "0.75rem 0.9rem",
-                  borderRadius: 12,
-                  border: "1px solid rgba(255,255,255,0.14)",
-                  background: "rgba(255,255,255,0.04)",
-                  color: "rgba(255,255,255,0.82)",
-                  fontSize: 13,
-                  lineHeight: 1.5,
-                  whiteSpace: "pre-wrap",
+                  display: "flex",
+                  gap: "0.75rem",
+                  flexWrap: "wrap",
+                  marginTop: "1rem",
                 }}
               >
-                {status}
-              </div>
-            )}
+                <button
+                  onClick={buildPayload}
+                  style={{
+                    padding: "0.65rem 0.95rem",
+                    borderRadius: 10,
+                    border: "1px solid rgba(255,255,255,0.22)",
+                    background: "rgba(255,255,255,0.06)",
+                    color: "rgba(255,255,255,0.92)",
+                    fontWeight: 700,
+                    cursor: "pointer",
+                  }}
+                >
+                  2) Build Data URI → Hex Calldata
+                </button>
 
-            {txHash && (
-              <div style={{ marginTop: 10, fontSize: 13, opacity: 0.85 }}>
-                <strong>Tx Hash:</strong> {txHash}
+                <button
+                  onClick={submitInscriptionTx}
+                  disabled={!account || !hexData}
+                  style={{
+                    padding: "0.65rem 0.95rem",
+                    borderRadius: 10,
+                    border: "1px solid rgba(255,255,255,0.22)",
+                    background:
+                      !account || !hexData
+                        ? "rgba(255,255,255,0.03)"
+                        : "rgba(255,255,255,0.06)",
+                    color:
+                      !account || !hexData
+                        ? "rgba(255,255,255,0.45)"
+                        : "rgba(255,255,255,0.92)",
+                    fontWeight: 700,
+                    cursor: !account || !hexData ? "not-allowed" : "pointer",
+                  }}
+                >
+                  3) Send 0 ETH Inscription Tx
+                </button>
               </div>
-            )}
+            </div>
           </div>
+
+          {/* ---------- STATUS ---------- */}
+          {status && (
+            <div
+              style={{
+                marginTop: 10,
+                padding: "0.75rem 0.9rem",
+                borderRadius: 12,
+                border: "1px solid rgba(255,255,255,0.14)",
+                background: "rgba(255,255,255,0.04)",
+                color: "rgba(255,255,255,0.82)",
+                fontSize: 13,
+                lineHeight: 1.5,
+                whiteSpace: "pre-wrap",
+              }}
+            >
+              {status}
+            </div>
+          )}
+
+          {txHash && (
+            <div style={{ marginTop: 10, fontSize: 13, opacity: 0.85 }}>
+              <strong>Tx Hash:</strong> {txHash}
+            </div>
+          )}
         </div>
       </section>
     </main>
