@@ -22,8 +22,14 @@ export default function RootLayout({
           <Link href="/ens">ENS</Link>
           <Link href="/mint">Genesis</Link>
 
-          {/* NEW */}
-          <Link href="/ethscriptions/mint">Ethscriptions</Link>
+          {/* Ethscriptions (Mint) */}
+          <Link href="/ethscriptions/mint">
+            <span style={{ display: "inline-block", lineHeight: 1.05, textAlign: "center" }}>
+              Ethscriptions
+              <br />
+              Mint
+            </span>
+          </Link>
 
           <Link href="/stake">Stake</Link>
           <Link href="/music">Music</Link>
