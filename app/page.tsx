@@ -7,6 +7,7 @@ export default function HomePage() {
   return (
     <main className="page-shell">
       <section className="content-shell">
+        {/* TOP GRID (text left + BIT stack right) */}
         <div
           style={{
             display: "grid",
@@ -44,22 +45,11 @@ export default function HomePage() {
               <div style={{ fontWeight: 700 }}>Under Construction</div>
               <div style={{ fontWeight: 700 }}>Launching Soon</div>
             </div>
-
-            {/* Centerpiece Genesis Preview Card (animated) */}
-            <div
-              style={{
-                marginTop: "2.25rem",
-                maxWidth: 520,
-                animation: "bbCardFloat 9s ease-in-out infinite",
-                transformOrigin: "50% 60%",
-              }}
-            >
-              <GenesisExampleCard frontSrc="/images/IMG_1090.jpeg" />
-            </div>
           </div>
 
           {/* RIGHT COLUMN */}
           <div style={{ textAlign: "right" }}>
+            {/* Keep your BIT stacked text look */}
             <div
               style={{
                 fontSize: "2.4rem",
@@ -77,15 +67,18 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* NOTE: This is NOT styled-jsx. This is safe in app/page.tsx */}
-        <style>{`
-          @keyframes bbCardFloat {
-            0%   { transform: translateY(0px) rotateZ(0deg); }
-            35%  { transform: translateY(-8px) rotateZ(-0.6deg); }
-            70%  { transform: translateY(4px) rotateZ(0.6deg); }
-            100% { transform: translateY(0px) rotateZ(0deg); }
-          }
-        `}</style>
+        {/* CENTERPIECE CARD (full width, centered) */}
+        <div
+          style={{
+            marginTop: "2.5rem",
+            display: "flex",
+            justifyContent: "center",
+          }}
+        >
+          <div style={{ width: "min(520px, 92vw)" }}>
+            <GenesisExampleCard frontSrc="/images/IMG_1090.jpeg" width={520} />
+          </div>
+        </div>
       </section>
     </main>
   );
