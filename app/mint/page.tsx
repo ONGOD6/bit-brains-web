@@ -24,11 +24,15 @@ export default function MintPage() {
 
         {/* Genesis Brain — Example Card */}
         <div style={{ marginTop: "3.5rem" }}>
-          <GenesisExampleCard frontSrc="/images/IMG_1090.jpeg" />
+          <GenesisExampleCard
+            frontSrc="/images/IMG_1090.jpeg"
+            rotateFront={true}
+            rotateSeconds={26}
+          />
         </div>
 
-        {/* Explanation Text */}
-        <div style={{ marginTop: "1.75rem", maxWidth: 720 }}>
+        {/* Optional explanatory text under the card */}
+        <div style={{ marginTop: "1.5rem", maxWidth: 720 }}>
           <h2
             style={{
               fontSize: "1.05rem",
@@ -46,9 +50,8 @@ export default function MintPage() {
           </p>
 
           <p className="page-subtitle" style={{ marginBottom: "0.75rem" }}>
-            The card shown above is a visual reference of a Genesis Brain.
-            Structural elements are fixed, while visual traits vary across the
-            collection.
+            The card shown is a visual example of a Genesis Brain. Structural
+            elements are fixed, while visual traits vary across the collection.
           </p>
 
           <p className="page-subtitle" style={{ opacity: 0.85 }}>
