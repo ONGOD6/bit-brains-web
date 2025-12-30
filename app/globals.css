@@ -1,36 +1,20 @@
 /* ===============================
-   BASE RESET & VARIABLES
-================================ */
+   BASE RESET & VARIABLES (DARK DEFAULT)
+   =============================== */
 
 :root {
-  --bg: #ffffff;
-  --text: #000000;
-  --muted: rgba(0, 0, 0, 0.7);
-  --border: rgba(0, 0, 0, 0.08);
-  --link: #000000;
-  --card-bg: #ffffff;
-}
+  color-scheme: dark;
 
-/* Dark mode variables */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #0b0b0d;
-    --text: #f5f5f7;
-    --muted: rgba(255, 255, 255, 0.7);
-    --border: rgba(255, 255, 255, 0.12);
-    --link: #ffffff;
-    --card-bg: #111114;
-  }
-}
-
-/* Optional manual override later */
-html[data-theme="dark"] {
-  --bg: #0b0b0d;
-  --text: #f5f5f7;
-  --muted: rgba(255, 255, 255, 0.7);
+  --bg: #070812;
+  --text: #e9e9f2;
+  --muted: rgba(233, 233, 242, 0.7);
   --border: rgba(255, 255, 255, 0.12);
-  --link: #ffffff;
-  --card-bg: #111114;
+  --link: #e9e9f2;
+
+  --card-bg: rgba(255, 255, 255, 0.06);
+  --panel: rgba(255, 255, 255, 0.06);
+  --panelBorder: rgba(255, 255, 255, 0.12);
+  --shadow: 0 14px 40px rgba(0, 0, 0, 0.45);
 }
 
 * {
@@ -41,24 +25,37 @@ html,
 body {
   padding: 0;
   margin: 0;
+  min-height: 100%;
   background: var(--bg);
   color: var(--text);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
-    Roboto, Helvetica, Arial, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
+    Arial, sans-serif;
+}
+
+/* links */
+a {
+  color: var(--link);
+  text-decoration: none;
+}
+a:hover {
+  opacity: 0.85;
 }
 
 /* ===============================
    NAV
-================================ */
+   =============================== */
 
-nav {
+/* supports both <nav> and <nav className="nav"> */
+nav,
+.nav {
   display: flex;
   gap: 1.5rem;
   padding: 1.25rem 1.5rem;
   border-bottom: 1px solid var(--border);
 }
 
-nav a {
+nav a,
+.nav a {
   color: var(--text);
   font-weight: 600;
   text-decoration: none;
@@ -66,7 +63,7 @@ nav a {
 
 /* ===============================
    PAGE SHELL
-================================ */
+   =============================== */
 
 .page-shell {
   padding: 2.5rem 1.25rem;
@@ -74,9 +71,27 @@ nav a {
   margin: 0 auto;
 }
 
+.content-shell {
+  width: 100%;
+}
+
+.page-title {
+  font-size: 2.5rem;
+  font-weight: 800;
+  margin: 0 0 0.75rem 0;
+  letter-spacing: 0.5px;
+}
+
+.page-subtitle {
+  font-size: 1.1rem;
+  line-height: 1.6;
+  margin: 0 0 1.25rem 0;
+  color: var(--muted);
+}
+
 /* ===============================
-   HOME HERO LAYOUT
-================================ */
+   HOME HERO (if used)
+   =============================== */
 
 .home-hero {
   display: flex;
@@ -89,6 +104,15 @@ nav a {
   flex: 1;
   min-width: 320px;
   max-width: 640px;
+}
+
+.home-right {
+  flex: 1;
+  min-width: 320px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  min-height: 680px; /* pushes image lower */
 }
 
 .home-title {
@@ -117,50 +141,24 @@ nav a {
   color: var(--muted);
 }
 
-/* ===============================
-   RIGHT SIDE — BRAIN
-================================ */
-
-.home-right {
-  flex: 1;
-  min-width: 320px;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  min-height: 680px; /* pushes image lower */
-}
-
+/* Right side BIT stack text */
 .brain-header {
   width: 100%;
   text-align: right;
   margin-bottom: 0.75rem;
 }
 
-.bit-tag {
-  font-size: 34px;
-  font-weight: 900;
-  letter-spacing: 2px;
-  line-height: 1;
-  color: var(--text);
-}
-
-.bit-title {
-  font-size: 34px;
-  font-weight: 900;
-  line-height: 1.1;
-  color: var(--text);
-}
-
 /* BIG, WIDE BRAIN IMAGE */
 .brain-wrapper {
   width: 100%;
   max-width: 1200px;
-  margin-top: auto; /* pushes image DOWN */
+  margin-top: auto; /* pushes image down */
   aspect-ratio: 16 / 9;
   border-radius: 18px;
   overflow: hidden;
   border: 1px solid var(--border);
   background: var(--card-bg);
+  box-shadow: var(--shadow);
 }
 
 .brain-image {
@@ -169,52 +167,8 @@ nav a {
   display: block;
   object-fit: cover;
 }
-/* ===== Force Dark Mode (Global) ===== */
-:root {
-  color-scheme: dark;          /* tells the browser we're dark (forms, scrollbars, etc.) */
-  --bg: #070812;
-  --fg: #e9e9f2;
-  --muted: rgba(233, 233, 242, 0.7);
 
-  --panel: rgba(255, 255, 255, 0.06);
-  --panelBorder: rgba(255, 255, 255, 0.12);
-  --shadow: 0 14px 40px rgba(0, 0, 0, 0.45);
-}
-.bit-stack {
-  position: absolute;        /* keeps it in same spot */
-  top: 140px;                /* keep your current values */
-  right: 60px;
-  text-align: right;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  color: #ffffff;
-}
-
-.bit-stack span {
-  display: block;
-  font-size: 42px;           /* adjust if needed */
-  line-height: 1.05;
-}
-
-html,
-body {
-  background: var(--bg);
-  color: var(--fg);
-  margin: 0;
-  padding: 0;
-  min-height: 100%;
-}
-
-/* links */
-a {
-  color: var(--fg);
-  text-decoration: none;
-}
-a:hover {
-  opacity: 0.85;
-}
-
-/* common “box/card” styling if you want consistent dark panels */
+/* Optional consistent dark panels */
 .dark-panel {
   background: var(--panel);
   border: 1px solid var(--panelBorder);
@@ -222,14 +176,14 @@ a:hover {
   border-radius: 16px;
 }
 
-/* optional: tone down default hr */
 hr {
   border: 0;
   border-top: 1px solid rgba(255, 255, 255, 0.12);
 }
+
 /* ===============================
    MOBILE / iPAD SAFETY
-================================ */
+   =============================== */
 
 @media (max-width: 768px) {
   .home-hero {
@@ -257,5 +211,11 @@ hr {
   .brain-wrapper {
     max-width: 100%;
     aspect-ratio: 4 / 3;
+  }
+
+  nav,
+  .nav {
+    flex-wrap: wrap;
+    gap: 1rem;
   }
 }
