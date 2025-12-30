@@ -1,4 +1,5 @@
 // app/page.tsx
+
 import Link from "next/link";
 import GenesisExampleCard from "./components/GenesisExampleCard";
 
@@ -18,9 +19,9 @@ export default function HomePage() {
           <h1 className="page-title">Proof of Care comes first.</h1>
 
           <p className="page-subtitle" style={{ maxWidth: 820 }}>
-            Bit Brains is a protocol for NFTs, ENS-based identity, zero-knowledge
-            eligibility, and real-world asset integration — beginning on
-            Ethereum.
+            Bit Brains is a protocol for NFTs, ENS-based Identity,
+            Zero-Knowledge Proof Eligibility, and Real-World Asset Integration —
+            beginning on Ethereum.
           </p>
 
           <Link
@@ -35,7 +36,7 @@ export default function HomePage() {
             Enter Proof of Care →
           </Link>
 
-          {/* UNDER CONSTRUCTION NOTICE */}
+          {/* UNDER CONSTRUCTION */}
           <div
             style={{
               marginTop: "0.75rem",
@@ -43,7 +44,7 @@ export default function HomePage() {
               fontWeight: 600,
             }}
           >
-            Website & GitHub
+            Website &amp; GitHub
             <br />
             Under Construction
             <br />
@@ -63,20 +64,18 @@ export default function HomePage() {
           {/* EXPLICIT DISCLAIMER */}
           <div
             style={{
-              marginTop: "0.25rem",
-              maxWidth: 560,
+              marginTop: "1.25rem",
+              maxWidth: 520,
               fontSize: 13,
-              lineHeight: 1.55,
-              color: "rgba(255,255,255,0.60)",
+              lineHeight: 1.5,
+              color: "rgba(255,255,255,0.55)",
             }}
           >
-            <strong style={{ color: "rgba(255,255,255,0.82)" }}>
-              EXAMPLE NFT ONLY — NOT FINAL PRODUCTION.
-            </strong>
+            <strong>EXAMPLE NFT ONLY.</strong>
             <br />
-            This card is a visual prototype for demonstration purposes. Final
-            production Genesis NFTs may differ in appearance, traits, and
-            structure.
+            This card is a visual prototype for demonstration purposes.
+            Final production Genesis NFTs may differ in appearance, traits,
+            and structure.
           </div>
         </div>
       </section>
