@@ -2,6 +2,7 @@
 
 import React, { useMemo, useState } from "react";
 
+/* ---------- types ---------- */
 declare global {
   interface Window {
     ethereum?: {
@@ -12,6 +13,7 @@ declare global {
   }
 }
 
+/* ---------- helpers ---------- */
 function bytesToHex(bytes: Uint8Array): string {
   let hex = "0x";
   for (let i = 0; i < bytes.length; i++) {
@@ -33,12 +35,12 @@ async function fileToDataUrl(file: File): Promise<string> {
     const reader = new FileReader();
     reader.onerror = () => reject(new Error("Failed to read file"));
     reader.onload = () => resolve(String(reader.result));
-    reader.readAsDataURL(file); // produces: data:<mime>;base64,<...>
+    reader.readAsDataURL(file);
   });
 }
 
+/* ---------- page ---------- */
 export default function EthscriptionsMintPage() {
-  // Ethscriptions Quick Start suggests ~90KB max for images.  [oai_citation:0‡Ethscriptions](https://docs.ethscriptions.com/overview/quick-start)
   const MAX_BYTES_DEFAULT = 90 * 1024;
 
   const [account, setAccount] = useState<string>("");
@@ -52,19 +54,21 @@ export default function EthscriptionsMintPage() {
   const [hexData, setHexData] = useState<string>("");
   const [txHash, setTxHash] = useState<string>("");
 
-  const hasProvider = typeof window !== "undefined" && !!window.ethereum;
+  const hasProvider =
+    typeof window !== "undefined" && !!window.ethereum;
 
   const fileSizeOk = useMemo(() => {
     if (!file) return false;
     return file.size <= maxBytes;
   }, [file, maxBytes]);
 
+  /* ---------- wallet ---------- */
   async function connectWallet() {
     setStatus("");
     setTxHash("");
 
     if (!hasProvider) {
-      setStatus("No wallet detected. Please install/use a browser wallet (e.g., MetaMask).");
+      setStatus("No wallet detected. Please install/use MetaMask.");
       return;
     }
 
@@ -72,16 +76,18 @@ export default function EthscriptionsMintPage() {
       const accounts: string[] = await window.ethereum!.request({
         method: "eth_requestAccounts",
       });
-      const acct = accounts?.[0] ?? "";
-      setAccount(acct);
+      setAccount(accounts?.[0] ?? "");
 
-      const cid: string = await window.ethereum!.request({ method: "eth_chainId" });
+      const cid: string = await window.ethereum!.request({
+        method: "eth_chainId",
+      });
       setChainId(cid ?? "");
     } catch (e: any) {
       setStatus(e?.message || "Wallet connection failed.");
     }
   }
 
+  /* ---------- build payload ---------- */
   async function buildPayload() {
     setStatus("");
     setTxHash("");
@@ -90,36 +96,30 @@ export default function EthscriptionsMintPage() {
       setStatus("Choose an image/file first.");
       return;
     }
-    if (!account) {
-      setStatus("Connect your wallet first.");
-      return;
-    }
+
     if (file.size > maxBytes) {
       setStatus(
-        `File is too large: ${formatBytes(file.size)}. Max allowed is ${formatBytes(maxBytes)}.`
+        `File too large: ${formatBytes(file.size)} (max ${formatBytes(maxBytes)})`
       );
       return;
     }
 
     try {
-      // Step 1: Data URI (data:image/png;base64,...)
       const uri = await fileToDataUrl(file);
       setDataUrl(uri);
 
-      // Step 2: Convert data URI string to bytes -> hex for tx "data"
       const enc = new TextEncoder();
       const bytes = enc.encode(uri);
       const hex = bytesToHex(bytes);
       setHexData(hex);
 
-      setStatus(
-        `Payload ready. Next: send a 0 ETH tx with this hex as calldata (the protocol ignores duplicates).`
-      );
+      setStatus("Payload ready. Next: send 0 ETH inscription transaction.");
     } catch (e: any) {
       setStatus(e?.message || "Failed to build payload.");
     }
   }
 
+  /* ---------- send tx ---------- */
   async function submitInscriptionTx() {
     setStatus("");
     setTxHash("");
@@ -128,18 +128,16 @@ export default function EthscriptionsMintPage() {
       setStatus("No wallet provider found.");
       return;
     }
+
     if (!account) {
       setStatus("Connect your wallet first.");
       return;
     }
+
     if (!hexData || !dataUrl) {
       setStatus("Build the payload first.");
       return;
     }
-
-    // Ethscriptions Quick Start: “Send a 0 ETH transaction … with the hex data in the Hex data field.”  [oai_citation:1‡Ethscriptions](https://docs.ethscriptions.com/overview/quick-start)
-    // Safe default: send to yourself (you will own the Ethscription).
-    const to = account;
 
     try {
       const hash: string = await window.ethereum!.request({
@@ -147,7 +145,7 @@ export default function EthscriptionsMintPage() {
         params: [
           {
             from: account,
-            to,
+            to: account,
             value: "0x0",
             data: hexData,
           },
@@ -155,242 +153,245 @@ export default function EthscriptionsMintPage() {
       });
 
       setTxHash(hash);
-      setStatus("Transaction submitted. Once mined, the Ethscription should appear in indexers.");
+      setStatus(
+        "Transaction submitted. Once mined, the Ethscription should index."
+      );
     } catch (e: any) {
       setStatus(e?.message || "Transaction failed.");
     }
   }
 
+  /* ---------- render ---------- */
   return (
     <main className="page-shell">
       <section className="content-shell">
         <div style={{ maxWidth: 860 }}>
-          <h1 className="page-title" style={{ marginBottom: "0.5rem" }}>
-            Ethscriptions Mint
-          </h1>
+          <h1 className="page-title">Ethscriptions Mint</h1>
 
           <p className="page-subtitle" style={{ maxWidth: 820 }}>
-            Create an on-chain calldata inscription by sending a <strong>0 ETH</strong> transaction
-            whose <strong>calldata</strong> is a <strong>data URI</strong> (commonly an image under
-            ~90KB).  [oai_citation:2‡Ethscriptions](https://docs.ethscriptions.com/overview/quick-start)
+            Free Ethscriptions for the community.
           </p>
 
-          <div style={{ display: "grid", gap: "0.75rem", marginTop: "1.25rem" }}>
-            <div
+          {/* ---------- PICKLE PREVIEWS ---------- */}
+          <div
+            style={{
+              display: "flex",
+              gap: "1.5rem",
+              flexWrap: "wrap",
+              marginTop: "1.5rem",
+            }}
+          >
+            <img
+              src="/images/IMG_6299.jpeg"
+              alt="Pickle Punk Blue"
               style={{
-                display: "flex",
-                gap: "0.75rem",
-                alignItems: "center",
-                flexWrap: "wrap",
+                width: "100%",
+                maxWidth: 320,
+                borderRadius: 12,
+                border: "1px solid rgba(255,255,255,0.15)",
+              }}
+            />
+            <img
+              src="/images/IMG_6300.jpeg"
+              alt="Pickle Green"
+              style={{
+                width: "100%",
+                maxWidth: 320,
+                borderRadius: 12,
+                border: "1px solid rgba(255,255,255,0.15)",
+              }}
+            />
+          </div>
+
+          {/* ---------- COPY ---------- */}
+          <p style={{ opacity: 0.85, marginTop: "1rem" }}>
+            • Free Ethscriptions are included with the purchase of a Brain NFT
+            <br />
+            • Page under construction — mint coming soon
+          </p>
+
+          {/* ---------- WALLET ---------- */}
+          <div
+            style={{
+              display: "flex",
+              gap: "0.75rem",
+              alignItems: "center",
+              flexWrap: "wrap",
+              marginTop: "1.5rem",
+            }}
+          >
+            <button
+              onClick={connectWallet}
+              style={{
+                padding: "0.65rem 0.95rem",
+                borderRadius: 10,
+                border: "1px solid rgba(255,255,255,0.22)",
+                background: "rgba(255,255,255,0.06)",
+                color: "rgba(255,255,255,0.92)",
+                fontWeight: 700,
+                cursor: "pointer",
               }}
             >
-              <button
-                onClick={connectWallet}
-                style={{
-                  padding: "0.65rem 0.95rem",
-                  borderRadius: 10,
-                  border: "1px solid rgba(255,255,255,0.22)",
-                  background: "rgba(255,255,255,0.06)",
-                  color: "rgba(255,255,255,0.92)",
-                  fontWeight: 700,
-                  cursor: "pointer",
-                }}
-              >
-                {account ? "Wallet Connected" : "Connect Wallet"}
-              </button>
+              {account ? "Wallet Connected" : "Connect Wallet"}
+            </button>
 
-              <div style={{ opacity: 0.8, fontSize: 13 }}>
-                {account ? (
-                  <>
-                    <div>
-                      <strong>Account:</strong> {account}
-                    </div>
-                    <div>
-                      <strong>Chain:</strong> {chainId || "—"}
-                    </div>
-                  </>
-                ) : (
-                  <div>{hasProvider ? "Wallet detected." : "No wallet detected."}</div>
-                )}
-              </div>
-            </div>
-
-            <div
-              style={{
-                marginTop: "0.5rem",
-                padding: "1rem",
-                borderRadius: 14,
-                border: "1px solid rgba(255,255,255,0.14)",
-                background: "rgba(0,0,0,0.25)",
-              }}
-            >
-              <div style={{ display: "grid", gap: "0.6rem" }}>
-                <label style={{ fontWeight: 700, opacity: 0.9 }}>
-                  1) Choose file (image recommended)
-                </label>
-
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => {
-                    setStatus("");
-                    setTxHash("");
-                    setDataUrl("");
-                    setHexData("");
-                    const f = e.target.files?.[0] ?? null;
-                    setFile(f);
-                  }}
-                />
-
-                <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap", fontSize: 13 }}>
+            <div style={{ opacity: 0.8, fontSize: 13 }}>
+              {account ? (
+                <>
                   <div>
-                    <strong>Selected:</strong> {file ? `${file.name} (${formatBytes(file.size)})` : "—"}
+                    <strong>Account:</strong> {account}
                   </div>
                   <div>
-                    <strong>Max size:</strong>{" "}
-                    <input
-                      type="number"
-                      value={maxBytes}
-                      min={1024}
-                      step={1024}
-                      onChange={(e) => setMaxBytes(Number(e.target.value || MAX_BYTES_DEFAULT))}
-                      style={{
-                        width: 120,
-                        marginLeft: 8,
-                        padding: "0.25rem 0.4rem",
-                        borderRadius: 8,
-                        border: "1px solid rgba(255,255,255,0.18)",
-                        background: "rgba(255,255,255,0.06)",
-                        color: "rgba(255,255,255,0.92)",
-                      }}
-                    />{" "}
-                    <span style={{ opacity: 0.75 }}>bytes</span>
+                    <strong>Chain:</strong> {chainId || "-"}
                   </div>
-                  {file ? (
-                    <div style={{ fontWeight: 700, opacity: fileSizeOk ? 0.9 : 0.6 }}>
-                      {fileSizeOk ? "✅ Size OK" : "⚠️ Too large"}
-                    </div>
-                  ) : null}
+                </>
+              ) : (
+                <div>
+                  {hasProvider ? "Wallet detected." : "No wallet detected."}
                 </div>
+              )}
+            </div>
+          </div>
 
-                <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", marginTop: 8 }}>
-                  <button
-                    onClick={buildPayload}
+          {/* ---------- FILE ---------- */}
+          <div
+            style={{
+              marginTop: "0.75rem",
+              padding: "1rem",
+              borderRadius: 14,
+              border: "1px solid rgba(255,255,255,0.14)",
+              background: "rgba(0,0,0,0.25)",
+            }}
+          >
+            <div style={{ display: "grid", gap: "0.6rem" }}>
+              <label style={{ fontWeight: 700, opacity: 0.9 }}>
+                1) Choose file (image recommended)
+              </label>
+
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  setStatus("");
+                  setTxHash("");
+                  setDataUrl("");
+                  setHexData("");
+                  const f = e.target.files?.[0] ?? null;
+                  setFile(f);
+                }}
+              />
+
+              <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap" }}>
+                <div>
+                  <strong>Selected:</strong>{" "}
+                  {file ? `${file.name} (${formatBytes(file.size)})` : "-"}
+                </div>
+                <div>
+                  <strong>Max size:</strong>{" "}
+                  <input
+                    type="number"
+                    value={maxBytes}
+                    min={1024}
+                    step={1024}
+                    onChange={(e) =>
+                      setMaxBytes(
+                        Number(e.target.value || MAX_BYTES_DEFAULT)
+                      )
+                    }
                     style={{
-                      padding: "0.65rem 0.95rem",
-                      borderRadius: 10,
-                      border: "1px solid rgba(255,255,255,0.22)",
+                      width: 120,
+                      marginLeft: 8,
+                      padding: "0.25rem 0.4rem",
+                      borderRadius: 8,
+                      border: "1px solid rgba(255,255,255,0.18)",
                       background: "rgba(255,255,255,0.06)",
                       color: "rgba(255,255,255,0.92)",
-                      fontWeight: 700,
-                      cursor: "pointer",
                     }}
-                  >
-                    2) Build Data URI → Hex Calldata
-                  </button>
-
-                  <button
-                    onClick={submitInscriptionTx}
-                    disabled={!account || !hexData}
-                    style={{
-                      padding: "0.65rem 0.95rem",
-                      borderRadius: 10,
-                      border: "1px solid rgba(255,255,255,0.22)",
-                      background: !account || !hexData ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.06)",
-                      color: !account || !hexData ? "rgba(255,255,255,0.45)" : "rgba(255,255,255,0.92)",
-                      fontWeight: 700,
-                      cursor: !account || !hexData ? "not-allowed" : "pointer",
-                    }}
-                  >
-                    3) Send 0 ETH Inscription Tx
-                  </button>
+                  />{" "}
+                  <span style={{ opacity: 0.75 }}>bytes</span>
                 </div>
-
-                {status ? (
-                  <div
-                    style={{
-                      marginTop: 10,
-                      padding: "0.75rem 0.9rem",
-                      borderRadius: 12,
-                      border: "1px solid rgba(255,255,255,0.14)",
-                      background: "rgba(255,255,255,0.04)",
-                      color: "rgba(255,255,255,0.82)",
-                      fontSize: 13,
-                      lineHeight: 1.5,
-                      whiteSpace: "pre-wrap",
-                    }}
-                  >
-                    {status}
-                  </div>
-                ) : null}
-
-                {txHash ? (
-                  <div style={{ marginTop: 10, fontSize: 13, opacity: 0.85 }}>
-                    <strong>Tx Hash:</strong> {txHash}
-                  </div>
-                ) : null}
               </div>
+
+              {file && (
+                <div style={{ fontWeight: 700, opacity: fileSizeOk ? 0.9 : 0.6 }}>
+                  {fileSizeOk ? "✅ Size OK" : "⚠️ Too large"}
+                </div>
+              )}
             </div>
-
-            {(dataUrl || hexData) && (
-              <div style={{ display: "grid", gap: "0.75rem", marginTop: "1rem" }}>
-                <div style={{ fontSize: 13, opacity: 0.8 }}>
-                  <strong>Preview:</strong> data URI length {dataUrl ? dataUrl.length : 0} chars • hex
-                  length {hexData ? hexData.length : 0} chars
-                </div>
-
-                {dataUrl ? (
-                  <details>
-                    <summary style={{ cursor: "pointer", opacity: 0.85, fontWeight: 700 }}>
-                      View Data URI (truncated)
-                    </summary>
-                    <div
-                      style={{
-                        marginTop: 8,
-                        padding: "0.75rem",
-                        borderRadius: 12,
-                        border: "1px solid rgba(255,255,255,0.12)",
-                        background: "rgba(0,0,0,0.25)",
-                        fontSize: 12,
-                        lineHeight: 1.5,
-                        wordBreak: "break-all",
-                        maxHeight: 180,
-                        overflow: "auto",
-                      }}
-                    >
-                      {dataUrl.slice(0, 1400)}
-                      {dataUrl.length > 1400 ? "…(truncated)" : ""}
-                    </div>
-                  </details>
-                ) : null}
-
-                {hexData ? (
-                  <details>
-                    <summary style={{ cursor: "pointer", opacity: 0.85, fontWeight: 700 }}>
-                      View Hex Calldata (truncated)
-                    </summary>
-                    <div
-                      style={{
-                        marginTop: 8,
-                        padding: "0.75rem",
-                        borderRadius: 12,
-                        border: "1px solid rgba(255,255,255,0.12)",
-                        background: "rgba(0,0,0,0.25)",
-                        fontSize: 12,
-                        lineHeight: 1.5,
-                        wordBreak: "break-all",
-                        maxHeight: 180,
-                        overflow: "auto",
-                      }}
-                    >
-                      {hexData.slice(0, 1400)}
-                      {hexData.length > 1400 ? "…(truncated)" : ""}
-                    </div>
-                  </details>
-                ) : null}
-              </div>
-            )}
           </div>
+
+          {/* ---------- ACTIONS ---------- */}
+          <div
+            style={{
+              display: "flex",
+              gap: "0.75rem",
+              flexWrap: "wrap",
+              marginTop: "1rem",
+            }}
+          >
+            <button
+              onClick={buildPayload}
+              style={{
+                padding: "0.65rem 0.95rem",
+                borderRadius: 10,
+                border: "1px solid rgba(255,255,255,0.22)",
+                background: "rgba(255,255,255,0.06)",
+                color: "rgba(255,255,255,0.92)",
+                fontWeight: 700,
+                cursor: "pointer",
+              }}
+            >
+              2) Build Data URI → Hex Calldata
+            </button>
+
+            <button
+              onClick={submitInscriptionTx}
+              disabled={!account || !hexData}
+              style={{
+                padding: "0.65rem 0.95rem",
+                borderRadius: 10,
+                border: "1px solid rgba(255,255,255,0.22)",
+                background:
+                  !account || !hexData
+                    ? "rgba(255,255,255,0.03)"
+                    : "rgba(255,255,255,0.06)",
+                color:
+                  !account || !hexData
+                    ? "rgba(255,255,255,0.45)"
+                    : "rgba(255,255,255,0.92)",
+                fontWeight: 700,
+                cursor:
+                  !account || !hexData ? "not-allowed" : "pointer",
+              }}
+            >
+              3) Send 0 ETH Inscription Tx
+            </button>
+          </div>
+
+          {/* ---------- STATUS ---------- */}
+          {status && (
+            <div
+              style={{
+                marginTop: 10,
+                padding: "0.75rem 0.9rem",
+                borderRadius: 12,
+                border: "1px solid rgba(255,255,255,0.14)",
+                background: "rgba(255,255,255,0.04)",
+                color: "rgba(255,255,255,0.82)",
+                fontSize: 13,
+                lineHeight: 1.5,
+                whiteSpace: "pre-wrap",
+              }}
+            >
+              {status}
+            </div>
+          )}
+
+          {txHash && (
+            <div style={{ marginTop: 10, fontSize: 13, opacity: 0.85 }}>
+              <strong>Tx Hash:</strong> {txHash}
+            </div>
+          )}
         </div>
       </section>
     </main>
