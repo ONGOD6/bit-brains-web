@@ -3,15 +3,13 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
 type Props = {
-  frontSrc: string; // "/images/IMG_1090.jpeg"
-  width?: number; // desktop width
-  flipBackHoldMs?: number; // hold after typing completes
-  typingMsPerChar?: number; // typing speed
-  lineDelayMs?: number; // delay between lines
-  accentColor?: string; // text accent (match canister glow)
-  autoReturnToFront?: boolean; // auto flip back after hold
-
-  // ✅ NEW: optional slow rotation on the FRONT image (illusion)
+  frontSrc: string;
+  width?: number;
+  flipBackHoldMs?: number;
+  typingMsPerChar?: number;
+  lineDelayMs?: number;
+  accentColor?: string;
+  autoReturnToFront?: boolean;
   rotateFront?: boolean;
   rotateSeconds?: number;
 };
@@ -24,26 +22,20 @@ export default function GenesisExampleCard({
   lineDelayMs = 350,
   accentColor = "rgba(120,185,255,0.95)",
   autoReturnToFront = true,
-
-  // ✅ NEW defaults
   rotateFront = false,
   rotateSeconds = 26,
 }: Props) {
   const [flipped, setFlipped] = useState(false);
   const [reduceMotion, setReduceMotion] = useState(false);
-
-  // typing state
   const [renderedLines, setRenderedLines] = useState<string[]>([]);
   const [isTyping, setIsTyping] = useState(false);
 
-  // cancel tokens for timers
   const timersRef = useRef<number[]>([]);
   const clearTimers = () => {
     timersRef.current.forEach((t) => window.clearTimeout(t));
     timersRef.current = [];
   };
 
-  // Respect prefers-reduced-motion
   useEffect(() => {
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
     const update = () => setReduceMotion(mq.matches);
@@ -67,31 +59,26 @@ export default function GenesisExampleCard({
     []
   );
 
-  // typing routine (runs when flipped to back)
   useEffect(() => {
     clearTimers();
 
     if (!flipped) {
-      // reset when returning to front
       setRenderedLines([]);
       setIsTyping(false);
       return;
     }
 
     if (reduceMotion) {
-      // If reduced motion, show text instantly (no typing)
       setRenderedLines(backTextLines);
       setIsTyping(false);
-
-      // still auto-return after hold if enabled
       if (autoReturnToFront) {
-        const t = window.setTimeout(() => setFlipped(false), flipBackHoldMs);
-        timersRef.current.push(t);
+        timersRef.current.push(
+          window.setTimeout(() => setFlipped(false), flipBackHoldMs)
+        );
       }
       return;
     }
 
-    // Start typing
     setRenderedLines([]);
     setIsTyping(true);
 
@@ -99,12 +86,9 @@ export default function GenesisExampleCard({
     let charIndex = 0;
 
     const typeNext = () => {
-      // if component flipped back early, stop
       if (!flipped) return;
-
       const currentLine = backTextLines[lineIndex] ?? "";
 
-      // Ensure we have space in renderedLines
       setRenderedLines((prev) => {
         const next = [...prev];
         while (next.length < lineIndex) next.push("");
@@ -113,39 +97,34 @@ export default function GenesisExampleCard({
         return next;
       });
 
-      // advance char
       if (charIndex < currentLine.length) {
         charIndex += 1;
-        const t = window.setTimeout(typeNext, typingMsPerChar);
-        timersRef.current.push(t);
+        timersRef.current.push(
+          window.setTimeout(typeNext, typingMsPerChar)
+        );
         return;
       }
 
-      // finished this line
       lineIndex += 1;
       charIndex = 0;
 
       if (lineIndex >= backTextLines.length) {
-        // done typing
         setIsTyping(false);
-
         if (autoReturnToFront) {
-          const t = window.setTimeout(() => setFlipped(false), flipBackHoldMs);
-          timersRef.current.push(t);
+          timersRef.current.push(
+            window.setTimeout(() => setFlipped(false), flipBackHoldMs)
+          );
         }
         return;
       }
 
-      const t = window.setTimeout(typeNext, lineDelayMs);
-      timersRef.current.push(t);
+      timersRef.current.push(
+        window.setTimeout(typeNext, lineDelayMs)
+      );
     };
 
-    // initial small delay so flip settles first
-    const start = window.setTimeout(typeNext, 250);
-    timersRef.current.push(start);
-
+    timersRef.current.push(window.setTimeout(typeNext, 250));
     return () => clearTimers();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     flipped,
     reduceMotion,
@@ -202,14 +181,11 @@ export default function GenesisExampleCard({
                   width: "100%",
                   height: "100%",
                   objectFit: "cover",
-
-                  // ✅ NEW: slow “in-canister” rotation illusion on the front image
                   animation:
                     rotateFront && !reduceMotion
                       ? `frontRotate ${rotateSeconds}s linear infinite`
                       : undefined,
                   transformOrigin: "50% 55%",
-                  willChange: rotateFront ? "transform" : undefined,
                 }}
               />
 
@@ -221,13 +197,9 @@ export default function GenesisExampleCard({
                   bottom: 12,
                   display: "flex",
                   justifyContent: "space-between",
-                  alignItems: "center",
-                  fontFamily:
-                    'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
                   fontSize: 12,
                   letterSpacing: 0.6,
                   color: "rgba(255,255,255,0.72)",
-                  textShadow: "0 2px 10px rgba(0,0,0,0.75)",
                 }}
               >
                 <span>GENESIS BRAIN</span>
@@ -243,9 +215,8 @@ export default function GenesisExampleCard({
                 transform: "rotateY(180deg)",
                 backfaceVisibility: "hidden",
                 borderRadius: 18,
-                overflow: "hidden",
                 background:
-                  "radial-gradient(120% 120% at 50% 0%, rgba(120,185,255,0.18), rgba(0,0,0,0.92))",
+                  "radial-gradient(120% 120% at 50% 0%, rgba(120,185,255,0.16), rgba(0,0,0,0.92))",
                 boxShadow:
                   "0 24px 70px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.08) inset",
               }}
@@ -258,13 +229,11 @@ export default function GenesisExampleCard({
                   display: "flex",
                   flexDirection: "column",
                   justifyContent: "center",
-                  gap: 10,
                   fontFamily:
-                    'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+                    'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
                   letterSpacing: 0.7,
                 }}
               >
-                {/* subtitle header strip */}
                 <div
                   style={{
                     position: "absolute",
@@ -273,7 +242,6 @@ export default function GenesisExampleCard({
                     right: 18,
                     display: "flex",
                     justifyContent: "space-between",
-                    alignItems: "center",
                     fontSize: 11,
                     color: "rgba(255,255,255,0.45)",
                   }}
@@ -282,39 +250,35 @@ export default function GenesisExampleCard({
                   <span style={{ color: accentColor }}>TAP TO RETURN</span>
                 </div>
 
-                {/* typed text */}
+                {/* 🔵 DARKER BLUE BACK TEXT */}
                 <div
                   style={{
                     whiteSpace: "pre-wrap",
                     fontSize: 14,
                     lineHeight: 1.55,
-                    color: "rgba(255,255,255,0.78)",
-                    textShadow: "0 2px 16px rgba(0,0,0,0.65)",
+                    color: "rgba(90,150,235,0.9)",
+                    textShadow: "0 2px 18px rgba(0,0,0,0.75)",
                   }}
                 >
                   {renderedLines.join("\n")}
-                  {caretVisible ? (
+                  {caretVisible && (
                     <span
                       style={{
-                        display: "inline-block",
                         marginLeft: 2,
-                        width: 10,
                         color: accentColor,
-                        opacity: 0.9,
-                        animation: "blink 1.1s steps(2, start) infinite",
+                        animation: "blink 1.1s steps(2,start) infinite",
                       }}
                     >
                       |
                     </span>
-                  ) : null}
+                  )}
                 </div>
 
-                {/* footer hint */}
                 <div
                   style={{
                     marginTop: 18,
                     fontSize: 11,
-                    color: "rgba(255,255,255,0.40)",
+                    color: "rgba(255,255,255,0.4)",
                   }}
                 >
                   Example shown for visual reference only.
@@ -324,35 +288,30 @@ export default function GenesisExampleCard({
           </div>
         </div>
 
-        {/* Optional caption under the card */}
         <div
           style={{
             marginTop: 12,
             fontSize: 14,
             textAlign: "center",
-            maxWidth: "92vw",
             color: "rgba(255,255,255,0.75)",
           }}
         >
           <div style={{ fontWeight: 600 }}>Genesis Brain — Example</div>
-          <div style={{ marginTop: 6, color: "rgba(255,255,255,0.62)" }}>
+          <div style={{ marginTop: 6, opacity: 0.75 }}>
             Tap the card to view the back inscription.
           </div>
         </div>
 
-        {/* keyframes */}
         <style>{`
           @keyframes blink {
             0% { opacity: 0; }
             50% { opacity: 1; }
             100% { opacity: 0; }
           }
-
-          /* ✅ slow “in-canister” rotation illusion */
           @keyframes frontRotate {
-            0%   { transform: rotateY(0deg) rotateZ(0deg) scale(1.01); }
-            50%  { transform: rotateY(10deg) rotateZ(-0.35deg) scale(1.01); }
-            100% { transform: rotateY(0deg) rotateZ(0deg) scale(1.01); }
+            0% { transform: rotateY(0deg) scale(1.01); }
+            50% { transform: rotateY(10deg) scale(1.01); }
+            100% { transform: rotateY(0deg) scale(1.01); }
           }
         `}</style>
       </button>
