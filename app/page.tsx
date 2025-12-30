@@ -1,63 +1,49 @@
-// app/page.tsx
-import Link from "next/link";
-import GenesisExampleCard from "./components/GenesisExampleCard";
+"use client";
 
-export default function HomePage() {
+// app/mint/page.tsx
+import GenesisExampleCard from "../components/GenesisExampleCard";
+
+export default function MintPage() {
   return (
     <main className="page-shell">
-      <section className="content-shell">
+      <section className="content-shell" style={{ textAlign: "center" }}>
+        <h1 className="page-title">Genesis Mint</h1>
+
+        <p className="page-subtitle" style={{ maxWidth: 820, margin: "0 auto" }}>
+          Welcome to the Bit Brains Genesis mint interface.
+        </p>
+
+        <p className="page-subtitle" style={{ maxWidth: 820, margin: "0.75rem auto 0" }}>
+          Minting will be available on Ethereum and Solana.
+        </p>
+
+        <div style={{ marginTop: "1.5rem" }}>
+          <button className="btn-disabled" disabled>
+            Mint (Coming Soon)
+          </button>
+        </div>
+
+        {/* Explicit disclaimer */}
         <div
           style={{
-            display: "grid",
-            placeItems: "center",
-            textAlign: "center",
-            gap: "1.25rem",
+            marginTop: "1.25rem",
+            fontSize: 12,
+            letterSpacing: "0.08em",
+            textTransform: "uppercase",
+            color: "rgba(255,255,255,0.62)",
           }}
         >
-          <h1 className="page-title">Proof of Care comes first.</h1>
+          EXAMPLE NFT ONLY — NOT FINAL PRODUCTION
+        </div>
 
-          <p className="page-subtitle" style={{ maxWidth: 820 }}>
-            Bit Brains is a protocol for NFTs, ENS-based identity, zero-knowledge
-            eligibility, and real-world asset integration — beginning on Ethereum.
-          </p>
-
-          <div style={{ marginTop: "0.35rem" }}>
-            <Link
-              href="/proof-of-care"
-              style={{
-                color: "rgba(255,255,255,0.9)",
-                textDecoration: "underline",
-                fontWeight: 600,
-              }}
-            >
-              Enter Proof of Care →
-            </Link>
-          </div>
-
-          {/* Under construction block */}
-          <div style={{ marginTop: "1.25rem", opacity: 0.65, fontWeight: 700 }}>
-            <div>Website &amp; GitHub</div>
-            <div>Under Construction</div>
-            <div>Launching Soon</div>
-          </div>
-
-          {/* Centerpiece Genesis Preview Card */}
-          <div style={{ marginTop: "1.25rem", width: "100%" }}>
-            <GenesisExampleCard frontSrc="/images/IMG_1090.jpeg" />
-
-            {/* ✅ Explicit disclaimer (NEW) */}
-            <div
-              style={{
-                marginTop: 10,
-                fontSize: 12,
-                letterSpacing: 0.3,
-                color: "rgba(255,255,255,0.58)",
-                textAlign: "center",
-              }}
-            >
-              Example NFT for Visual Reference Only — Not Final Production.
-            </div>
-          </div>
+        {/* Centered card */}
+        <div style={{ marginTop: "1.25rem", display: "grid", placeItems: "center" }}>
+          <GenesisExampleCard
+            frontSrc="/images/IMG_1090.jpeg"
+            rotateFront={true}
+            rotateSeconds={26}
+            accentColor="rgba(120,185,255,0.95)"
+          />
         </div>
       </section>
     </main>
