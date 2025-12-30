@@ -72,9 +72,8 @@ export default function GenesisExampleCard({
       setRenderedLines(backTextLines);
       setIsTyping(false);
       if (autoReturnToFront) {
-        timersRef.current.push(
-          window.setTimeout(() => setFlipped(false), flipBackHoldMs)
-        );
+        const t = window.setTimeout(() => setFlipped(false), flipBackHoldMs);
+        timersRef.current.push(t);
       }
       return;
     }
@@ -87,6 +86,7 @@ export default function GenesisExampleCard({
 
     const typeNext = () => {
       if (!flipped) return;
+
       const currentLine = backTextLines[lineIndex] ?? "";
 
       setRenderedLines((prev) => {
@@ -99,9 +99,8 @@ export default function GenesisExampleCard({
 
       if (charIndex < currentLine.length) {
         charIndex += 1;
-        timersRef.current.push(
-          window.setTimeout(typeNext, typingMsPerChar)
-        );
+        const t = window.setTimeout(typeNext, typingMsPerChar);
+        timersRef.current.push(t);
         return;
       }
 
@@ -111,19 +110,19 @@ export default function GenesisExampleCard({
       if (lineIndex >= backTextLines.length) {
         setIsTyping(false);
         if (autoReturnToFront) {
-          timersRef.current.push(
-            window.setTimeout(() => setFlipped(false), flipBackHoldMs)
-          );
+          const t = window.setTimeout(() => setFlipped(false), flipBackHoldMs);
+          timersRef.current.push(t);
         }
         return;
       }
 
-      timersRef.current.push(
-        window.setTimeout(typeNext, lineDelayMs)
-      );
+      const t = window.setTimeout(typeNext, lineDelayMs);
+      timersRef.current.push(t);
     };
 
-    timersRef.current.push(window.setTimeout(typeNext, 250));
+    const start = window.setTimeout(typeNext, 250);
+    timersRef.current.push(start);
+
     return () => clearTimers();
   }, [
     flipped,
@@ -141,14 +140,8 @@ export default function GenesisExampleCard({
     <div style={{ display: "grid", placeItems: "center" }}>
       <button
         type="button"
-        aria-label={flipped ? "Show front of card" : "Show back of card"}
         onClick={() => setFlipped((v) => !v)}
-        style={{
-          all: "unset",
-          cursor: "pointer",
-          width,
-          maxWidth: "92vw",
-        }}
+        style={{ all: "unset", cursor: "pointer", width, maxWidth: "92vw" }}
       >
         <div style={{ perspective: "1200px", width: "100%" }}>
           <div
@@ -171,12 +164,12 @@ export default function GenesisExampleCard({
                 borderRadius: 18,
                 overflow: "hidden",
                 boxShadow:
-                  "0 24px 70px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.08) inset",
+                  "0 24px 70px rgba(0,0,0,0.55), inset 0 0 0 1px rgba(255,255,255,0.08)",
               }}
             >
               <img
                 src={frontSrc}
-                alt="Genesis Brain example card (front)"
+                alt="Genesis Brain example card"
                 style={{
                   width: "100%",
                   height: "100%",
@@ -188,23 +181,6 @@ export default function GenesisExampleCard({
                   transformOrigin: "50% 55%",
                 }}
               />
-
-              <div
-                style={{
-                  position: "absolute",
-                  left: 14,
-                  right: 14,
-                  bottom: 12,
-                  display: "flex",
-                  justifyContent: "space-between",
-                  fontSize: 12,
-                  letterSpacing: 0.6,
-                  color: "rgba(255,255,255,0.72)",
-                }}
-              >
-                <span>GENESIS BRAIN</span>
-                <span style={{ color: accentColor }}>TAP TO FLIP</span>
-              </div>
             </div>
 
             {/* BACK */}
@@ -215,106 +191,58 @@ export default function GenesisExampleCard({
                 transform: "rotateY(180deg)",
                 backfaceVisibility: "hidden",
                 borderRadius: 18,
+                overflow: "hidden",
                 background:
-                  "radial-gradient(120% 120% at 50% 0%, rgba(120,185,255,0.16), rgba(0,0,0,0.92))",
+                  "radial-gradient(120% 120% at 50% 0%, rgba(180,210,255,0.25), rgba(255,255,255,0.88))",
                 boxShadow:
-                  "0 24px 70px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.08) inset",
+                  "0 24px 70px rgba(0,0,0,0.55), inset 0 0 0 1px rgba(0,0,0,0.12)",
               }}
             >
               <div
                 style={{
-                  position: "absolute",
-                  inset: 0,
                   padding: 22,
-                  display: "flex",
-                  flexDirection: "column",
-                  justifyContent: "center",
                   fontFamily:
                     'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
-                  letterSpacing: 0.7,
+                  fontSize: 14,
+                  lineHeight: 1.6,
+                  whiteSpace: "pre-wrap",
+
+                  // ✅ KEY CHANGE: BACK TEXT COLOR → BLACK
+                  color: "rgba(10,14,20,0.92)",
+
+                  textShadow: "none",
                 }}
               >
-                <div
-                  style={{
-                    position: "absolute",
-                    top: 14,
-                    left: 18,
-                    right: 18,
-                    display: "flex",
-                    justifyContent: "space-between",
-                    fontSize: 11,
-                    color: "rgba(255,255,255,0.45)",
-                  }}
-                >
-                  <span>BACK OF CARD</span>
-                  <span style={{ color: accentColor }}>TAP TO RETURN</span>
-                </div>
-
-                {/* 🔵 DARKER BLUE BACK TEXT */}
-                <div
-                  style={{
-                    whiteSpace: "pre-wrap",
-                    fontSize: 14,
-                    lineHeight: 1.55,
-                    color: "rgba(90,150,235,0.9)",
-                    textShadow: "0 2px 18px rgba(0,0,0,0.75)",
-                  }}
-                >
-                  {renderedLines.join("\n")}
-                  {caretVisible && (
-                    <span
-                      style={{
-                        marginLeft: 2,
-                        color: accentColor,
-                        animation: "blink 1.1s steps(2,start) infinite",
-                      }}
-                    >
-                      |
-                    </span>
-                  )}
-                </div>
-
-                <div
-                  style={{
-                    marginTop: 18,
-                    fontSize: 11,
-                    color: "rgba(255,255,255,0.4)",
-                  }}
-                >
-                  Example shown for visual reference only.
-                </div>
+                {renderedLines.join("\n")}
+                {caretVisible && (
+                  <span
+                    style={{
+                      marginLeft: 2,
+                      color: "rgba(10,14,20,0.9)",
+                      animation: "blink 1.1s steps(2,start) infinite",
+                    }}
+                  >
+                    |
+                  </span>
+                )}
               </div>
             </div>
           </div>
         </div>
-
-        <div
-          style={{
-            marginTop: 12,
-            fontSize: 14,
-            textAlign: "center",
-            color: "rgba(255,255,255,0.75)",
-          }}
-        >
-          <div style={{ fontWeight: 600 }}>Genesis Brain — Example</div>
-          <div style={{ marginTop: 6, opacity: 0.75 }}>
-            Tap the card to view the back inscription.
-          </div>
-        </div>
-
-        <style>{`
-          @keyframes blink {
-            0% { opacity: 0; }
-            50% { opacity: 1; }
-            100% { opacity: 0; }
-          }
-          @keyframes frontRotate {
-            0% { transform: rotateY(0deg) scale(1.01); }
-            50% { transform: rotateY(10deg) scale(1.01); }
-            100% { transform: rotateY(0deg) scale(1.01); }
-          }
-        `}</style>
       </button>
+
+      <style>{`
+        @keyframes blink {
+          0% { opacity: 0; }
+          50% { opacity: 1; }
+          100% { opacity: 0; }
+        }
+        @keyframes frontRotate {
+          0% { transform: rotateY(0deg); }
+          50% { transform: rotateY(10deg); }
+          100% { transform: rotateY(0deg); }
+        }
+      `}</style>
     </div>
   );
 }
