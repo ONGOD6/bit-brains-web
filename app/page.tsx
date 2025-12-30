@@ -4,37 +4,24 @@ import GenesisExampleCard from "./components/GenesisExampleCard";
 
 export default function HomePage() {
   return (
-    <main
-      className="page-shell"
-      style={{
-        minHeight: "100vh",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-      }}
-    >
-      <section
-        className="content-shell"
-        style={{
-          width: "100%",
-          maxWidth: 1200,
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          gap: "2.5rem",
-        }}
-      >
-        {/* TEXT BLOCK */}
-        <div style={{ textAlign: "center", maxWidth: 640 }}>
+    <main className="page-shell">
+      <section className="content-shell">
+        <div
+          style={{
+            display: "grid",
+            placeItems: "center",
+            textAlign: "center",
+            gap: "1.25rem",
+          }}
+        >
           <h1 className="page-title">Proof of Care comes first.</h1>
 
-          <p className="page-subtitle">
-            Bit Brains is a protocol for NFTs, ENS-based identity,
-            zero-knowledge eligibility, and real-world asset integration —
-            beginning on Ethereum.
+          <p className="page-subtitle" style={{ maxWidth: 820 }}>
+            Bit Brains is a protocol for NFTs, ENS-based identity, zero-knowledge
+            eligibility, and real-world asset integration — beginning on Ethereum.
           </p>
 
-          <div style={{ marginTop: "1.25rem" }}>
+          <div style={{ marginTop: "0.35rem" }}>
             <Link
               href="/proof-of-care"
               style={{
@@ -47,18 +34,31 @@ export default function HomePage() {
             </Link>
           </div>
 
-          <div style={{ marginTop: "2rem", opacity: 0.65 }}>
-            <div style={{ fontWeight: 700 }}>Website & GitHub</div>
-            <div style={{ fontWeight: 700 }}>Under Construction</div>
-            <div style={{ fontWeight: 700 }}>Launching Soon</div>
+          {/* Under construction block */}
+          <div style={{ marginTop: "1.25rem", opacity: 0.65, fontWeight: 700 }}>
+            <div>Website &amp; GitHub</div>
+            <div>Under Construction</div>
+            <div>Launching Soon</div>
+          </div>
+
+          {/* Centerpiece Genesis Preview Card */}
+          <div style={{ marginTop: "1.25rem", width: "100%" }}>
+            <GenesisExampleCard frontSrc="/images/IMG_1090.jpeg" />
+
+            {/* ✅ Explicit disclaimer (NEW) */}
+            <div
+              style={{
+                marginTop: 10,
+                fontSize: 12,
+                letterSpacing: 0.3,
+                color: "rgba(255,255,255,0.58)",
+                textAlign: "center",
+              }}
+            >
+              Example NFT for Visual Reference Only — Not Final Production.
+            </div>
           </div>
         </div>
-
-        {/* ✅ CENTERED CARD */}
-        <GenesisExampleCard
-          frontSrc="/images/IMG_1090.jpeg"
-          rotateFront
-        />
       </section>
     </main>
   );
