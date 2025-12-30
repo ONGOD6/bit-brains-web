@@ -158,7 +158,6 @@ export default function EthscriptionsMintPage() {
     }
   }
 
-  /* ---------- render ---------- */
   return (
     <main className="page-shell">
       <section className="content-shell">
@@ -176,38 +175,37 @@ export default function EthscriptionsMintPage() {
               gap: "1.5rem",
               flexWrap: "wrap",
               marginTop: "1.5rem",
+              alignItems: "flex-start",
             }}
           >
-            {/* Left preview */}
-            <img
-              src="/images/IMG_6299.jpeg"
-              alt="Pickle Punk Blue"
-              style={{
-                width: "100%",
-                maxWidth: 320,
-                borderRadius: 12,
-                border: "1px solid rgba(255,255,255,0.15)",
-              }}
-            />
+            {/* LEFT (blue) */}
+            <div style={{ width: "100%", maxWidth: 320 }}>
+              <img
+                src="/images/IMG_6299.jpeg"
+                alt="Pickle Punk Blue"
+                style={{
+                  width: "100%",
+                  borderRadius: 12,
+                  border: "1px solid rgba(255,255,255,0.15)",
+                  display: "block",
+                }}
+              />
+            </div>
 
-            {/* Right preview (with Pickle Punks label) */}
-            <div style={{ position: "relative", width: "100%", maxWidth: 320 }}>
+            {/* RIGHT (green/yellow) with text ABOVE image (NOT overlay) */}
+            <div style={{ width: "100%", maxWidth: 320 }}>
               <div
                 style={{
-                  position: "absolute",
-                  top: 10,
-                  left: 0,
-                  right: 0,
                   textAlign: "center",
-                  fontWeight: 800,
-                  letterSpacing: "0.08em",
+                  fontWeight: 900,
+                  letterSpacing: "0.12em",
                   textTransform: "uppercase",
-                  fontSize: 14,
-                  color: "rgba(255,255,255,0.95)",
-                  textShadow:
-                    "0 2px 10px rgba(0,0,0,0.75), 0 0 18px rgba(255,255,255,0.18)",
-                  pointerEvents: "none",
-                  zIndex: 2,
+                  color: "#000",
+                  background: "rgba(255,255,255,0.90)",
+                  borderRadius: 10,
+                  padding: "0.35rem 0.6rem",
+                  marginBottom: "0.5rem",
+                  border: "1px solid rgba(0,0,0,0.10)",
                 }}
               >
                 Pickle Punks
@@ -220,18 +218,17 @@ export default function EthscriptionsMintPage() {
                   width: "100%",
                   borderRadius: 12,
                   border: "1px solid rgba(255,255,255,0.15)",
+                  display: "block",
                 }}
               />
             </div>
           </div>
 
-          {/* ---------- COPY ---------- */}
+          {/* ---------- COPY (fixed) ---------- */}
           <p style={{ opacity: 0.85, marginTop: "1rem" }}>
             • Free Ethscriptions are included with the purchase of a Brain mint
             <br />
-            • Free descriptions are included with the purchase of a Brain mint
-            <br />
-            • Page under construction — sorry, mint coming soon
+            • Page under construction — mint coming soon
           </p>
 
           {/* ---------- WALLET ---------- */}
@@ -239,9 +236,9 @@ export default function EthscriptionsMintPage() {
             style={{
               display: "flex",
               gap: "0.75rem",
-              alignItems: "center",
               flexWrap: "wrap",
               marginTop: "1.5rem",
+              alignItems: "center",
             }}
           >
             <button
@@ -316,9 +313,7 @@ export default function EthscriptionsMintPage() {
                     value={maxBytes}
                     min={1024}
                     step={1024}
-                    onChange={(e) =>
-                      setMaxBytes(Number(e.target.value || MAX_BYTES_DEFAULT))
-                    }
+                    onChange={(e) => setMaxBytes(Number(e.target.value || MAX_BYTES_DEFAULT))}
                     style={{
                       width: 120,
                       marginLeft: 8,
@@ -331,13 +326,13 @@ export default function EthscriptionsMintPage() {
                   />{" "}
                   <span style={{ opacity: 0.75 }}>bytes</span>
                 </div>
-              </div>
 
-              {file && (
-                <div style={{ fontWeight: 700, opacity: fileSizeOk ? 0.9 : 0.6 }}>
-                  {fileSizeOk ? "✅ Size OK" : "⚠️ Too large"}
-                </div>
-              )}
+                {file && (
+                  <div style={{ fontWeight: 700, opacity: fileSizeOk ? 0.9 : 0.6 }}>
+                    {fileSizeOk ? "✅ Size OK" : "⚠️ Too large"}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
