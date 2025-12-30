@@ -1,6 +1,6 @@
 // app/mint/page.tsx
 
-import GenesisExampleCard from "@/app/components/GenesisExampleCard";
+import GenesisExampleCard from "../components/GenesisExampleCard";
 
 export default function MintPage() {
   return (
@@ -27,8 +27,8 @@ export default function MintPage() {
           <GenesisExampleCard frontSrc="/images/IMG_1090.jpeg" />
         </div>
 
-        {/* Optional explanatory text next to/under the card */}
-        <div style={{ marginTop: "1.5rem", maxWidth: 720 }}>
+        {/* Explanation Text */}
+        <div style={{ marginTop: "1.75rem", maxWidth: 720 }}>
           <h2
             style={{
               fontSize: "1.05rem",
@@ -46,8 +46,9 @@ export default function MintPage() {
           </p>
 
           <p className="page-subtitle" style={{ marginBottom: "0.75rem" }}>
-            The card shown is a visual example of a Genesis Brain. All Genesis
-            Brains share the same structure, while visual traits vary.
+            The card shown above is a visual reference of a Genesis Brain.
+            Structural elements are fixed, while visual traits vary across the
+            collection.
           </p>
 
           <p className="page-subtitle" style={{ opacity: 0.85 }}>
