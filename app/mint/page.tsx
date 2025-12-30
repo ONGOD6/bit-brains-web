@@ -1,5 +1,7 @@
 // app/mint/page.tsx
 
+import GenesisExampleCard from "@/app/components/GenesisExampleCard";
+
 export default function MintPage() {
   return (
     <main className="page-shell">
@@ -18,6 +20,44 @@ export default function MintPage() {
           <button className="btn-disabled" disabled>
             Mint (Coming Soon)
           </button>
+        </div>
+
+        {/* Genesis Brain — Example Card */}
+        <div style={{ marginTop: "3.5rem" }}>
+          <GenesisExampleCard frontSrc="/images/IMG_1090.jpeg" />
+        </div>
+
+        {/* Optional explanatory text next to/under the card */}
+        <div style={{ marginTop: "1.5rem", maxWidth: 720 }}>
+          <h2
+            style={{
+              fontSize: "1.05rem",
+              letterSpacing: "0.02em",
+              marginBottom: "0.75rem",
+              color: "rgba(255,255,255,0.88)",
+            }}
+          >
+            Genesis Brain — Example
+          </h2>
+
+          <p className="page-subtitle" style={{ marginBottom: "0.75rem" }}>
+            Each Genesis Brain is an immutable origin artifact — minted once,
+            fixed forever, and bound to a single identity.
+          </p>
+
+          <p className="page-subtitle" style={{ marginBottom: "0.75rem" }}>
+            The card shown is a visual example of a Genesis Brain. All Genesis
+            Brains share the same structure, while visual traits vary.
+          </p>
+
+          <p className="page-subtitle" style={{ opacity: 0.85 }}>
+            Autonomy is not granted at birth — it is earned through Proof of
+            Care.
+          </p>
+
+          <p className="page-subtitle" style={{ opacity: 0.55, marginTop: 12 }}>
+            *Example shown for visual reference only.*
+          </p>
         </div>
       </section>
     </main>
