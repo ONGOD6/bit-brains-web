@@ -23,7 +23,13 @@ export default function MintPage() {
         </div>
 
         {/* Genesis Brain — Example Card */}
-        <div style={{ marginTop: "3.5rem" }}>
+        <div
+          style={{
+            marginTop: "3.5rem",
+            display: "flex",
+            justifyContent: "center",
+          }}
+        >
           <GenesisExampleCard
             frontSrc="/images/IMG_1090.jpeg"
             rotateFront={true}
