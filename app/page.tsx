@@ -45,17 +45,21 @@ export default function HomePage() {
               <div style={{ fontWeight: 700 }}>Launching Soon</div>
             </div>
 
-            {/* Centerpiece Genesis Preview Card (left side, larger) */}
-            <div style={{ marginTop: "2.25rem" }}>
-              <div className="genesisFloatWrap">
-                <GenesisExampleCard frontSrc="/images/IMG_1090.jpeg" width={520} />
-              </div>
+            {/* Centerpiece Genesis Preview Card (animated) */}
+            <div
+              style={{
+                marginTop: "2.25rem",
+                maxWidth: 520,
+                animation: "bbCardFloat 9s ease-in-out infinite",
+                transformOrigin: "50% 60%",
+              }}
+            >
+              <GenesisExampleCard frontSrc="/images/IMG_1090.jpeg" />
             </div>
           </div>
 
           {/* RIGHT COLUMN */}
           <div style={{ textAlign: "right" }}>
-            {/* Keep your BIT stacked text look */}
             <div
               style={{
                 fontSize: "2.4rem",
@@ -68,35 +72,18 @@ export default function HomePage() {
               <div>Brain Intelligence</div>
               <div>Token</div>
             </div>
+
+            {/* (Removed brain-evolution.gif from homepage as requested) */}
           </div>
         </div>
 
-        {/* Local animation styles (no Global CSS needed) */}
-        <style jsx>{`
-          @media (prefers-reduced-motion: reduce) {
-            .genesisFloatWrap {
-              animation: none !important;
-              transform: none !important;
-            }
-          }
-
-          .genesisFloatWrap {
-            width: fit-content;
-            max-width: 100%;
-            animation: genesisFloat 8s ease-in-out infinite;
-            transform-origin: center;
-          }
-
-          @keyframes genesisFloat {
-            0% {
-              transform: translateY(0px) rotate(-0.6deg);
-            }
-            50% {
-              transform: translateY(-10px) rotate(0.6deg);
-            }
-            100% {
-              transform: translateY(0px) rotate(-0.6deg);
-            }
+        {/* NOTE: This is NOT styled-jsx. This is safe in app/page.tsx */}
+        <style>{`
+          @keyframes bbCardFloat {
+            0%   { transform: translateY(0px) rotateZ(0deg); }
+            35%  { transform: translateY(-8px) rotateZ(-0.6deg); }
+            70%  { transform: translateY(4px) rotateZ(0.6deg); }
+            100% { transform: translateY(0px) rotateZ(0deg); }
           }
         `}</style>
       </section>
