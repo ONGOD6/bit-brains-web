@@ -14,7 +14,7 @@ export default function HomePage() {
             gap: "1.25rem",
           }}
         >
-          {/* HERO */}
+          {/* HERO TEXT */}
           <h1 className="page-title">Proof of Care comes first.</h1>
 
           <p className="page-subtitle" style={{ maxWidth: 820 }}>
@@ -35,16 +35,15 @@ export default function HomePage() {
             Enter Proof of Care →
           </Link>
 
-          {/* UNDER CONSTRUCTION */}
+          {/* UNDER CONSTRUCTION NOTICE */}
           <div
             style={{
               marginTop: "0.75rem",
               opacity: 0.65,
               fontWeight: 600,
-              lineHeight: 1.45,
             }}
           >
-            Website &amp; GitHub
+            Website & GitHub
             <br />
             Under Construction
             <br />
@@ -61,13 +60,13 @@ export default function HomePage() {
             />
           </div>
 
-          {/* EXPLICIT DISCLAIMER (FRONT PAGE) */}
+          {/* EXPLICIT DISCLAIMER */}
           <div
             style={{
               marginTop: "0.25rem",
-              maxWidth: 520,
+              maxWidth: 560,
               fontSize: 13,
-              lineHeight: 1.5,
+              lineHeight: 1.55,
               color: "rgba(255,255,255,0.60)",
             }}
           >
