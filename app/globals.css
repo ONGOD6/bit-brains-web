@@ -60,6 +60,36 @@ nav a,
   font-weight: 600;
   text-decoration: none;
 }
+/* ================================
+   ETHSCRIPTIONS PICKLE CARDS
+================================ */
+
+.eth-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 2rem;
+}
+
+.eth-card {
+  background: var(--panel);
+  border: 1px solid var(--panelBorder);
+  border-radius: 16px;
+  padding: 1rem;
+}
+
+.eth-image-wrap {
+  width: 100%;
+  aspect-ratio: 1 / 1; /* FORCE SAME SIZE */
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.eth-image-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
 
 /* ===============================
    PAGE SHELL
