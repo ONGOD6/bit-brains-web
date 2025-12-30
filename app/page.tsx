@@ -1,5 +1,4 @@
 // app/page.tsx
-
 import Link from "next/link";
 import GenesisExampleCard from "./components/GenesisExampleCard";
 
@@ -7,6 +6,7 @@ export default function HomePage() {
   return (
     <main className="page-shell">
       <section className="content-shell">
+        {/* HERO BLOCK */}
         <div
           style={{
             display: "grid",
@@ -15,6 +15,41 @@ export default function HomePage() {
             gap: "1.25rem",
           }}
         >
+          {/* BIT LOCKUP */}
+          <div
+            style={{
+              display: "grid",
+              placeItems: "center",
+              marginBottom: "0.25rem",
+            }}
+          >
+            {/* BIT (centered over INTELLIGENCE) */}
+            <div
+              style={{
+                fontSize: 28,
+                fontWeight: 800,
+                letterSpacing: "0.22em",
+                marginLeft: "0.22em", // optical centering over INTELLIGENCE
+                color: "rgba(255,255,255,0.95)",
+              }}
+            >
+              BIT
+            </div>
+
+            {/* BRAIN INTELLIGENCE TOKEN (single line) */}
+            <div
+              style={{
+                fontSize: 16,
+                fontWeight: 600,
+                letterSpacing: "0.12em",
+                textTransform: "uppercase",
+                color: "rgba(255,255,255,0.75)",
+              }}
+            >
+              Brain Intelligence Token
+            </div>
+          </div>
+
           {/* HERO TEXT */}
           <h1 className="page-title">Proof of Care comes first.</h1>
 
@@ -36,7 +71,6 @@ export default function HomePage() {
             Enter Proof of Care →
           </Link>
 
-          {/* UNDER CONSTRUCTION */}
           <div
             style={{
               marginTop: "0.75rem",
@@ -44,7 +78,7 @@ export default function HomePage() {
               fontWeight: 600,
             }}
           >
-            Website &amp; GitHub
+            Website & GitHub
             <br />
             Under Construction
             <br />
@@ -73,9 +107,9 @@ export default function HomePage() {
           >
             <strong>EXAMPLE NFT ONLY.</strong>
             <br />
-            This card is a visual prototype for demonstration purposes.
-            Final production Genesis NFTs may differ in appearance, traits,
-            and structure.
+            This card is a visual prototype for demonstration purposes. Final
+            production Genesis NFTs may differ in appearance, traits, and
+            structure.
           </div>
         </div>
       </section>
