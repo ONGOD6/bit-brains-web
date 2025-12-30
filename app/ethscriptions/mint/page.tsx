@@ -54,8 +54,7 @@ export default function EthscriptionsMintPage() {
   const [hexData, setHexData] = useState<string>("");
   const [txHash, setTxHash] = useState<string>("");
 
-  const hasProvider =
-    typeof window !== "undefined" && !!window.ethereum;
+  const hasProvider = typeof window !== "undefined" && !!window.ethereum;
 
   const fileSizeOk = useMemo(() => {
     if (!file) return false;
@@ -153,9 +152,7 @@ export default function EthscriptionsMintPage() {
       });
 
       setTxHash(hash);
-      setStatus(
-        "Transaction submitted. Once mined, the Ethscription should index."
-      );
+      setStatus("Transaction submitted. Once mined, the Ethscription should index.");
     } catch (e: any) {
       setStatus(e?.message || "Transaction failed.");
     }
@@ -181,6 +178,7 @@ export default function EthscriptionsMintPage() {
               marginTop: "1.5rem",
             }}
           >
+            {/* Left preview */}
             <img
               src="/images/IMG_6299.jpeg"
               alt="Pickle Punk Blue"
@@ -191,23 +189,49 @@ export default function EthscriptionsMintPage() {
                 border: "1px solid rgba(255,255,255,0.15)",
               }}
             />
-            <img
-              src="/images/IMG_6300.jpeg"
-              alt="Pickle Green"
-              style={{
-                width: "100%",
-                maxWidth: 320,
-                borderRadius: 12,
-                border: "1px solid rgba(255,255,255,0.15)",
-              }}
-            />
+
+            {/* Right preview (with Pickle Punks label) */}
+            <div style={{ position: "relative", width: "100%", maxWidth: 320 }}>
+              <div
+                style={{
+                  position: "absolute",
+                  top: 10,
+                  left: 0,
+                  right: 0,
+                  textAlign: "center",
+                  fontWeight: 800,
+                  letterSpacing: "0.08em",
+                  textTransform: "uppercase",
+                  fontSize: 14,
+                  color: "rgba(255,255,255,0.95)",
+                  textShadow:
+                    "0 2px 10px rgba(0,0,0,0.75), 0 0 18px rgba(255,255,255,0.18)",
+                  pointerEvents: "none",
+                  zIndex: 2,
+                }}
+              >
+                Pickle Punks
+              </div>
+
+              <img
+                src="/images/IMG_6300.jpeg"
+                alt="Pickle Punk Green"
+                style={{
+                  width: "100%",
+                  borderRadius: 12,
+                  border: "1px solid rgba(255,255,255,0.15)",
+                }}
+              />
+            </div>
           </div>
 
           {/* ---------- COPY ---------- */}
           <p style={{ opacity: 0.85, marginTop: "1rem" }}>
-            • Free Ethscriptions are included with the purchase of a Brain NFT
+            • Free Ethscriptions are included with the purchase of a Brain mint
             <br />
-            • Page under construction — mint coming soon
+            • Free descriptions are included with the purchase of a Brain mint
+            <br />
+            • Page under construction — sorry, mint coming soon
           </p>
 
           {/* ---------- WALLET ---------- */}
@@ -242,13 +266,11 @@ export default function EthscriptionsMintPage() {
                     <strong>Account:</strong> {account}
                   </div>
                   <div>
-                    <strong>Chain:</strong> {chainId || "-"}
+                    <strong>Chain:</strong> {chainId || "--"}
                   </div>
                 </>
               ) : (
-                <div>
-                  {hasProvider ? "Wallet detected." : "No wallet detected."}
-                </div>
+                <div>{hasProvider ? "Wallet detected." : "No wallet detected."}</div>
               )}
             </div>
           </div>
@@ -284,8 +306,9 @@ export default function EthscriptionsMintPage() {
               <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap" }}>
                 <div>
                   <strong>Selected:</strong>{" "}
-                  {file ? `${file.name} (${formatBytes(file.size)})` : "-"}
+                  {file ? `${file.name} (${formatBytes(file.size)})` : "--"}
                 </div>
+
                 <div>
                   <strong>Max size:</strong>{" "}
                   <input
@@ -294,9 +317,7 @@ export default function EthscriptionsMintPage() {
                     min={1024}
                     step={1024}
                     onChange={(e) =>
-                      setMaxBytes(
-                        Number(e.target.value || MAX_BYTES_DEFAULT)
-                      )
+                      setMaxBytes(Number(e.target.value || MAX_BYTES_DEFAULT))
                     }
                     style={{
                       width: 120,
@@ -351,17 +372,10 @@ export default function EthscriptionsMintPage() {
                 padding: "0.65rem 0.95rem",
                 borderRadius: 10,
                 border: "1px solid rgba(255,255,255,0.22)",
-                background:
-                  !account || !hexData
-                    ? "rgba(255,255,255,0.03)"
-                    : "rgba(255,255,255,0.06)",
-                color:
-                  !account || !hexData
-                    ? "rgba(255,255,255,0.45)"
-                    : "rgba(255,255,255,0.92)",
+                background: !account || !hexData ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.06)",
+                color: !account || !hexData ? "rgba(255,255,255,0.45)" : "rgba(255,255,255,0.92)",
                 fontWeight: 700,
-                cursor:
-                  !account || !hexData ? "not-allowed" : "pointer",
+                cursor: !account || !hexData ? "not-allowed" : "pointer",
               }}
             >
               3) Send 0 ETH Inscription Tx
