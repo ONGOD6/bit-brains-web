@@ -231,7 +231,29 @@ export default function EthscriptionsMintPage() {
             <br />
             • Page under construction — mint coming soon
           </p>
-
+{/* ---------- FULL WIDTH BRAIN EVOLUTION ---------- */}
+<div
+  style={{
+    width: "100vw",
+    position: "relative",
+    left: "50%",
+    right: "50%",
+    marginLeft: "-50vw",
+    marginRight: "-50vw",
+    marginTop: "4rem",
+  }}
+>
+  <img
+    src="/images/brain-evolution.gif"
+    alt="Brain Evolution"
+    style={{
+      width: "100%",
+      height: "auto",
+      display: "block",
+      borderTop: "1px solid rgba(255,255,255,0.10)",
+    }}
+  />
+</div>
           {/* ---------- WALLET ---------- */}
           <div
             style={{
