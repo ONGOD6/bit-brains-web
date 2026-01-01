@@ -224,38 +224,27 @@ export default function EthscriptionsMintPage() {
           </p>
 
           {/* ---------- PICKLE PREVIEWS (same-size cards) ---------- */}
-          <div
-            style={{
-              display: "flex",
-              gap: "1.5rem",
-              flexWrap: "wrap",
-              marginTop: "1.5rem",
-              alignItems: "flex-start",
-            }}
-          >
-            {/* LEFT (blue) */}
-            <div style={previewCard}>
-              <div style={squareFrame}>
-                <img
-                  src="/images/IMG_6299.jpeg"
-                  alt="Pickle Punk Blue"
-                  style={squareImg}
-                />
-              </div>
-            </div>
-
-            {/* RIGHT (green/gold) */}
-            <div style={previewCard}>
-              <div style={squareFrame}>
-                <img
-                  src="/images/IMG_6300.jpeg"
-                  alt="Pickle Punk Green"
-                  style={squareImg}
-                />
-              </div>
-            </div>
-          </div>
-
+        
+<div
+  style={{
+    display: "flex",
+    gap: "1.5rem",
+    flexWrap: "wrap",
+    marginTop: "1.5rem",
+    alignItems: "flex-start",
+  }}
+>
+  {/* ONLY (green) */}
+  <div style={previewCard}>
+    <div style={squareFrame}>
+      <img
+        src="/images/IMG_6300.jpeg"
+        alt="Pickle Punk Green"
+        style={squareImg}
+      />
+    </div>
+  </div>
+</div>
           {/* ---------- COPY (kept clean) ---------- */}
           <p style={{ opacity: 0.85, marginTop: "1rem" }}>
             • Free Ethscriptions are included with the purchase of a Brain mint
