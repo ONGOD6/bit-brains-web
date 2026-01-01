@@ -223,38 +223,7 @@ export default function EthscriptionsMintPage() {
             Free Ethscriptions for the community.
           </p>
 
-          {/* ---------- PICKLE PREVIEWS (same-size cards) ---------- */}
-        <div
-  style={{
-    display: "flex",
-    gap: "1.5rem",
-    flexWrap: "wrap",
-    marginTop: "1.5rem",
-    alignItems: "flex-start",
-  }}
->
-  {/* GREEN PICKLE #1 */}
-  <div style={previewCard}>
-    <div style={squareFrame}>
-      <img
-        src="/images/IMG_6300.jpeg"
-        alt="Pickle Punk Green"
-        style={squareImg}
-      />
-    </div>
-  </div>
-
-  {/* GREEN PICKLE #2 (bandanna) */}
-  <div style={previewCard}>
-    <div style={squareFrame}>
-      <img
-        src="/images/IMG_1373.jpeg"
-        alt="Pickle Punk Green Bandanna"
-        style={squareImg}
-      />
-    </div>
-  </div>
-</div>
+      
 
           {/* ---------- COPY (kept clean) ---------- */}
           <p style={{ opacity: 0.85, marginTop: "1rem" }}>
