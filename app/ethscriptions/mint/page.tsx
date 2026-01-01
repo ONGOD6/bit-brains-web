@@ -231,7 +231,7 @@ export default function EthscriptionsMintPage() {
             <br />
             • Page under construction — mint coming soon
           </p>
-{/* ---------- FULL WIDTH BRAIN EVOLUTION ---------- */}
+ 
 
           {/* ---------- WALLET ---------- */}
           <div
@@ -409,6 +409,28 @@ export default function EthscriptionsMintPage() {
           {txHash && (
             <div style={{ marginTop: 10, fontSize: 13, opacity: 0.85 }}>
               <strong>Tx Hash:</strong> {txHash}
+              {/* ===== Brain Evolution Footer ===== */}
+<div
+  style={{
+    marginTop: "4rem",
+    marginBottom: "2rem",
+    width: "50%",
+    maxWidth: "720px",
+    marginLeft: "auto",
+    marginRight: "auto",
+    opacity: 0.9,
+  }}
+>
+  <img
+    src="/brain-evolution.gif"
+    alt="Brain evolution"
+    style={{
+      width: "100%",
+      height: "auto",
+      display: "block",
+    }}
+  />
+</div>
             </div>
           )}
         </div>
