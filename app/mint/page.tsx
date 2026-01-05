@@ -1,5 +1,4 @@
-// app/mint/page.tsx
-import GenesisExampleCard from "../components/GenesisExampleCard";
+// /mint/page.tsx
 
 export default function MintPage() {
   return (
@@ -29,13 +28,24 @@ export default function MintPage() {
             </button>
           </div>
 
-          {/* CARD PREVIEW */}
-          <div style={{ marginTop: "2.25rem" }}>
-            <GenesisExampleCard
-              frontSrc="/images/IMG_1090.jpeg"
-              rotateFront
-              rotateSeconds={26}
-              accentColor="rgba(120,185,255,0.95)"
+          {/* BRAIN IMAGE PREVIEW (replaces card) */}
+          <div
+            style={{
+              marginTop: "2.25rem",
+              width: "100%",
+              maxWidth: 520,
+              opacity: 0.95,
+            }}
+          >
+            <img
+              src="/brain-evolution.gif"
+              alt="Brain evolution"
+              style={{
+                width: "100%",
+                height: "auto",
+                display: "block",
+                borderRadius: 18,
+              }}
             />
           </div>
 
@@ -50,7 +60,7 @@ export default function MintPage() {
             }}
           >
             <strong style={{ color: "rgba(255,255,255,0.82)" }}>
-              EXAMPLE NFT ONLY — NOT FINAL PRODUCTION.
+              EXAMPLE IMAGE ONLY — NOT FINAL PRODUCTION.
             </strong>
             <br />
             This preview is a visual prototype for demonstration purposes. Final
