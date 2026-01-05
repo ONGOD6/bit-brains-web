@@ -1,6 +1,5 @@
 // app/page.tsx
 import Link from "next/link";
-import GenesisExampleCard from "./components/GenesisExampleCard";
 
 export default function HomePage() {
   return (
@@ -36,7 +35,7 @@ export default function HomePage() {
               BIT
             </div>
 
-            {/* BRAIN INTELLIGENCE TOKEN (single line) */}
+            {/* BRAIN INTELLIGENCE TOKEN */}
             <div
               style={{
                 fontSize: 16,
@@ -85,13 +84,24 @@ export default function HomePage() {
             Launching Soon
           </div>
 
-          {/* CARD CENTERPIECE */}
-          <div style={{ marginTop: "2.25rem" }}>
-            <GenesisExampleCard
-              frontSrc="/images/IMG_1090.jpeg"
-              rotateFront
-              rotateSeconds={26}
-              accentColor="rgba(120,185,255,0.95)"
+          {/* BRAIN IMAGE CENTERPIECE (replaces card) */}
+          <div
+            style={{
+              marginTop: "2.25rem",
+              width: "100%",
+              maxWidth: 520,
+              opacity: 0.95,
+            }}
+          >
+            <img
+              src="/brain-evolution.gif"
+              alt="Brain evolution"
+              style={{
+                width: "100%",
+                height: "auto",
+                display: "block",
+                borderRadius: 18,
+              }}
             />
           </div>
 
@@ -105,9 +115,9 @@ export default function HomePage() {
               color: "rgba(255,255,255,0.55)",
             }}
           >
-            <strong>EXAMPLE NFT ONLY.</strong>
+            <strong>EXAMPLE IMAGE ONLY.</strong>
             <br />
-            This card is a visual prototype for demonstration purposes. Final
+            This image is a visual prototype for demonstration purposes. Final
             production Genesis NFTs may differ in appearance, traits, and
             structure.
           </div>
