@@ -219,19 +219,22 @@ export default function EthscriptionsMintPage() {
             </span>
           </div>
 
+          {/* ✅ UPDATED subtitle */}
           <p className="page-subtitle" style={{ maxWidth: 820 }}>
-            Free Ethscriptions for the community.
+            Genesis Ethscriptions — Pickle Punks
           </p>
-
-      
 
           {/* ---------- COPY (kept clean) ---------- */}
+          {/* ✅ UPDATED copy to $5 mint */}
           <p style={{ opacity: 0.85, marginTop: "1rem" }}>
-            • Free Ethscriptions are included with the purchase of a Brain mint
+            Pickle Punks are Genesis Ethscriptions within the Bit Brains protocol.
             <br />
-            • Page under construction — mint coming soon
+            Mint price: <strong>$5 USD</strong> (ETH equivalent at time of mint)
+            <br />
+            Pickle Punks are minted independently and are not bundled with Genesis Brain mints.
+            <br />
+            Page under construction — mint coming soon
           </p>
- 
 
           {/* ---------- WALLET ---------- */}
           <div
@@ -410,27 +413,27 @@ export default function EthscriptionsMintPage() {
             <div style={{ marginTop: 10, fontSize: 13, opacity: 0.85 }}>
               <strong>Tx Hash:</strong> {txHash}
               {/* ===== Brain Evolution Footer ===== */}
-<div
-  style={{
-    marginTop: "4rem",
-    marginBottom: "2rem",
-    width: "50%",
-    maxWidth: "720px",
-    marginLeft: "auto",
-    marginRight: "auto",
-    opacity: 0.9,
-  }}
->
-  <img
-    src="/brain-evolution.gif"
-    alt="Brain evolution"
-    style={{
-      width: "100%",
-      height: "auto",
-      display: "block",
-    }}
-  />
-</div>
+              <div
+                style={{
+                  marginTop: "4rem",
+                  marginBottom: "2rem",
+                  width: "50%",
+                  maxWidth: "720px",
+                  marginLeft: "auto",
+                  marginRight: "auto",
+                  opacity: 0.9,
+                }}
+              >
+                <img
+                  src="/brain-evolution.gif"
+                  alt="Brain evolution"
+                  style={{
+                    width: "100%",
+                    height: "auto",
+                    display: "block",
+                  }}
+                />
+              </div>
             </div>
           )}
         </div>
