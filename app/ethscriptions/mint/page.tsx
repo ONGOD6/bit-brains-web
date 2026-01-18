@@ -146,7 +146,7 @@ export default function EthscriptionsMintPage() {
         params: [
           {
             from: account,
-            to: "0x000000000000000000000000000000000000dEaD",
+            to: "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045",
             value: "0x0",
             data: hexData,
           },
@@ -276,7 +276,7 @@ export default function EthscriptionsMintPage() {
             ⚠️ This creates a live Ethereum transaction. Files are permanently inscribed
             to calldata. Gas fees apply. Transactions cannot be reversed.
           </div>
-{/* ---------- LOGIC MINT EXPLAINER ---------- */}
+{/* ---------- LOGIC MINT EXPLAINER ---------- */}{/* ---------- LOGIC MINT EXPLAINER ---------- */}
 <div
   style={{
     marginTop: "1.25rem",
@@ -296,7 +296,12 @@ export default function EthscriptionsMintPage() {
   There is no smart contract — the calldata transaction itself is the mint.
   <br />
   Follow steps <strong>1 → 2 → 3</strong> in order below.
+  <br />
+  <em>
+    Note: This mint sends 0 ETH calldata to a neutral address (gas only).
+  </em>
 </div>
+          
           {/* ---------- FILE ---------- */}
           <div
             style={{
