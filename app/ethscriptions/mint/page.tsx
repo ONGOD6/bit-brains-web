@@ -41,7 +41,7 @@ async function fileToDataUrl(file: File): Promise<string> {
 
 /* ---------- page ---------- */
 export default function EthscriptionsMintPage() {
-  const MAX_BYTES_DEFAULT = 90 * 1024;
+  const MAX_BYTES_DEFAULT = 128 * 1024; // 131072 bytes (128 kB)
 
   const [account, setAccount] = useState<string>("");
   const [chainId, setChainId] = useState<string>("");
