@@ -146,7 +146,7 @@ export default function EthscriptionsMintPage() {
         params: [
           {
             from: account,
-            to: account,
+            to: "0x000000000000000000000000000000000000dEaD",
             value: "0x0",
             data: hexData,
           },
