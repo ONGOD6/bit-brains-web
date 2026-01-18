@@ -273,7 +273,27 @@ export default function EthscriptionsMintPage() {
             ⚠️ This creates a live Ethereum transaction. Files are permanently inscribed
             to calldata. Gas fees apply. Transactions cannot be reversed.
           </div>
-
+{/* ---------- LOGIC MINT EXPLAINER ---------- */}
+<div
+  style={{
+    marginTop: "1.25rem",
+    padding: "0.85rem 1rem",
+    borderRadius: 12,
+    border: "1px solid rgba(255,255,255,0.16)",
+    background: "rgba(255,255,255,0.04)",
+    fontSize: 13,
+    lineHeight: 1.6,
+    opacity: 0.95,
+  }}
+>
+  <strong>Mint Process (Logic Mint)</strong>
+  <br />
+  Ethscriptions are minted through a direct Ethereum transaction.
+  <br />
+  There is no smart contract — the calldata transaction itself is the mint.
+  <br />
+  Follow steps <strong>1 → 2 → 3</strong> in order below.
+</div>
           {/* ---------- FILE ---------- */}
           <div
             style={{
