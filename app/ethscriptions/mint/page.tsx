@@ -256,7 +256,10 @@ export default function EthscriptionsMintPage() {
               )}
             </div>
           </div>
-
+<div style={{ fontSize: 12, opacity: 0.75, marginTop: 6 }}>
+  On mobile, open this site inside your wallet’s in-app browser
+  (e.g. MetaMask → Browser).
+</div>
           {/* IMPORTANT NOTICE */}
           <div
             style={{
