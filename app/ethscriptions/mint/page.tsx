@@ -160,28 +160,6 @@ export default function EthscriptionsMintPage() {
     }
   }
 
-  /* ---------- styles (kept local so you don’t have to touch globals) ---------- */
-  const previewCard: React.CSSProperties = {
-    width: "100%",
-    maxWidth: 360,
-  };
-
-  const squareFrame: React.CSSProperties = {
-    width: "100%",
-    aspectRatio: "1 / 1",
-    borderRadius: 16,
-    overflow: "hidden",
-    border: "1px solid rgba(255,255,255,0.15)",
-    background: "rgba(255,255,255,0.04)",
-  };
-
-  const squareImg: React.CSSProperties = {
-    width: "100%",
-    height: "100%",
-    objectFit: "cover",
-    display: "block",
-  };
-
   return (
     <main className="page-shell">
       <section className="content-shell">
@@ -199,7 +177,7 @@ export default function EthscriptionsMintPage() {
               Ethscriptions Mint
             </h1>
 
-            {/* badge NEXT to title (fix) */}
+            {/* badge NEXT to title */}
             <span
               style={{
                 display: "inline-flex",
@@ -215,25 +193,27 @@ export default function EthscriptionsMintPage() {
                 opacity: 0.9,
               }}
             >
-              Pickle Punks
+              Community Mint Open
             </span>
           </div>
 
-          {/* ✅ UPDATED subtitle */}
+          {/* UPDATED subtitle */}
           <p className="page-subtitle" style={{ maxWidth: 820 }}>
-            Genesis Ethscriptions — Pickle Punks
+            Ethscriptions Mint — Community Open
           </p>
 
-          {/* ---------- COPY (kept clean) ---------- */}
-          {/* ✅ UPDATED copy to $5 mint */}
-          <p style={{ opacity: 0.85, marginTop: "1rem" }}>
-            Pickle Punks are Genesis Ethscriptions within the Bit Brains protocol.
+          {/* ---------- COPY ---------- */}
+          <p style={{ opacity: 0.85, marginTop: "1rem", lineHeight: 1.65 }}>
+            <strong>Ethscriptions mint is now open for community use.</strong>
             <br />
-            Mint price: <strong>$5 USD</strong> (ETH equivalent at time of mint)
+            Assets are inscribed directly to <strong>Ethereum calldata</strong> and
+            indexed as Ethscriptions.
             <br />
-            Pickle Punks are minted independently and are not bundled with Genesis Brain mints.
+            Minting is performed directly from your wallet.
             <br />
-            Page under construction — mint coming soon
+            <strong>No protocol fee</strong> — gas only.
+            <br />
+            <span style={{ opacity: 0.9 }}>Pickle Punks mint coming soon.</span>
           </p>
 
           {/* ---------- WALLET ---------- */}
@@ -275,6 +255,23 @@ export default function EthscriptionsMintPage() {
                 <div>{hasProvider ? "No wallet connected." : "No wallet detected."}</div>
               )}
             </div>
+          </div>
+
+          {/* IMPORTANT NOTICE */}
+          <div
+            style={{
+              marginTop: "1rem",
+              padding: "0.75rem 0.9rem",
+              borderRadius: 12,
+              border: "1px solid rgba(255,255,255,0.16)",
+              background: "rgba(255,255,255,0.04)",
+              fontSize: 13,
+              opacity: 0.92,
+              lineHeight: 1.5,
+            }}
+          >
+            ⚠️ This creates a live Ethereum transaction. Files are permanently inscribed
+            to calldata. Gas fees apply. Transactions cannot be reversed.
           </div>
 
           {/* ---------- FILE ---------- */}
@@ -412,6 +409,7 @@ export default function EthscriptionsMintPage() {
           {txHash && (
             <div style={{ marginTop: 10, fontSize: 13, opacity: 0.85 }}>
               <strong>Tx Hash:</strong> {txHash}
+
               {/* ===== Brain Evolution Footer ===== */}
               <div
                 style={{
