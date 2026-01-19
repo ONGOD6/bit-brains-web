@@ -84,7 +84,7 @@ export default function HomePage() {
             Launching Soon
           </div>
 
-          {/* BITY NODES NOTICE */}
+          {/* BITY NODES + GITHUB */}
           <div
             style={{
               marginTop: "2rem",
@@ -94,9 +94,22 @@ export default function HomePage() {
             }}
           >
             <strong>BITY Nodes Protocol</strong> — Under Construction
+            <br />
+            <Link
+              href="https://github.com/ONGOD6"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                fontSize: "0.85rem",
+                textDecoration: "underline",
+                opacity: 0.85,
+              }}
+            >
+              View GitHub →
+            </Link>
           </div>
 
-          {/* BRAIN IMAGE CENTERPIECE (replaces card) */}
+          {/* BRAIN IMAGE CENTERPIECE */}
           <div
             style={{
               marginTop: "2.25rem",
