@@ -27,7 +27,7 @@ export default function HomePage() {
                 fontSize: 28,
                 fontWeight: 800,
                 letterSpacing: "0.22em",
-                marginLeft: "0.22em", // optical centering over INTELLIGENCE
+                marginLeft: "0.22em",
                 color: "rgba(255,255,255,0.95)",
               }}
             >
@@ -53,8 +53,8 @@ export default function HomePage() {
 
           <p className="page-subtitle" style={{ maxWidth: 820 }}>
             Bit Brains is a protocol for NFTs, ENS-based Identity,
-            Zero-Knowledge Proof Eligibility, and Real-World Asset Integration —
-            beginning on Ethereum.
+            Zero-Knowledge Proof Eligibility, Autonomous Intelligence Node
+            Protocol, and Real-World Asset Integration — beginning on Ethereum.
           </p>
 
           <Link
@@ -84,7 +84,7 @@ export default function HomePage() {
             Launching Soon
           </div>
 
-          {/* BITY NODES + GITHUB */}
+          {/* BITY NODES NOTICE */}
           <div
             style={{
               marginTop: "2rem",
