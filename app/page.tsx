@@ -1,4 +1,3 @@
-// app/page.tsx
 import Link from "next/link";
 
 export default function HomePage() {
@@ -70,6 +69,7 @@ export default function HomePage() {
             Enter Proof of Care →
           </Link>
 
+          {/* SITE STATUS */}
           <div
             style={{
               marginTop: "0.75rem",
@@ -82,6 +82,18 @@ export default function HomePage() {
             Under Construction
             <br />
             Launching Soon
+          </div>
+
+          {/* BITY NODES NOTICE */}
+          <div
+            style={{
+              marginTop: "2rem",
+              opacity: 0.75,
+              fontSize: "0.9rem",
+              textAlign: "center",
+            }}
+          >
+            <strong>BITY Nodes Protocol</strong> — Under Construction
           </div>
 
           {/* BRAIN IMAGE CENTERPIECE (replaces card) */}
