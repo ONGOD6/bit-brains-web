@@ -1,7 +1,7 @@
+"use client";
+
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
-
-"use client";
 
 import React, { useMemo, useState } from "react";
 
@@ -68,18 +68,26 @@ export default function EthscriptionsPicklePunksMintPage() {
 
   async function connect() {
     try {
+      setStatus("");
+      setTxHash("");
+
       if (!hasEthereum()) throw new Error("MetaMask not detected");
+
       const accounts = await window.ethereum!.request({
         method: "eth_requestAccounts",
       });
-      setAccount(accounts[0]);
+
+      setAccount((accounts as string[])?.[0] ?? "");
     } catch (e: any) {
-      setStatus(e.message);
+      setStatus(e?.message ?? "Failed to connect");
     }
   }
 
   async function mint() {
     try {
+      setStatus("");
+      setTxHash("");
+
       if (!hasEthereum()) throw new Error("MetaMask not detected");
       if (!account) throw new Error("Connect wallet first");
 
@@ -91,7 +99,7 @@ export default function EthscriptionsPicklePunksMintPage() {
 
       const tx = {
         from: account,
-        to: account, // 🔑 critical: owner = tx.to
+        to: account, // 🔑 critical: initial owner = tx.to
         value: "0x0",
         data: utf8ToHex(dataUri),
       };
@@ -102,16 +110,16 @@ export default function EthscriptionsPicklePunksMintPage() {
         params: [tx],
       });
 
-      setTxHash(hash);
-      setStatus("Mint submitted. Await indexing.");
+      setTxHash(hash as string);
+      setStatus("Mint submitted. Await confirmations / indexing.");
     } catch (e: any) {
-      setStatus(e.message);
+      setStatus(e?.message ?? "Mint failed");
     }
   }
 
   return (
     <main style={{ minHeight: "100vh", background: "#0b0b0b", color: "#fff" }}>
-      {/* 🔥 Pickle Punks Banner */}
+      {/* Pickle Punks Banner */}
       <div style={{ maxWidth: 1100, margin: "0 auto", padding: "2rem 1rem" }}>
         <img
           src="/IMG_2082.jpeg"
@@ -175,6 +183,7 @@ export default function EthscriptionsPicklePunksMintPage() {
               background: "#111",
               border: "1px solid #333",
               color: "#fff",
+              borderRadius: 10,
             }}
           />
 
@@ -190,6 +199,7 @@ export default function EthscriptionsPicklePunksMintPage() {
               background: "#111",
               border: "1px solid #333",
               color: "#fff",
+              borderRadius: 10,
             }}
           />
 
@@ -214,6 +224,7 @@ export default function EthscriptionsPicklePunksMintPage() {
               border: "1px solid #333",
               color: "#fff",
               opacity: isReady ? 1 : 0.5,
+              cursor: isReady ? "pointer" : "not-allowed",
             }}
           >
             Mint Pickle Punk Ethscription
@@ -221,8 +232,9 @@ export default function EthscriptionsPicklePunksMintPage() {
         </div>
 
         {status && (
-          <div style={{ marginTop: "1rem", opacity: 0.8 }}>{status}</div>
+          <div style={{ marginTop: "1rem", opacity: 0.85 }}>{status}</div>
         )}
+
         {txHash && (
           <div style={{ marginTop: "0.5rem", fontSize: 13 }}>
             Tx: {txHash}
