@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 
 /* ---------- types ---------- */
 declare global {
@@ -39,6 +39,12 @@ async function fileToDataUrl(file: File): Promise<string> {
   });
 }
 
+function shortenAddr(addr: string): string {
+  if (!addr) return "";
+  if (addr.length < 12) return addr;
+  return `${addr.slice(0, 6)}…${addr.slice(-4)}`;
+}
+
 /* ---------- page ---------- */
 export default function EthscriptionsMintPage() {
   const MAX_BYTES_DEFAULT = 128 * 1024; // 131072 bytes (128 kB)
@@ -54,12 +60,43 @@ export default function EthscriptionsMintPage() {
   const [hexData, setHexData] = useState<string>("");
   const [txHash, setTxHash] = useState<string>("");
 
+  // NEW: explicit recipient (defaults to connected account)
+  const [recipient, setRecipient] = useState<string>("");
+
   const hasProvider = typeof window !== "undefined" && !!window.ethereum;
 
   const fileSizeOk = useMemo(() => {
     if (!file) return false;
     return file.size <= maxBytes;
   }, [file, maxBytes]);
+
+  /* ---------- NEW: keep account/chain in sync + default recipient ---------- */
+  useEffect(() => {
+    if (!hasProvider) return;
+
+    const handleAccountsChanged = (accounts: any) => {
+      const next = Array.isArray(accounts) ? (accounts[0] ?? "") : "";
+      setAccount(next);
+      // Always default recipient to connected wallet
+      setRecipient(next);
+      setStatus(next ? "Wallet updated." : "Wallet disconnected.");
+      setTxHash("");
+    };
+
+    const handleChainChanged = (cid: any) => {
+      setChainId(String(cid ?? ""));
+      setStatus("Network changed.");
+      setTxHash("");
+    };
+
+    window.ethereum?.on?.("accountsChanged", handleAccountsChanged);
+    window.ethereum?.on?.("chainChanged", handleChainChanged);
+
+    return () => {
+      window.ethereum?.removeListener?.("accountsChanged", handleAccountsChanged);
+      window.ethereum?.removeListener?.("chainChanged", handleChainChanged);
+    };
+  }, [hasProvider]);
 
   /* ---------- wallet ---------- */
   async function connectWallet() {
@@ -75,7 +112,11 @@ export default function EthscriptionsMintPage() {
       const accounts: string[] = await window.ethereum!.request({
         method: "eth_requestAccounts",
       });
-      setAccount(accounts?.[0] ?? "");
+      const a = accounts?.[0] ?? "";
+      setAccount(a);
+
+      // NEW: default mint recipient to the connected wallet
+      setRecipient(a);
 
       const cid: string = await window.ethereum!.request({
         method: "eth_chainId",
@@ -99,9 +140,7 @@ export default function EthscriptionsMintPage() {
     }
 
     if (file.size > maxBytes) {
-      setStatus(
-        `File too large: ${formatBytes(file.size)} (max ${formatBytes(maxBytes)})`
-      );
+      setStatus(`File too large: ${formatBytes(file.size)} (max ${formatBytes(maxBytes)})`);
       return;
     }
 
@@ -140,13 +179,22 @@ export default function EthscriptionsMintPage() {
       return;
     }
 
+    // NEW: enforce recipient = connected wallet by default (and validate)
+    const toAddr = (recipient || account).trim();
+
+    if (!/^0x[a-fA-F0-9]{40}$/.test(toAddr)) {
+      setStatus("Recipient address is invalid. It must be a 0x + 40 hex characters address.");
+      return;
+    }
+
     try {
       const hash: string = await window.ethereum!.request({
         method: "eth_sendTransaction",
         params: [
           {
             from: account,
-            to: "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045",
+            // ✅ FIX: send to the connected wallet (or the recipient input)
+            to: toAddr,
             value: "0x0",
             data: hexData,
           },
@@ -154,7 +202,9 @@ export default function EthscriptionsMintPage() {
       });
 
       setTxHash(hash);
-      setStatus("Transaction submitted. Once mined, the Ethscription should index.");
+      setStatus(
+        `Transaction submitted.\nMint recipient: ${toAddr}\nOnce mined, the Ethscription should index under that wallet.`
+      );
     } catch (e: any) {
       setStatus(e?.message || "Transaction failed.");
     }
@@ -206,8 +256,7 @@ export default function EthscriptionsMintPage() {
           <p style={{ opacity: 0.85, marginTop: "1rem", lineHeight: 1.65 }}>
             <strong>Ethscriptions mint is now open for community use.</strong>
             <br />
-            Assets are inscribed directly to <strong>Ethereum calldata</strong> and
-            indexed as Ethscriptions.
+            Assets are inscribed directly to <strong>Ethereum calldata</strong> and indexed as Ethscriptions.
             <br />
             Minting is performed directly from your wallet.
             <br />
@@ -256,10 +305,11 @@ export default function EthscriptionsMintPage() {
               )}
             </div>
           </div>
-<div style={{ fontSize: 12, opacity: 0.75, marginTop: 6 }}>
-  On mobile, open this site inside your wallet’s in-app browser
-  (e.g. MetaMask → Browser).
-</div>
+
+          <div style={{ fontSize: 12, opacity: 0.75, marginTop: 6 }}>
+            On mobile, open this site inside your wallet’s in-app browser (e.g. MetaMask → Browser).
+          </div>
+
           {/* IMPORTANT NOTICE */}
           <div
             style={{
@@ -273,35 +323,83 @@ export default function EthscriptionsMintPage() {
               lineHeight: 1.5,
             }}
           >
-            ⚠️ This creates a live Ethereum transaction. Files are permanently inscribed
-            to calldata. Gas fees apply. Transactions cannot be reversed.
+            ⚠️ This creates a live Ethereum transaction. Files are permanently inscribed to calldata. Gas fees apply.
+            Transactions cannot be reversed.
           </div>
-{/* ---------- LOGIC MINT EXPLAINER ---------- */}{/* ---------- LOGIC MINT EXPLAINER ---------- */}
-<div
-  style={{
-    marginTop: "1.25rem",
-    padding: "0.85rem 1rem",
-    borderRadius: 12,
-    border: "1px solid rgba(255,255,255,0.16)",
-    background: "rgba(255,255,255,0.04)",
-    fontSize: 13,
-    lineHeight: 1.6,
-    opacity: 0.95,
-  }}
->
-  <strong>Mint Process (Logic Mint)</strong>
-  <br />
-  Ethscriptions are minted through a direct Ethereum transaction.
-  <br />
-  There is no smart contract — the calldata transaction itself is the mint.
-  <br />
-  Follow steps <strong>1 → 2 → 3</strong> in order below.
-  <br />
-  <em>
-    Note: This mint sends 0 ETH calldata to a neutral address (gas only).
-  </em>
-</div>
-          
+
+          {/* ---------- NEW: MINT RECIPIENT (defaults to connected wallet) ---------- */}
+          <div
+            style={{
+              marginTop: "1rem",
+              padding: "0.85rem 1rem",
+              borderRadius: 12,
+              border: "1px solid rgba(255,255,255,0.16)",
+              background: "rgba(255,255,255,0.04)",
+              fontSize: 13,
+              lineHeight: 1.6,
+              opacity: 0.95,
+            }}
+          >
+            <strong>Mint Recipient</strong>
+            <br />
+            Default is your connected wallet. (This is the address the Ethscription will appear under.)
+            <div style={{ display: "flex", gap: "0.6rem", flexWrap: "wrap", marginTop: "0.6rem" }}>
+              <input
+                value={recipient}
+                onChange={(e) => setRecipient(e.target.value)}
+                placeholder={account || "0x…"}
+                style={{
+                  width: 420,
+                  maxWidth: "100%",
+                  padding: "0.45rem 0.55rem",
+                  borderRadius: 10,
+                  border: "1px solid rgba(255,255,255,0.18)",
+                  background: "rgba(0,0,0,0.25)",
+                  color: "rgba(255,255,255,0.92)",
+                }}
+              />
+              <button
+                onClick={() => setRecipient(account)}
+                disabled={!account}
+                style={{
+                  padding: "0.45rem 0.65rem",
+                  borderRadius: 10,
+                  border: "1px solid rgba(255,255,255,0.18)",
+                  background: !account ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.06)",
+                  color: !account ? "rgba(255,255,255,0.45)" : "rgba(255,255,255,0.92)",
+                  fontWeight: 700,
+                  cursor: !account ? "not-allowed" : "pointer",
+                }}
+              >
+                Use connected ({account ? shortenAddr(account) : "—"})
+              </button>
+            </div>
+          </div>
+
+          {/* ---------- LOGIC MINT EXPLAINER ---------- */}
+          <div
+            style={{
+              marginTop: "1.25rem",
+              padding: "0.85rem 1rem",
+              borderRadius: 12,
+              border: "1px solid rgba(255,255,255,0.16)",
+              background: "rgba(255,255,255,0.04)",
+              fontSize: 13,
+              lineHeight: 1.6,
+              opacity: 0.95,
+            }}
+          >
+            <strong>Mint Process (Logic Mint)</strong>
+            <br />
+            Ethscriptions are minted through a direct Ethereum transaction.
+            <br />
+            There is no smart contract — the calldata transaction itself is the mint.
+            <br />
+            Follow steps <strong>1 → 2 → 3</strong> in order below.
+            <br />
+            <em>Note: This mint sends 0 ETH calldata to a neutral address (gas only).</em>
+          </div>
+
           {/* ---------- FILE ---------- */}
           <div
             style={{
@@ -313,9 +411,7 @@ export default function EthscriptionsMintPage() {
             }}
           >
             <div style={{ display: "grid", gap: "0.6rem" }}>
-              <label style={{ fontWeight: 700, opacity: 0.9 }}>
-                1) Choose file (image recommended)
-              </label>
+              <label style={{ fontWeight: 700, opacity: 0.9 }}>1) Choose file (image recommended)</label>
 
               <input
                 type="file"
@@ -332,8 +428,7 @@ export default function EthscriptionsMintPage() {
 
               <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap" }}>
                 <div>
-                  <strong>Selected:</strong>{" "}
-                  {file ? `${file.name} (${formatBytes(file.size)})` : "--"}
+                  <strong>Selected:</strong> {file ? `${file.name} (${formatBytes(file.size)})` : "--"}
                 </div>
 
                 <div>
@@ -343,9 +438,7 @@ export default function EthscriptionsMintPage() {
                     value={maxBytes}
                     min={1024}
                     step={1024}
-                    onChange={(e) =>
-                      setMaxBytes(Number(e.target.value || MAX_BYTES_DEFAULT))
-                    }
+                    onChange={(e) => setMaxBytes(Number(e.target.value || MAX_BYTES_DEFAULT))}
                     style={{
                       width: 120,
                       marginLeft: 8,
@@ -397,14 +490,8 @@ export default function EthscriptionsMintPage() {
                     padding: "0.65rem 0.95rem",
                     borderRadius: 10,
                     border: "1px solid rgba(255,255,255,0.22)",
-                    background:
-                      !account || !hexData
-                        ? "rgba(255,255,255,0.03)"
-                        : "rgba(255,255,255,0.06)",
-                    color:
-                      !account || !hexData
-                        ? "rgba(255,255,255,0.45)"
-                        : "rgba(255,255,255,0.92)",
+                    background: !account || !hexData ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.06)",
+                    color: !account || !hexData ? "rgba(255,255,255,0.45)" : "rgba(255,255,255,0.92)",
                     fontWeight: 700,
                     cursor: !account || !hexData ? "not-allowed" : "pointer",
                   }}
