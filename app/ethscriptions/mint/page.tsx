@@ -56,7 +56,7 @@ export default function EthscriptionsMintPage() {
     setStatus("");
     setTxHash("");
     if (!hasProvider) {
-      setStatus("No wallet detected. Use MetaMask, Rabby, Coinbase Wallet, or Brave Wallet.");
+      setStatus("No wallet detected. Use MetaMask, Rabby, or Brave Wallet.");
       return;
     }
     try {
@@ -64,7 +64,7 @@ export default function EthscriptionsMintPage() {
       setAccount(accounts?.[0] ?? "");
       const cid: string = await window.ethereum!.request({ method: "eth_chainId" });
       setChainId(cid ?? "");
-      setStatus("Wallet connected.");
+      setStatus("✅ Wallet connected.");
     } catch (e: any) {
       setStatus(e?.message || "Wallet connection failed.");
     }
@@ -88,7 +88,7 @@ export default function EthscriptionsMintPage() {
       const bytes = enc.encode(uri);
       const hex = bytesToHex(bytes);
       setHexData(hex);
-      setStatus("Payload ready. Next: send transaction.");
+      setStatus("✅ Payload ready. Next: send transaction.");
     } catch (e: any) {
       setStatus(e?.message || "Failed to build payload.");
     }
@@ -110,33 +110,33 @@ export default function EthscriptionsMintPage() {
       return;
     }
 
-    // Check if using smart contract wallet or exchange wallet
     try {
-      const code = await window.ethereum!.request({
-        method: "eth_getCode",
-        params: [account, "latest"]
-      });
+      setStatus("🔄 Sending transaction... Check your wallet to approve.");
       
-      if (code && code !== "0x" && code !== "0x0") {
-        setStatus("⚠️ ERROR: Smart contract wallets (Coinbase Wallet, Argent, Safe, etc.) cannot create Ethscriptions. Please use MetaMask, Rabby, or a standard EOA (Externally Owned Account) wallet.");
-        return;
-      }
-    } catch (e) {
-      console.error("Could not check wallet type:", e);
-    }
-
-    try {
       const hash: string = await window.ethereum!.request({
         method: "eth_sendTransaction",
-        params: [{ from: account, to: account, value: "0x0", data: hexData }],
+        params: [{ 
+          from: account, 
+          to: account, 
+          value: "0x0", 
+          data: hexData 
+        }],
       });
+      
       setTxHash(hash);
-      setStatus("Transaction submitted!");
+      setStatus("✅ Transaction submitted! Wait for confirmation.");
     } catch (e: any) {
-      if (e?.message?.includes("internal account")) {
-        setStatus("⚠️ ERROR: Your wallet type doesn't support Ethscriptions. You're likely using Coinbase Wallet or another smart contract wallet. Please switch to MetaMask, Rabby, or another EOA wallet.");
+      console.error("Transaction error:", e);
+      
+      // Handle specific errors
+      if (e.code === 4001) {
+        setStatus("❌ Transaction rejected by user.");
+      } else if (e?.message?.includes("internal account") || e?.message?.includes("smart contract")) {
+        setStatus("⚠️ ERROR: Your wallet is a smart contract wallet. Switch to MetaMask, Rabby, or another EOA wallet.");
+      } else if (e?.message?.includes("insufficient funds")) {
+        setStatus("❌ ERROR: Insufficient ETH for gas fees. You need at least ~0.002-0.01 ETH depending on network congestion.");
       } else {
-        setStatus(e?.message || "Transaction failed.");
+        setStatus("❌ Error: " + (e?.message || "Transaction failed."));
       }
     }
   }
@@ -176,10 +176,10 @@ export default function EthscriptionsMintPage() {
 
           <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", marginTop: "1.5rem", alignItems: "center" }}>
             <button onClick={connectWallet} style={{ padding: "0.65rem 0.95rem", borderRadius: 10, border: "1px solid rgba(255,255,255,0.22)", background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.92)", fontWeight: 700, cursor: "pointer" }}>
-              {account ? "Wallet Connected" : "Connect Wallet"}
+              {account ? "✓ Wallet Connected" : "Connect Wallet"}
             </button>
             <div style={{ opacity: 0.8, fontSize: 13 }}>
-              {account ? (<><div><strong>Account:</strong> {account}</div><div><strong>Chain:</strong> {chainId || "--"}</div></>) : (<div>{hasProvider ? "No wallet connected" : "No wallet detected"}</div>)}
+              {account ? (<><div><strong>Account:</strong> {account.slice(0, 6)}...{account.slice(-4)}</div><div><strong>Chain:</strong> {chainId === "0x1" ? "Ethereum Mainnet" : chainId || "--"}</div></>) : (<div>{hasProvider ? "No wallet connected" : "No wallet detected"}</div>)}
             </div>
           </div>
           <div style={{ marginTop: "1rem", padding: "0.75rem", borderRadius: 12, border: "1px solid rgba(255,255,255,0.16)", background: "rgba(255,255,255,0.04)", fontSize: 13 }}>
@@ -193,14 +193,14 @@ export default function EthscriptionsMintPage() {
                 <div><strong>Selected:</strong> {file ? file.name + " (" + formatBytes(file.size) + ")" : "--"}</div>
                 <div><strong>Max:</strong> <input type="number" value={maxBytes} min={1024} step={1024} onChange={(e) => setMaxBytes(Number(e.target.value || MAX_BYTES_DEFAULT))} style={{ width: 120, marginLeft: 8, padding: "0.25rem", borderRadius: 8, border: "1px solid rgba(255,255,255,0.18)", background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.92)" }} /> bytes</div>
               </div>
-              {file && <div style={{ fontWeight: 700, opacity: fileSizeOk ? 0.9 : 0.6 }}>{fileSizeOk ? "Size OK" : "Too large"}</div>}
+              {file && <div style={{ fontWeight: 700, opacity: fileSizeOk ? 0.9 : 0.6 }}>{fileSizeOk ? "✓ Size OK" : "✗ Too large"}</div>}
               <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", marginTop: "1rem" }}>
                 <button onClick={buildPayload} style={{ padding: "0.65rem 0.95rem", borderRadius: 10, border: "1px solid rgba(255,255,255,0.22)", background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.92)", fontWeight: 700, cursor: "pointer" }}>2) Build Payload</button>
                 <button onClick={submitInscriptionTx} disabled={!account || !hexData} style={{ padding: "0.65rem 0.95rem", borderRadius: 10, border: "1px solid rgba(255,255,255,0.22)", background: !account || !hexData ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.06)", color: !account || !hexData ? "rgba(255,255,255,0.45)" : "rgba(255,255,255,0.92)", fontWeight: 700, cursor: !account || !hexData ? "not-allowed" : "pointer" }}>3) Send Transaction</button>
               </div>
             </div>
           </div>
-          {status && <div style={{ marginTop: 10, padding: "0.75rem", borderRadius: 12, border: "1px solid rgba(255,255,255,0.14)", background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.82)", fontSize: 13 }}>{status}</div>}
+          {status && <div style={{ marginTop: 10, padding: "0.75rem", borderRadius: 12, border: "1px solid rgba(255,255,255,0.14)", background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.82)", fontSize: 13, whiteSpace: "pre-wrap" }}>{status}</div>}
           {txHash && <div style={{ marginTop: 10, fontSize: 13, opacity: 0.85 }}><strong>Tx Hash:</strong> {txHash}<br /><br /><a href={"https://ethscriptions.com/address/" + account} target="_blank" rel="noopener noreferrer" style={{ color: "rgba(100, 200, 255, 0.9)", textDecoration: "underline" }}>View Ethscriptions</a><br /><a href={"https://etherscan.io/tx/" + txHash} target="_blank" rel="noopener noreferrer" style={{ color: "rgba(100, 200, 255, 0.9)", textDecoration: "underline" }}>View on Etherscan</a></div>}
           <div style={{ marginTop: "4rem", marginBottom: "2rem", width: "50%", maxWidth: "720px", marginLeft: "auto", marginRight: "auto", opacity: 0.9 }}>
             <img src="/brain-evolution.gif" alt="Brain evolution" style={{ width: "100%", height: "auto", display: "block" }} />
