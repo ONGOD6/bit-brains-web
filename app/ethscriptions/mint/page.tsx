@@ -39,15 +39,12 @@ async function fileToDataUrl(file: File): Promise<string> {
   });
 }
 
-function shortenAddr(addr: string): string {
-  if (!addr) return "";
-  if (addr.length < 12) return addr;
-  return `${addr.slice(0, 6)}…${addr.slice(-4)}`;
-}
-
 /* ---------- page ---------- */
 export default function EthscriptionsMintPage() {
   const MAX_BYTES_DEFAULT = 128 * 1024; // 131072 bytes (128 kB)
+
+  // ✅ Neutral calldata sink (MetaMask-safe). Ownership is derived from `from`.
+  const NEUTRAL_TO = "0x000000000000000000000000000000000000dEaD";
 
   const [account, setAccount] = useState<string>("");
   const [chainId, setChainId] = useState<string>("");
@@ -60,9 +57,6 @@ export default function EthscriptionsMintPage() {
   const [hexData, setHexData] = useState<string>("");
   const [txHash, setTxHash] = useState<string>("");
 
-  // NEW: explicit recipient (defaults to connected account)
-  const [recipient, setRecipient] = useState<string>("");
-
   const hasProvider = typeof window !== "undefined" && !!window.ethereum;
 
   const fileSizeOk = useMemo(() => {
@@ -70,15 +64,13 @@ export default function EthscriptionsMintPage() {
     return file.size <= maxBytes;
   }, [file, maxBytes]);
 
-  /* ---------- NEW: keep account/chain in sync + default recipient ---------- */
+  /* ---------- NEW: keep account/chain in sync ---------- */
   useEffect(() => {
     if (!hasProvider) return;
 
     const handleAccountsChanged = (accounts: any) => {
       const next = Array.isArray(accounts) ? (accounts[0] ?? "") : "";
       setAccount(next);
-      // Always default recipient to connected wallet
-      setRecipient(next);
       setStatus(next ? "Wallet updated." : "Wallet disconnected.");
       setTxHash("");
     };
@@ -112,11 +104,7 @@ export default function EthscriptionsMintPage() {
       const accounts: string[] = await window.ethereum!.request({
         method: "eth_requestAccounts",
       });
-      const a = accounts?.[0] ?? "";
-      setAccount(a);
-
-      // NEW: default mint recipient to the connected wallet
-      setRecipient(a);
+      setAccount(accounts?.[0] ?? "");
 
       const cid: string = await window.ethereum!.request({
         method: "eth_chainId",
@@ -179,22 +167,15 @@ export default function EthscriptionsMintPage() {
       return;
     }
 
-    // NEW: enforce recipient = connected wallet by default (and validate)
-    const toAddr = (recipient || account).trim();
-
-    if (!/^0x[a-fA-F0-9]{40}$/.test(toAddr)) {
-      setStatus("Recipient address is invalid. It must be a 0x + 40 hex characters address.");
-      return;
-    }
-
     try {
       const hash: string = await window.ethereum!.request({
         method: "eth_sendTransaction",
         params: [
           {
+            // ✅ Ownership of the Ethscription is derived from THIS wallet (the sender)
             from: account,
-            // ✅ FIX: send to the connected wallet (or the recipient input)
-            to: toAddr,
+            // ✅ MetaMask Mobile blocks sending calldata to yourself; use a neutral sink
+            to: NEUTRAL_TO,
             value: "0x0",
             data: hexData,
           },
@@ -203,7 +184,7 @@ export default function EthscriptionsMintPage() {
 
       setTxHash(hash);
       setStatus(
-        `Transaction submitted.\nMint recipient: ${toAddr}\nOnce mined, the Ethscription should index under that wallet.`
+        `Transaction submitted.\nOwner (from): ${account}\nCalldata sink (to): ${NEUTRAL_TO}\nOnce mined, it should index under your wallet.`
       );
     } catch (e: any) {
       setStatus(e?.message || "Transaction failed.");
@@ -327,55 +308,6 @@ export default function EthscriptionsMintPage() {
             Transactions cannot be reversed.
           </div>
 
-          {/* ---------- NEW: MINT RECIPIENT (defaults to connected wallet) ---------- */}
-          <div
-            style={{
-              marginTop: "1rem",
-              padding: "0.85rem 1rem",
-              borderRadius: 12,
-              border: "1px solid rgba(255,255,255,0.16)",
-              background: "rgba(255,255,255,0.04)",
-              fontSize: 13,
-              lineHeight: 1.6,
-              opacity: 0.95,
-            }}
-          >
-            <strong>Mint Recipient</strong>
-            <br />
-            Default is your connected wallet. (This is the address the Ethscription will appear under.)
-            <div style={{ display: "flex", gap: "0.6rem", flexWrap: "wrap", marginTop: "0.6rem" }}>
-              <input
-                value={recipient}
-                onChange={(e) => setRecipient(e.target.value)}
-                placeholder={account || "0x…"}
-                style={{
-                  width: 420,
-                  maxWidth: "100%",
-                  padding: "0.45rem 0.55rem",
-                  borderRadius: 10,
-                  border: "1px solid rgba(255,255,255,0.18)",
-                  background: "rgba(0,0,0,0.25)",
-                  color: "rgba(255,255,255,0.92)",
-                }}
-              />
-              <button
-                onClick={() => setRecipient(account)}
-                disabled={!account}
-                style={{
-                  padding: "0.45rem 0.65rem",
-                  borderRadius: 10,
-                  border: "1px solid rgba(255,255,255,0.18)",
-                  background: !account ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.06)",
-                  color: !account ? "rgba(255,255,255,0.45)" : "rgba(255,255,255,0.92)",
-                  fontWeight: 700,
-                  cursor: !account ? "not-allowed" : "pointer",
-                }}
-              >
-                Use connected ({account ? shortenAddr(account) : "—"})
-              </button>
-            </div>
-          </div>
-
           {/* ---------- LOGIC MINT EXPLAINER ---------- */}
           <div
             style={{
@@ -397,7 +329,10 @@ export default function EthscriptionsMintPage() {
             <br />
             Follow steps <strong>1 → 2 → 3</strong> in order below.
             <br />
-            <em>Note: This mint sends 0 ETH calldata to a neutral address (gas only).</em>
+            <em>
+              Note: This mint sends calldata to a neutral address (gas only). Ownership is derived from the sending
+              wallet.
+            </em>
           </div>
 
           {/* ---------- FILE ---------- */}
