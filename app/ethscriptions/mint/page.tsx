@@ -43,7 +43,8 @@ async function fileToDataUrl(file: File): Promise<string> {
 export default function EthscriptionsMintPage() {
   const MAX_BYTES_DEFAULT = 128 * 1024; // 131072 bytes (128 kB)
 
-  // ✅ Neutral calldata sink (MetaMask-safe). Ownership is derived from `from`.
+  // ✅ MetaMask-safe calldata sink (do NOT send calldata to yourself).
+  // ✅ Ethscription ownership is derived from `from` (the connected wallet).
   const NEUTRAL_TO = "0x000000000000000000000000000000000000dEaD";
 
   const [account, setAccount] = useState<string>("");
@@ -64,7 +65,7 @@ export default function EthscriptionsMintPage() {
     return file.size <= maxBytes;
   }, [file, maxBytes]);
 
-  /* ---------- NEW: keep account/chain in sync ---------- */
+  /* ---------- keep account/chain in sync ---------- */
   useEffect(() => {
     if (!hasProvider) return;
 
@@ -147,7 +148,7 @@ export default function EthscriptionsMintPage() {
     }
   }
 
-  /* ---------- send tx ---------- */
+  /* ---------- send tx (FIXED) ---------- */
   async function submitInscriptionTx() {
     setStatus("");
     setTxHash("");
@@ -172,9 +173,9 @@ export default function EthscriptionsMintPage() {
         method: "eth_sendTransaction",
         params: [
           {
-            // ✅ Ownership of the Ethscription is derived from THIS wallet (the sender)
+            // ✅ Owner is derived from sender (connected wallet)
             from: account,
-            // ✅ MetaMask Mobile blocks sending calldata to yourself; use a neutral sink
+            // ✅ Neutral sink (MetaMask allows calldata here)
             to: NEUTRAL_TO,
             value: "0x0",
             data: hexData,
@@ -195,7 +196,56 @@ export default function EthscriptionsMintPage() {
     <main className="page-shell">
       <section className="content-shell">
         <div style={{ maxWidth: 860 }}>
-          {/* Title row: Ethscriptions Mint + badge */}
+          {/* =========================
+              PICKLE PUNKS HERO (TOP)
+              ========================= */}
+          <div style={{ marginBottom: "2rem", textAlign: "center" }}>
+            {/* You uploaded this to /public/IMG_2082.jpeg */}
+            <img
+              src="/IMG_2082.jpeg"
+              alt="Pickle Punks Collage"
+              style={{
+                width: "100%",
+                maxWidth: 760,
+                height: "auto",
+                borderRadius: 16,
+                border: "2px solid rgba(255,255,255,0.18)",
+                boxShadow: "0 10px 40px rgba(0,0,0,0.45)",
+                marginLeft: "auto",
+                marginRight: "auto",
+                display: "block",
+              }}
+            />
+
+            <div style={{ marginTop: "1.1rem" }}>
+              <div
+                style={{
+                  fontSize: 26,
+                  fontWeight: 900,
+                  letterSpacing: "0.02em",
+                  marginBottom: 4,
+                }}
+              >
+                Pickle Punks
+              </div>
+
+              <div
+                style={{
+                  fontSize: 14,
+                  fontWeight: 900,
+                  letterSpacing: "0.12em",
+                  textTransform: "uppercase",
+                  opacity: 0.92,
+                }}
+              >
+                Minting Soon
+              </div>
+            </div>
+          </div>
+
+          {/* =========================
+              ETHSCRIPTIONS MINT HEADER
+              ========================= */}
           <div
             style={{
               display: "flex",
@@ -208,7 +258,6 @@ export default function EthscriptionsMintPage() {
               Ethscriptions Mint
             </h1>
 
-            {/* badge NEXT to title */}
             <span
               style={{
                 display: "inline-flex",
@@ -228,12 +277,11 @@ export default function EthscriptionsMintPage() {
             </span>
           </div>
 
-          {/* UPDATED subtitle */}
           <p className="page-subtitle" style={{ maxWidth: 820 }}>
             Ethscriptions Mint — Community Open
           </p>
 
-          {/* ---------- COPY ---------- */}
+          {/* ---------- COPY (removed duplicate Pickle Punks line) ---------- */}
           <p style={{ opacity: 0.85, marginTop: "1rem", lineHeight: 1.65 }}>
             <strong>Ethscriptions mint is now open for community use.</strong>
             <br />
@@ -242,8 +290,6 @@ export default function EthscriptionsMintPage() {
             Minting is performed directly from your wallet.
             <br />
             <strong>No protocol fee</strong> — gas only.
-            <br />
-            <span style={{ opacity: 0.9 }}>Pickle Punks mint coming soon.</span>
           </p>
 
           {/* ---------- WALLET ---------- */}
@@ -331,7 +377,7 @@ export default function EthscriptionsMintPage() {
             <br />
             <em>
               Note: This mint sends calldata to a neutral address (gas only). Ownership is derived from the sending
-              wallet.
+              wallet (the “from” address).
             </em>
           </div>
 
