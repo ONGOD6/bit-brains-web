@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 
 /* ---------- types ---------- */
 declare global {
@@ -30,6 +30,11 @@ function formatBytes(n: number): string {
   return `${mb.toFixed(2)} MB`;
 }
 
+function shortAddr(addr: string): string {
+  if (!addr) return "";
+  return `${addr.slice(0, 6)}…${addr.slice(-4)}`;
+}
+
 async function fileToDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -39,21 +44,26 @@ async function fileToDataUrl(file: File): Promise<string> {
   });
 }
 
-function isHexAddress(addr: string): boolean {
-  return /^0x[a-fA-F0-9]{40}$/.test(addr.trim());
-}
-
 /* ---------- page ---------- */
 export default function EthscriptionsMintPage() {
-  const MAX_BYTES_DEFAULT = 128 * 1024; // 131072 bytes (128 KB)
+  // Keep your defaults
+  const MAX_BYTES_DEFAULT = 128 * 1024; // 131072 bytes (128 kB)
 
   /**
-   * Ethscriptions ownership is derived from the SENDER ("from") address.
-   * The "to" is simply a calldata sink (0 ETH).
+   * IMPORTANT:
+   * Ethscriptions "ownership" is derived from the SENDING WALLET (the `from` field).
+   * The `to` address is just a calldata sink (a neutral receiver). Users still own it via `from`.
    *
-   * We keep this configurable because some wallets may flag certain sink addresses.
+   * If MetaMask flags some sink addresses, you can swap this to another sink easily.
+   * Your earlier version used Vitalik's well-known address:
+   * 0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045
    */
-  const DEFAULT_SINK_TO = "0x8ba1f109551bD432803012645Ac136ddd64DBA72";
+  const DEFAULT_CALLDATA_SINK = "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045";
+
+  // UI assets (you asked for this at top)
+  // Put image at: /public/images/pickle-punks-collage.jpeg
+  // Then this path works:
+  const PICKLE_PUNKS_COLLAGE_SRC = "/images/pickle-punks-collage.jpeg";
 
   const [account, setAccount] = useState<string>("");
   const [chainId, setChainId] = useState<string>("");
@@ -66,7 +76,7 @@ export default function EthscriptionsMintPage() {
   const [hexData, setHexData] = useState<string>("");
   const [txHash, setTxHash] = useState<string>("");
 
-  const [sinkTo, setSinkTo] = useState<string>(DEFAULT_SINK_TO);
+  const [calldataSink, setCalldataSink] = useState<string>(DEFAULT_CALLDATA_SINK);
 
   const hasProvider = typeof window !== "undefined" && !!window.ethereum;
 
@@ -75,32 +85,7 @@ export default function EthscriptionsMintPage() {
     return file.size <= maxBytes;
   }, [file, maxBytes]);
 
-  const sinkToOk = useMemo(() => isHexAddress(sinkTo), [sinkTo]);
-
-  /* ---------- provider listeners ---------- */
-  useEffect(() => {
-    if (!hasProvider) return;
-
-    const handleAccountsChanged = (accounts: any) => {
-      setAccount(accounts?.[0] ?? "");
-      setTxHash("");
-      setStatus("");
-    };
-
-    const handleChainChanged = (cid: any) => {
-      setChainId(String(cid ?? ""));
-      setTxHash("");
-      setStatus("");
-    };
-
-    window.ethereum?.on?.("accountsChanged", handleAccountsChanged);
-    window.ethereum?.on?.("chainChanged", handleChainChanged);
-
-    return () => {
-      window.ethereum?.removeListener?.("accountsChanged", handleAccountsChanged);
-      window.ethereum?.removeListener?.("chainChanged", handleChainChanged);
-    };
-  }, [hasProvider]);
+  const isMainnet = chainId?.toLowerCase() === "0x1";
 
   /* ---------- wallet ---------- */
   async function connectWallet() {
@@ -108,7 +93,7 @@ export default function EthscriptionsMintPage() {
     setTxHash("");
 
     if (!hasProvider) {
-      setStatus("No wallet detected. Please use MetaMask or another EVM wallet.");
+      setStatus("No wallet detected. Use MetaMask / Rabby / Coinbase Wallet in-app browser.");
       return;
     }
 
@@ -116,7 +101,8 @@ export default function EthscriptionsMintPage() {
       const accounts: string[] = await window.ethereum!.request({
         method: "eth_requestAccounts",
       });
-      setAccount(accounts?.[0] ?? "");
+      const acct = accounts?.[0] ?? "";
+      setAccount(acct);
 
       const cid: string = await window.ethereum!.request({
         method: "eth_chainId",
@@ -140,9 +126,7 @@ export default function EthscriptionsMintPage() {
     }
 
     if (file.size > maxBytes) {
-      setStatus(
-        `File too large: ${formatBytes(file.size)} (max ${formatBytes(maxBytes)})`
-      );
+      setStatus(`File too large: ${formatBytes(file.size)} (max ${formatBytes(maxBytes)})`);
       return;
     }
 
@@ -150,7 +134,8 @@ export default function EthscriptionsMintPage() {
       const uri = await fileToDataUrl(file);
       setDataUrl(uri);
 
-      const bytes = new TextEncoder().encode(uri);
+      const enc = new TextEncoder();
+      const bytes = enc.encode(uri);
       const hex = bytesToHex(bytes);
 
       setHexData(hex);
@@ -180,13 +165,11 @@ export default function EthscriptionsMintPage() {
       return;
     }
 
-    if (!sinkToOk) {
-      setStatus("Invalid calldata sink address. Must be a 0x…40 hex address.");
-      return;
-    }
-
-    if (sinkTo.toLowerCase() === account.toLowerCase()) {
-      setStatus("Calldata sink address cannot be the same as your wallet.");
+    // Safety: warn if not mainnet (Ethscriptions indexing most commonly expected on mainnet)
+    if (chainId && !isMainnet) {
+      setStatus(
+        `Wrong network: chainId=${chainId}. Switch to Ethereum Mainnet (0x1) and try again.`
+      );
       return;
     }
 
@@ -196,7 +179,7 @@ export default function EthscriptionsMintPage() {
         params: [
           {
             from: account,
-            to: sinkTo,
+            to: calldataSink,
             value: "0x0",
             data: hexData,
           },
@@ -205,9 +188,7 @@ export default function EthscriptionsMintPage() {
 
       setTxHash(hash);
       setStatus(
-        "Transaction submitted. Once mined, the Ethscription should index.\n\n" +
-          `Owner (from): ${account}\n` +
-          `Calldata sink (to): ${sinkTo}`
+        "Transaction submitted. Once mined, the Ethscription should index.\n\nNote: Ownership is derived from the SENDING wallet (from address)."
       );
     } catch (e: any) {
       setStatus(e?.message || "Transaction failed.");
@@ -217,41 +198,42 @@ export default function EthscriptionsMintPage() {
   return (
     <main className="page-shell">
       <section className="content-shell">
-        <div style={{ maxWidth: 860, margin: "0 auto" }}>
-          {/* ---------- PICKLE PUNKS HERO ---------- */}
-          <div style={{ textAlign: "center", marginBottom: "1.75rem" }}>
+        <div style={{ maxWidth: 860 }}>
+          {/* ===== Pickle Punks Collage Header (TOP OF PAGE) ===== */}
+          <div
+            style={{
+              marginTop: "0.75rem",
+              borderRadius: 18,
+              overflow: "hidden",
+              border: "1px solid rgba(255,255,255,0.14)",
+              background: "rgba(0,0,0,0.25)",
+            }}
+          >
             <img
-              src="/IMG_2082.jpeg"
-              alt="Pickle Punks collage"
-              style={{
-                width: "100%",
-                maxWidth: 820,
-                borderRadius: 18,
-                border: "2px solid rgba(255,255,255,0.18)",
-                background: "rgba(0,0,0,0.18)",
-                boxShadow: "0 12px 50px rgba(0,0,0,0.55)",
-              }}
+              src={PICKLE_PUNKS_COLLAGE_SRC}
+              alt="Pickle Punks Collage"
+              style={{ width: "100%", height: "auto", display: "block" }}
             />
-            <div style={{ marginTop: "1rem" }}>
-              <div style={{ fontSize: 28, fontWeight: 900, letterSpacing: "0.01em" }}>
-                Pickle Punks
-              </div>
-              <div
-                style={{
-                  marginTop: 6,
-                  fontSize: 13,
-                  fontWeight: 900,
-                  letterSpacing: "0.14em",
-                  textTransform: "uppercase",
-                  opacity: 0.92,
-                }}
-              >
-                Minting Soon
-              </div>
+          </div>
+
+          <div style={{ textAlign: "center", marginTop: "1rem", marginBottom: "1.25rem" }}>
+            <div style={{ fontSize: 26, fontWeight: 900, letterSpacing: "0.02em" }}>
+              Pickle Punks
+            </div>
+            <div
+              style={{
+                marginTop: 6,
+                fontSize: 13,
+                fontWeight: 800,
+                letterSpacing: "0.22em",
+                opacity: 0.9,
+              }}
+            >
+              MINTING SOON
             </div>
           </div>
 
-          {/* ---------- Title row: Ethscriptions Mint + badge ---------- */}
+          {/* Title row: Ethscriptions Mint + badge */}
           <div
             style={{
               display: "flex",
@@ -264,6 +246,7 @@ export default function EthscriptionsMintPage() {
               Ethscriptions Mint
             </h1>
 
+            {/* badge NEXT to title */}
             <span
               style={{
                 display: "inline-flex",
@@ -291,8 +274,8 @@ export default function EthscriptionsMintPage() {
           <p style={{ opacity: 0.85, marginTop: "1rem", lineHeight: 1.65 }}>
             <strong>Ethscriptions mint is now open for community use.</strong>
             <br />
-            Assets are inscribed directly to <strong>Ethereum calldata</strong> and indexed
-            as Ethscriptions.
+            Assets are inscribed directly to <strong>Ethereum calldata</strong> and indexed as
+            Ethscriptions.
             <br />
             Minting is performed directly from your wallet.
             <br />
@@ -305,7 +288,7 @@ export default function EthscriptionsMintPage() {
               display: "flex",
               gap: "0.75rem",
               flexWrap: "wrap",
-              marginTop: "1.5rem",
+              marginTop: "1.25rem",
               alignItems: "center",
             }}
           >
@@ -317,21 +300,22 @@ export default function EthscriptionsMintPage() {
                 border: "1px solid rgba(255,255,255,0.22)",
                 background: "rgba(255,255,255,0.06)",
                 color: "rgba(255,255,255,0.92)",
-                fontWeight: 800,
+                fontWeight: 700,
                 cursor: "pointer",
               }}
             >
               {account ? "Wallet Connected" : "Connect Wallet"}
             </button>
 
-            <div style={{ opacity: 0.88, fontSize: 13 }}>
+            <div style={{ opacity: 0.8, fontSize: 13 }}>
               {account ? (
                 <>
                   <div>
                     <strong>Account:</strong> {account}
                   </div>
                   <div>
-                    <strong>Chain:</strong> {chainId || "--"}
+                    <strong>Chain:</strong> {chainId || "--"}{" "}
+                    {chainId ? (isMainnet ? "(Mainnet)" : "(Not Mainnet)") : ""}
                   </div>
                 </>
               ) : (
@@ -340,31 +324,35 @@ export default function EthscriptionsMintPage() {
             </div>
           </div>
 
-          <div style={{ fontSize: 12, opacity: 0.78, marginTop: 6 }}>
+          <div style={{ fontSize: 12, opacity: 0.75, marginTop: 6 }}>
             On mobile, open this site inside your wallet’s in-app browser (e.g. MetaMask → Browser).
           </div>
 
-          {/* ---------- COMPATIBLE WALLETS ---------- */}
+          {/* ---------- Compatible wallets ---------- */}
           <div
             style={{
               marginTop: "1rem",
               padding: "0.85rem 1rem",
-              borderRadius: 14,
+              borderRadius: 12,
               border: "1px solid rgba(255,255,255,0.16)",
               background: "rgba(255,255,255,0.04)",
               fontSize: 13,
-              lineHeight: 1.55,
-              opacity: 0.97,
+              lineHeight: 1.6,
+              opacity: 0.95,
             }}
           >
-            <div style={{ fontWeight: 900, marginBottom: 6 }}>Compatible Wallets</div>
-            <ul style={{ margin: 0, paddingLeft: 18, opacity: 0.92 }}>
-              <li>MetaMask (mobile & desktop)</li>
-              <li>Rabby Wallet</li>
-              <li>Coinbase Wallet (in-app browser)</li>
-              <li>Brave Wallet</li>
-              <li>Other EVM wallets with injected providers</li>
-            </ul>
+            <strong>Compatible Wallets</strong>
+            <div style={{ marginTop: 6, opacity: 0.9 }}>
+              • MetaMask (mobile & desktop)
+              <br />
+              • Rabby Wallet
+              <br />
+              • Coinbase Wallet (in-app browser)
+              <br />
+              • Brave Wallet
+              <br />
+              • Other EVM wallets with injected providers
+            </div>
           </div>
 
           {/* IMPORTANT NOTICE */}
@@ -387,7 +375,7 @@ export default function EthscriptionsMintPage() {
           {/* ---------- LOGIC MINT EXPLAINER ---------- */}
           <div
             style={{
-              marginTop: "1rem",
+              marginTop: "1.25rem",
               padding: "0.85rem 1rem",
               borderRadius: 12,
               border: "1px solid rgba(255,255,255,0.16)",
@@ -406,35 +394,57 @@ export default function EthscriptionsMintPage() {
             Follow steps <strong>1 → 2 → 3</strong> in order below.
             <br />
             <em>
-              Note: This mint sends calldata to a neutral address (gas only). Ownership is derived from the sending
-              wallet (the <strong>&quot;from&quot;</strong> address).
+              Note: This mint sends calldata to a neutral sink address (gas only). Ownership is derived
+              from the sending wallet (the <strong>from</strong> address).
             </em>
           </div>
 
-          {/* ---------- ADVANCED: SINK ADDRESS ---------- */}
-          <details
+          {/* ---------- MetaMask Review Alert explanation ---------- */}
+          <div
             style={{
               marginTop: "1rem",
               padding: "0.85rem 1rem",
               borderRadius: 12,
-              border: "1px solid rgba(255,255,255,0.14)",
-              background: "rgba(0,0,0,0.22)",
+              border: "1px solid rgba(255,255,255,0.16)",
+              background: "rgba(0,0,0,0.25)",
+              fontSize: 13,
+              lineHeight: 1.6,
+              opacity: 0.95,
             }}
           >
-            <summary style={{ cursor: "pointer", fontWeight: 900, opacity: 0.92 }}>
-              Advanced: Calldata Sink Address
-            </summary>
+            <strong>MetaMask “Review Alert” / “High Risk” (Expected)</strong>
+            <br />
+            MetaMask may warn because this transaction includes a large <strong>data</strong> field.
+            That’s normal for Ethscriptions (the data is the artwork/file).
+            <br />
+            Before confirming, verify:
+            <br />
+            • <strong>Value:</strong> 0 ETH
+            <br />
+            • <strong>From:</strong> your connected wallet
+            <br />
+            • <strong>To:</strong> the calldata sink address shown below
+            <br />
+            • <strong>Data:</strong> present (this is the inscription)
+          </div>
 
-            <div style={{ marginTop: 10, fontSize: 13, opacity: 0.9 }}>
-              The sink is where calldata is sent (0 ETH). Your wallet remains the owner via the{" "}
-              <strong>&quot;from&quot;</strong> field.
-            </div>
-
-            <div style={{ marginTop: 10 }}>
+          {/* ---------- FILE + SINK ---------- */}
+          <div
+            style={{
+              marginTop: "0.75rem",
+              padding: "1rem",
+              borderRadius: 14,
+              border: "1px solid rgba(255,255,255,0.14)",
+              background: "rgba(0,0,0,0.25)",
+            }}
+          >
+            {/* Sink address row */}
+            <div style={{ display: "grid", gap: "0.6rem", marginBottom: "0.85rem" }}>
+              <label style={{ fontWeight: 800, opacity: 0.9 }}>Calldata Sink Address</label>
               <input
-                value={sinkTo}
-                onChange={(e) => setSinkTo(e.target.value)}
-                placeholder="0x..."
+                value={calldataSink}
+                onChange={(e) => setCalldataSink(e.target.value)}
+                spellCheck={false}
                 style={{
                   width: "100%",
                   padding: "0.55rem 0.65rem",
@@ -445,24 +455,14 @@ export default function EthscriptionsMintPage() {
                   fontSize: 13,
                 }}
               />
-              <div style={{ marginTop: 8, fontSize: 12, opacity: 0.75 }}>
-                {sinkToOk ? "✅ Sink address format OK" : "⚠️ Invalid address format"}
+              <div style={{ fontSize: 12, opacity: 0.75 }}>
+                This address is a neutral receiver. Your Ethscription ownership is derived from the
+                sending wallet (<strong>from</strong>): {account ? shortAddr(account) : "—"}.
               </div>
             </div>
-          </details>
 
-          {/* ---------- FILE ---------- */}
-          <div
-            style={{
-              marginTop: "1rem",
-              padding: "1rem",
-              borderRadius: 14,
-              border: "1px solid rgba(255,255,255,0.14)",
-              background: "rgba(0,0,0,0.25)",
-            }}
-          >
             <div style={{ display: "grid", gap: "0.6rem" }}>
-              <label style={{ fontWeight: 900, opacity: 0.9 }}>
+              <label style={{ fontWeight: 700, opacity: 0.9 }}>
                 1) Choose file (image recommended)
               </label>
 
@@ -508,7 +508,7 @@ export default function EthscriptionsMintPage() {
               </div>
 
               {file && (
-                <div style={{ fontWeight: 900, opacity: fileSizeOk ? 0.9 : 0.6 }}>
+                <div style={{ fontWeight: 700, opacity: fileSizeOk ? 0.9 : 0.6 }}>
                   {fileSizeOk ? "✅ Size OK" : "⚠️ Too large"}
                 </div>
               )}
@@ -530,7 +530,7 @@ export default function EthscriptionsMintPage() {
                     border: "1px solid rgba(255,255,255,0.22)",
                     background: "rgba(255,255,255,0.06)",
                     color: "rgba(255,255,255,0.92)",
-                    fontWeight: 900,
+                    fontWeight: 700,
                     cursor: "pointer",
                   }}
                 >
@@ -539,21 +539,17 @@ export default function EthscriptionsMintPage() {
 
                 <button
                   onClick={submitInscriptionTx}
-                  disabled={!account || !hexData || !sinkToOk}
+                  disabled={!account || !hexData}
                   style={{
                     padding: "0.65rem 0.95rem",
                     borderRadius: 10,
                     border: "1px solid rgba(255,255,255,0.22)",
                     background:
-                      !account || !hexData || !sinkToOk
-                        ? "rgba(255,255,255,0.03)"
-                        : "rgba(255,255,255,0.06)",
+                      !account || !hexData ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.06)",
                     color:
-                      !account || !hexData || !sinkToOk
-                        ? "rgba(255,255,255,0.45)"
-                        : "rgba(255,255,255,0.92)",
-                    fontWeight: 900,
-                    cursor: !account || !hexData || !sinkToOk ? "not-allowed" : "pointer",
+                      !account || !hexData ? "rgba(255,255,255,0.45)" : "rgba(255,255,255,0.92)",
+                    fontWeight: 700,
+                    cursor: !account || !hexData ? "not-allowed" : "pointer",
                   }}
                 >
                   3) Send 0 ETH Inscription Tx
@@ -582,7 +578,7 @@ export default function EthscriptionsMintPage() {
           )}
 
           {txHash && (
-            <div style={{ marginTop: 10, fontSize: 13, opacity: 0.9 }}>
+            <div style={{ marginTop: 10, fontSize: 13, opacity: 0.85 }}>
               <strong>Tx Hash:</strong> {txHash}
 
               {/* ===== Brain Evolution Footer ===== */}
