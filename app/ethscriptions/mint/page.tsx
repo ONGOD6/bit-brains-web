@@ -13,11 +13,9 @@ declare global {
 }
 
 function bytesToHex(bytes: Uint8Array): string {
-  let hex = "0x";
-  for (let i = 0; i < bytes.length; i++) {
-    hex += bytes[i].toString(16).padStart(2, "0");
-  }
-  return hex;
+  return "0x" + Array.from(bytes)
+    .map(b => b.toString(16).padStart(2, "0"))
+    .join("");
 }
 
 function formatBytes(n: number): string {
@@ -111,6 +109,22 @@ export default function EthscriptionsMintPage() {
       setStatus("Build the payload first.");
       return;
     }
+
+    // Check if using smart contract wallet or exchange wallet
+    try {
+      const code = await window.ethereum!.request({
+        method: "eth_getCode",
+        params: [account, "latest"]
+      });
+      
+      if (code && code !== "0x" && code !== "0x0") {
+        setStatus("⚠️ ERROR: Smart contract wallets (Coinbase Wallet, Argent, Safe, etc.) cannot create Ethscriptions. Please use MetaMask, Rabby, or a standard EOA (Externally Owned Account) wallet.");
+        return;
+      }
+    } catch (e) {
+      console.error("Could not check wallet type:", e);
+    }
+
     try {
       const hash: string = await window.ethereum!.request({
         method: "eth_sendTransaction",
@@ -119,7 +133,11 @@ export default function EthscriptionsMintPage() {
       setTxHash(hash);
       setStatus("Transaction submitted!");
     } catch (e: any) {
-      setStatus(e?.message || "Transaction failed.");
+      if (e?.message?.includes("internal account")) {
+        setStatus("⚠️ ERROR: Your wallet type doesn't support Ethscriptions. You're likely using Coinbase Wallet or another smart contract wallet. Please switch to MetaMask, Rabby, or another EOA wallet.");
+      } else {
+        setStatus(e?.message || "Transaction failed.");
+      }
     }
   }
 
@@ -145,6 +163,17 @@ export default function EthscriptionsMintPage() {
             <strong>Ethscriptions mint is now open.</strong><br />
             Inscribe to Ethereum calldata. No protocol fee — gas only.
           </p>
+
+          {/* IMPORTANT WALLET WARNING */}
+          <div style={{ marginTop: "1.5rem", padding: "1rem", borderRadius: 12, border: "2px solid rgba(239, 68, 68, 0.4)", background: "rgba(239, 68, 68, 0.1)", fontSize: 14 }}>
+            <div style={{ fontWeight: 800, marginBottom: "0.5rem", color: "#fca5a5" }}>⚠️ WALLET COMPATIBILITY</div>
+            <div style={{ lineHeight: 1.6 }}>
+              <strong>Compatible wallets:</strong> MetaMask, Rabby, Brave Wallet, Rainbow, Frame<br />
+              <strong>NOT compatible:</strong> Coinbase Wallet, Smart Contract Wallets (Safe, Argent), Exchange Wallets<br />
+              <small style={{ opacity: 0.9 }}>Ethscriptions require sending data to yourself. Smart contract wallets block this.</small>
+            </div>
+          </div>
+
           <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", marginTop: "1.5rem", alignItems: "center" }}>
             <button onClick={connectWallet} style={{ padding: "0.65rem 0.95rem", borderRadius: 10, border: "1px solid rgba(255,255,255,0.22)", background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.92)", fontWeight: 700, cursor: "pointer" }}>
               {account ? "Wallet Connected" : "Connect Wallet"}
