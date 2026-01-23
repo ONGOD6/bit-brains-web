@@ -2,6 +2,14 @@
 
 import React, { useMemo, useState } from "react";
 
+/* ============================================================================
+  Ethscriptions Mint — Community Open
+  - 3-step UX (no payload download step)
+  - Uses calldata "sink" address by default for maximum wallet compatibility
+  - Optional: contract mode via NEXT_PUBLIC_ETHSCRIPTIONS_CONTRACT
+    (if you later learn the exact contract used by another project)
+============================================================================ */
+
 /* ---------- types ---------- */
 declare global {
   interface Window {
@@ -9,17 +17,39 @@ declare global {
       request: (args: { method: string; params?: any[] | object }) => Promise<any>;
       on?: (event: string, cb: (...args: any[]) => void) => void;
       removeListener?: (event: string, cb: (...args: any[]) => void) => void;
+      isMetaMask?: boolean;
     };
   }
 }
 
+/* ---------- constants ---------- */
+const MAX_BYTES_DEFAULT = 128 * 1024; // 131072 bytes (128 kB)
+const CALLDATA_SINK = "0x000000000000000000000000000000000000dEaD";
+
+// OPTIONAL: If you later find an Ethscriptions “intents/inscribe” contract
+// used by other mint sites, you can set it in Vercel env vars and redeploy:
+// NEXT_PUBLIC_ETHSCRIPTIONS_CONTRACT=0x...
+//
+// This file will automatically switch to “contract mode” if it’s set.
+const ETHSCRIPTIONS_CONTRACT =
+  (process.env.NEXT_PUBLIC_ETHSCRIPTIONS_CONTRACT || "").trim() || "";
+
+// Selector for inscribe(bytes) = 0x449b2cf6 (keccak256("inscribe(bytes)")[:4])
+const INSCRIBE_SELECTOR = "0x449b2cf6";
+
 /* ---------- helpers ---------- */
-function bytesToHex(bytes: Uint8Array): string {
-  let hex = "0x";
-  for (let i = 0; i < bytes.length; i++) {
-    hex += bytes[i].toString(16).padStart(2, "0");
-  }
-  return hex;
+function clamp(n: number, min: number, max: number) {
+  return Math.max(min, Math.min(max, n));
+}
+
+function isHexAddress(s: string) {
+  return /^0x[a-fA-F0-9]{40}$/.test(s);
+}
+
+function shortAddr(addr: string) {
+  if (!addr) return "";
+  if (addr.length < 10) return addr;
+  return `${addr.slice(0, 6)}…${addr.slice(-4)}`;
 }
 
 function formatBytes(n: number): string {
@@ -39,32 +69,70 @@ async function fileToDataUrl(file: File): Promise<string> {
   });
 }
 
-function downloadTextFile(filename: string, content: string) {
-  const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(url);
+function bytesToHex(bytes: Uint8Array): string {
+  let hex = "0x";
+  for (let i = 0; i < bytes.length; i++) {
+    hex += bytes[i].toString(16).padStart(2, "0");
+  }
+  return hex;
 }
 
-function shortAddr(addr: string) {
-  if (!addr) return "";
-  return `${addr.slice(0, 6)}…${addr.slice(-4)}`;
+function hexToBytes(hex: string): Uint8Array {
+  const clean = hex.startsWith("0x") ? hex.slice(2) : hex;
+  if (clean.length % 2 !== 0) throw new Error("Invalid hex length");
+  const out = new Uint8Array(clean.length / 2);
+  for (let i = 0; i < out.length; i++) {
+    out[i] = parseInt(clean.slice(i * 2, i * 2 + 2), 16);
+  }
+  return out;
+}
+
+function pad32(bytes: Uint8Array): Uint8Array {
+  const rem = bytes.length % 32;
+  if (rem === 0) return bytes;
+  const padded = new Uint8Array(bytes.length + (32 - rem));
+  padded.set(bytes, 0);
+  return padded;
+}
+
+function u256(n: number): Uint8Array {
+  // simple u256 encoder for small numbers
+  const out = new Uint8Array(32);
+  let x = n;
+  for (let i = 31; i >= 0; i--) {
+    out[i] = x & 0xff;
+    x = Math.floor(x / 256);
+  }
+  return out;
+}
+
+/**
+ * ABI-encode a call to inscribe(bytes data).
+ * calldata = selector (4) + offset (32) + len (32) + bytes (padded)
+ */
+function encodeInscribeBytes(bytes: Uint8Array): string {
+  const selectorBytes = hexToBytes(INSCRIBE_SELECTOR); // 4 bytes
+  const headOffset = u256(32); // first dynamic arg starts after the head (32 bytes)
+  const len = u256(bytes.length);
+  const body = pad32(bytes);
+
+  const total = new Uint8Array(
+    selectorBytes.length + headOffset.length + len.length + body.length
+  );
+  let o = 0;
+  total.set(selectorBytes, o);
+  o += selectorBytes.length;
+  total.set(headOffset, o);
+  o += headOffset.length;
+  total.set(len, o);
+  o += len.length;
+  total.set(body, o);
+
+  return bytesToHex(total);
 }
 
 /* ---------- page ---------- */
 export default function EthscriptionsMintPage() {
-  const MAX_BYTES_DEFAULT = 128 * 1024; // 131072 bytes (128 kB)
-
-  // Canonical “sink” address used in ethscriptions-style calldata mints.
-  // IMPORTANT: Ownership is derived from the SENDER (“from”), not “to”.
-  // Also avoids Coinbase “internal account cannot include data” restriction.
-  const CALLDATA_SINK = "0x000000000000000000000000000000000000dEaD";
-
   const [account, setAccount] = useState<string>("");
   const [chainId, setChainId] = useState<string>("");
   const [status, setStatus] = useState<string>("");
@@ -74,9 +142,12 @@ export default function EthscriptionsMintPage() {
 
   const [dataUrl, setDataUrl] = useState<string>("");
   const [hexData, setHexData] = useState<string>("");
-  const [txHash, setTxHash] = useState<string>("");
 
-  const [downloaded, setDownloaded] = useState<boolean>(false);
+  const [txHash, setTxHash] = useState<string>("");
+  const [isSending, setIsSending] = useState<boolean>(false);
+
+  // Default: sink mode (best compatibility). Optional: contract mode if env var set.
+  const mintMode: "sink" | "contract" = ETHSCRIPTIONS_CONTRACT ? "contract" : "sink";
 
   const hasProvider = typeof window !== "undefined" && !!window.ethereum;
 
@@ -87,6 +158,11 @@ export default function EthscriptionsMintPage() {
 
   const payloadReady = useMemo(() => !!dataUrl && !!hexData, [dataUrl, hexData]);
 
+  const recipientToShow = useMemo(() => {
+    if (mintMode === "contract") return ETHSCRIPTIONS_CONTRACT;
+    return CALLDATA_SINK;
+  }, [mintMode]);
+
   /* ---------- wallet ---------- */
   async function connectWallet() {
     setStatus("");
@@ -94,7 +170,7 @@ export default function EthscriptionsMintPage() {
 
     if (!hasProvider) {
       setStatus(
-        "No wallet detected. On desktop: install MetaMask/Rabby/Brave Wallet. On mobile: open this site inside your wallet’s in-app browser."
+        "No wallet detected. Use a compatible EVM wallet with an injected provider (MetaMask, Rabby, Coinbase Wallet in-app browser, Brave Wallet)."
       );
       return;
     }
@@ -103,13 +179,13 @@ export default function EthscriptionsMintPage() {
       const accounts: string[] = await window.ethereum!.request({
         method: "eth_requestAccounts",
       });
-      setAccount(accounts?.[0] ?? "");
 
       const cid: string = await window.ethereum!.request({
         method: "eth_chainId",
       });
-      setChainId(cid ?? "");
 
+      setAccount(accounts?.[0] ?? "");
+      setChainId(cid ?? "");
       setStatus("Wallet connected.");
     } catch (e: any) {
       setStatus(e?.message || "Wallet connection failed.");
@@ -120,57 +196,55 @@ export default function EthscriptionsMintPage() {
   async function buildPayload() {
     setStatus("");
     setTxHash("");
-    setDownloaded(false);
+    setHexData("");
+    setDataUrl("");
 
     if (!file) {
       setStatus("Choose an image/file first.");
       return;
     }
 
+    // This is the user-facing “file size” check
     if (file.size > maxBytes) {
-      setStatus(`File too large: ${formatBytes(file.size)} (max ${formatBytes(maxBytes)})`);
+      setStatus(
+        `File too large: ${formatBytes(file.size)} (max ${formatBytes(maxBytes)}). Try compressing the image.`
+      );
       return;
     }
 
     try {
       const uri = await fileToDataUrl(file);
-      setDataUrl(uri);
 
       const enc = new TextEncoder();
       const bytes = enc.encode(uri);
 
-      // IMPORTANT: enforce the actual encoded payload size
+      // This is the REAL on-chain bytes size check (data URI -> bytes)
       if (bytes.length > maxBytes) {
-        setHexData("");
         setStatus(
-          `Payload too large after encoding: ${formatBytes(bytes.length)} (max ${formatBytes(maxBytes)}). Compress the image and try again.`
+          `Payload too large after encoding: ${formatBytes(bytes.length)} (max ${formatBytes(
+            maxBytes
+          )}). Use a smaller image, more compression, or lower resolution.`
         );
         return;
       }
 
-      const hex = bytesToHex(bytes);
+      // SINK MODE:
+      // For eth_sendTransaction, data is the raw bytes (as hex) to put in calldata.
+      // Ownership/indexing derives from the SENDER (from address) in common Ethscriptions flows.
+      // CONTRACT MODE:
+      // If you later set a contract address, we encode inscribe(bytes) calldata.
+      const hex =
+        mintMode === "contract" ? encodeInscribeBytes(bytes) : bytesToHex(bytes);
+
+      setDataUrl(uri);
       setHexData(hex);
 
-      setStatus("Payload ready. Step 3: download payload file. Step 4: send inscription transaction.");
+      setStatus(
+        `Payload ready (${formatBytes(bytes.length)}). Next: Send inscription transaction.`
+      );
     } catch (e: any) {
       setStatus(e?.message || "Failed to build payload.");
     }
-  }
-
-  /* ---------- download payload ---------- */
-  function downloadPayload() {
-    setStatus("");
-
-    if (!file || !dataUrl) {
-      setStatus("Build the payload first (Step 2).");
-      return;
-    }
-
-    const safe = file.name.replace(/\s+/g, "_").replace(/[^\w.\-]/g, "");
-    downloadTextFile(`${safe}.ethscription-payload.txt`, dataUrl);
-
-    setDownloaded(true);
-    setStatus("Payload downloaded. Final step: send the inscription transaction.");
   }
 
   /* ---------- send tx ---------- */
@@ -193,39 +267,138 @@ export default function EthscriptionsMintPage() {
       return;
     }
 
-    if (!downloaded) {
-      setStatus("Download the payload file first (Step 3).");
-      return;
+    // sanity
+    if (mintMode === "contract") {
+      if (!isHexAddress(ETHSCRIPTIONS_CONTRACT)) {
+        setStatus(
+          "Contract mode is enabled, but NEXT_PUBLIC_ETHSCRIPTIONS_CONTRACT is not a valid address."
+        );
+        return;
+      }
     }
 
     try {
-      // ✅ Use sink address for broad wallet compatibility (especially Coinbase).
+      setIsSending(true);
+
+      // Optional: ask wallet for gas estimate to reduce “stuck” confirmations
+      let gas: string | undefined = undefined;
+      try {
+        const estimate: string = await window.ethereum!.request({
+          method: "eth_estimateGas",
+          params: [
+            {
+              from: account,
+              to: recipientToShow,
+              value: "0x0",
+              data: hexData,
+            },
+          ],
+        });
+        // add ~20% buffer (hex math)
+        const g = BigInt(estimate);
+        const buffered = (g * 120n) / 100n;
+        gas = "0x" + buffered.toString(16);
+      } catch {
+        // ignore estimate failures (some wallets refuse large-data estimates)
+      }
+
+      const params: any = {
+        from: account,
+        to: recipientToShow,
+        value: "0x0",
+        data: hexData,
+      };
+      if (gas) params.gas = gas;
+
       const hash: string = await window.ethereum!.request({
         method: "eth_sendTransaction",
-        params: [
-          {
-            from: account,
-            to: CALLDATA_SINK,
-            value: "0x0",
-            data: hexData,
-          },
-        ],
+        params: [params],
       });
 
       setTxHash(hash);
-      setStatus(
-        "Transaction submitted. Once mined, the Ethscription should index under your sending wallet (from address) on ethscriptions.com."
-      );
+
+      if (mintMode === "contract") {
+        setStatus(
+          "Transaction submitted (contract mode). Once mined, it should index under your wallet address."
+        );
+      } else {
+        setStatus(
+          "Transaction submitted (sink mode). Once mined, it should index under your sending wallet (from address) on ethscriptions.com."
+        );
+      }
     } catch (e: any) {
       setStatus(e?.message || "Transaction failed.");
+    } finally {
+      setIsSending(false);
     }
   }
+
+  /* ---------- UI bits ---------- */
+  const Card = ({ children }: { children: React.ReactNode }) => (
+    <div
+      style={{
+        marginTop: "1rem",
+        padding: "1rem",
+        borderRadius: 14,
+        border: "1px solid rgba(255,255,255,0.14)",
+        background: "rgba(0,0,0,0.25)",
+      }}
+    >
+      {children}
+    </div>
+  );
+
+  const Pill = ({ children }: { children: React.ReactNode }) => (
+    <span
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        padding: "0.2rem 0.55rem",
+        borderRadius: 999,
+        border: "1px solid rgba(255,255,255,0.18)",
+        background: "rgba(255,255,255,0.06)",
+        fontWeight: 800,
+        letterSpacing: "0.06em",
+        textTransform: "uppercase",
+        fontSize: 12,
+        opacity: 0.9,
+      }}
+    >
+      {children}
+    </span>
+  );
+
+  const Button = ({
+    children,
+    onClick,
+    disabled,
+  }: {
+    children: React.ReactNode;
+    onClick?: () => void;
+    disabled?: boolean;
+  }) => (
+    <button
+      onClick={onClick}
+      disabled={!!disabled}
+      style={{
+        padding: "0.65rem 0.95rem",
+        borderRadius: 10,
+        border: "1px solid rgba(255,255,255,0.22)",
+        background: disabled ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.06)",
+        color: disabled ? "rgba(255,255,255,0.45)" : "rgba(255,255,255,0.92)",
+        fontWeight: 800,
+        cursor: disabled ? "not-allowed" : "pointer",
+      }}
+    >
+      {children}
+    </button>
+  );
 
   return (
     <main className="page-shell">
       <section className="content-shell">
-        <div style={{ maxWidth: 860, margin: "0 auto" }}>
-          {/* ===================== PICKLE PUNKS HEADER (TOP) ===================== */}
+        <div style={{ maxWidth: 860 }}>
+          {/* ===================== PICKLE PUNKS BANNER (TOP) ===================== */}
           <div style={{ marginTop: "0.5rem", marginBottom: "1.5rem", textAlign: "center" }}>
             <div
               style={{
@@ -235,7 +408,6 @@ export default function EthscriptionsMintPage() {
                 background: "rgba(255,255,255,0.04)",
               }}
             >
-              {/* banner image you uploaded to /public */}
               <img
                 src="/IMG_2082.jpeg"
                 alt="Pickle Punks Collage"
@@ -259,105 +431,58 @@ export default function EthscriptionsMintPage() {
             </div>
           </div>
 
-          {/* Title row */}
+          {/* ===================== TITLE ===================== */}
           <div style={{ display: "flex", alignItems: "baseline", gap: "0.75rem", flexWrap: "wrap" }}>
             <h1 className="page-title" style={{ margin: 0 }}>
               Ethscriptions Mint
             </h1>
-
-            <span
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                padding: "0.2rem 0.55rem",
-                borderRadius: 999,
-                border: "1px solid rgba(255,255,255,0.18)",
-                background: "rgba(255,255,255,0.06)",
-                fontWeight: 800,
-                letterSpacing: "0.06em",
-                textTransform: "uppercase",
-                fontSize: 12,
-                opacity: 0.9,
-              }}
-            >
-              Community Mint Open
-            </span>
+            <Pill>Community Mint Open</Pill>
           </div>
 
           <p className="page-subtitle" style={{ maxWidth: 820 }}>
             Ethscriptions Mint — Community Open
           </p>
 
-          {/* ---------- Intro copy ---------- */}
           <p style={{ opacity: 0.85, marginTop: "1rem", lineHeight: 1.65 }}>
             <strong>Ethscriptions mint is open for community use.</strong>
             <br />
-            Files are encoded into a <strong>Data URI</strong>, then inscribed as <strong>Ethereum calldata</strong>.
+            Files are inscribed directly to <strong>Ethereum calldata</strong> and indexed as Ethscriptions.
+            <br />
+            Minting is performed directly from your connected wallet.
             <br />
             <strong>No protocol fee</strong> — gas only.
           </p>
 
-          {/* ---------- Wallet panel ---------- */}
-          <div
-            style={{
-              display: "flex",
-              gap: "0.75rem",
-              flexWrap: "wrap",
-              marginTop: "1.25rem",
-              alignItems: "center",
-            }}
-          >
-            <button
-              onClick={connectWallet}
-              style={{
-                padding: "0.65rem 0.95rem",
-                borderRadius: 10,
-                border: "1px solid rgba(255,255,255,0.22)",
-                background: "rgba(255,255,255,0.06)",
-                color: "rgba(255,255,255,0.92)",
-                fontWeight: 800,
-                cursor: "pointer",
-              }}
-            >
-              {account ? "Wallet Connected" : "Connect Wallet"}
-            </button>
+          {/* ===================== WALLET CONNECT ===================== */}
+          <Card>
+            <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", alignItems: "center" }}>
+              <Button onClick={connectWallet}>{account ? "Wallet Connected" : "Connect Wallet"}</Button>
 
-            <div style={{ opacity: 0.9, fontSize: 13 }}>
-              {account ? (
-                <>
-                  <div>
-                    <strong>Wallet:</strong> {account} ({shortAddr(account)})
-                  </div>
-                  <div>
-                    <strong>Chain:</strong> {chainId || "--"}{" "}
-                    <span style={{ opacity: 0.75 }}>(Ethereum mainnet is recommended)</span>
-                  </div>
-                </>
-              ) : (
-                <div>{hasProvider ? "No wallet connected." : "No wallet detected."}</div>
-              )}
+              <div style={{ opacity: 0.85, fontSize: 13 }}>
+                {account ? (
+                  <>
+                    <div>
+                      <strong>Account:</strong> {account}
+                    </div>
+                    <div>
+                      <strong>Chain:</strong> {chainId || "--"}
+                    </div>
+                  </>
+                ) : (
+                  <div>{hasProvider ? "No wallet connected." : "No wallet detected."}</div>
+                )}
+              </div>
             </div>
-          </div>
 
-          <div style={{ fontSize: 12, opacity: 0.75, marginTop: 8 }}>
-            Mobile tip: open this page inside your wallet’s in-app browser (MetaMask → Browser, Coinbase Wallet → Browser).
-          </div>
+            <div style={{ fontSize: 12, opacity: 0.75, marginTop: 10 }}>
+              Mobile: open this page inside your wallet’s in-app browser (MetaMask → Browser / Coinbase Wallet → Browser).
+            </div>
+          </Card>
 
-          {/* ---------- Compatible wallets ---------- */}
-          <div
-            style={{
-              marginTop: "1rem",
-              padding: "0.85rem 1rem",
-              borderRadius: 12,
-              border: "1px solid rgba(255,255,255,0.16)",
-              background: "rgba(255,255,255,0.04)",
-              fontSize: 13,
-              lineHeight: 1.6,
-              opacity: 0.95,
-            }}
-          >
+          {/* ===================== COMPATIBILITY ===================== */}
+          <Card>
             <strong>Compatible Wallets</strong>
-            <div style={{ marginTop: 8 }}>
+            <div style={{ marginTop: 8, fontSize: 13, lineHeight: 1.6, opacity: 0.95 }}>
               • MetaMask (desktop + mobile in-app browser)
               <br />
               • Coinbase Wallet (mobile in-app browser)
@@ -368,63 +493,56 @@ export default function EthscriptionsMintPage() {
               <br />
               • Any EVM wallet that injects <code>window.ethereum</code>
             </div>
-          </div>
 
-          {/* ---------- Important notice ---------- */}
-          <div
-            style={{
-              marginTop: "1rem",
-              padding: "0.75rem 0.9rem",
-              borderRadius: 12,
-              border: "1px solid rgba(255,255,255,0.16)",
-              background: "rgba(255,255,255,0.04)",
-              fontSize: 13,
-              opacity: 0.92,
-              lineHeight: 1.5,
-            }}
-          >
-            ⚠️ This creates a live Ethereum transaction. Data is permanently inscribed to calldata. Gas fees apply. Transactions cannot be reversed.
-            <br />
-            <span style={{ opacity: 0.85 }}>
-              MetaMask warnings about “large data / unusual transaction” are normal for calldata mints.
-            </span>
-          </div>
+            <div
+              style={{
+                marginTop: 12,
+                padding: "0.75rem 0.9rem",
+                borderRadius: 12,
+                border: "1px solid rgba(255,255,255,0.16)",
+                background: "rgba(255,255,255,0.04)",
+                fontSize: 13,
+                opacity: 0.92,
+                lineHeight: 1.55,
+              }}
+            >
+              ⚠️ This creates a live Ethereum transaction. Data is permanently inscribed to calldata. Gas fees apply. Transactions cannot be reversed.
+              <br />
+              MetaMask warnings like <em>“large data / unusual transaction”</em> are normal for calldata mints.
+            </div>
+          </Card>
 
-          {/* ---------- Steps explainer ---------- */}
-          <div
-            style={{
-              marginTop: "1.25rem",
-              padding: "0.85rem 1rem",
-              borderRadius: 12,
-              border: "1px solid rgba(255,255,255,0.16)",
-              background: "rgba(255,255,255,0.04)",
-              fontSize: 13,
-              lineHeight: 1.6,
-              opacity: 0.95,
-            }}
-          >
+          {/* ===================== MINT PROCESS ===================== */}
+          <Card>
             <strong>Mint Process</strong>
-            <br />
-            Follow steps <strong>1 → 2 → 3 → 4</strong> in order.
-            <br />
-            <em>
-              This uses a calldata “sink” transaction. The Ethscription indexes to the <strong>sending wallet</strong> (from address).
-              This is the most compatible flow across wallets (including Coinbase).
-            </em>
-          </div>
+            <div style={{ marginTop: 8, fontSize: 13, lineHeight: 1.65, opacity: 0.95 }}>
+              Follow steps <strong>1 → 2 → 3</strong> in order.
+              <br />
+              <em>
+                Mode:{" "}
+                <strong>{mintMode === "contract" ? "Contract mode" : "Sink mode (recommended)"}</strong>
+              </em>
+              <br />
+              Recipient (to): <strong>{recipientToShow}</strong>
+              <br />
+              {mintMode === "sink" ? (
+                <>
+                  Using a sink address avoids Coinbase “internal accounts cannot include data” errors.
+                  The Ethscription indexes to your <strong>from</strong> (sender) address.
+                </>
+              ) : (
+                <>
+                  Contract mode is enabled because NEXT_PUBLIC_ETHSCRIPTIONS_CONTRACT is set.
+                  The call is encoded as <code>inscribe(bytes)</code>.
+                </>
+              )}
+            </div>
+          </Card>
 
-          {/* ---------- File + actions card ---------- */}
-          <div
-            style={{
-              marginTop: "0.75rem",
-              padding: "1rem",
-              borderRadius: 14,
-              border: "1px solid rgba(255,255,255,0.14)",
-              background: "rgba(0,0,0,0.25)",
-            }}
-          >
+          {/* ===================== STEP 1: FILE ===================== */}
+          <Card>
             <div style={{ display: "grid", gap: "0.6rem" }}>
-              <label style={{ fontWeight: 800, opacity: 0.95 }}>1) Choose file (image recommended)</label>
+              <label style={{ fontWeight: 900, opacity: 0.92 }}>1) Choose file (image recommended)</label>
 
               <input
                 type="file"
@@ -434,7 +552,6 @@ export default function EthscriptionsMintPage() {
                   setTxHash("");
                   setDataUrl("");
                   setHexData("");
-                  setDownloaded(false);
                   const f = e.target.files?.[0] ?? null;
                   setFile(f);
                 }}
@@ -452,7 +569,7 @@ export default function EthscriptionsMintPage() {
                     value={maxBytes}
                     min={1024}
                     step={1024}
-                    onChange={(e) => setMaxBytes(Number(e.target.value || MAX_BYTES_DEFAULT))}
+                    onChange={(e) => setMaxBytes(clamp(Number(e.target.value || MAX_BYTES_DEFAULT), 1024, 512 * 1024))}
                     style={{
                       width: 120,
                       marginLeft: 8,
@@ -468,89 +585,45 @@ export default function EthscriptionsMintPage() {
               </div>
 
               {file && (
-                <div style={{ fontWeight: 800, opacity: fileSizeOk ? 0.95 : 0.7 }}>
-                  {fileSizeOk ? "✅ Size OK" : "⚠️ Too large (must be ≤ 128 KB)"}
+                <div style={{ fontWeight: 900, opacity: fileSizeOk ? 0.92 : 0.65, fontSize: 13 }}>
+                  {fileSizeOk ? "✅ Size OK" : "⚠️ Too large (compress the image)"}
                 </div>
               )}
-
-              <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", marginTop: "0.75rem" }}>
-                <button
-                  onClick={buildPayload}
-                  style={{
-                    padding: "0.65rem 0.95rem",
-                    borderRadius: 10,
-                    border: "1px solid rgba(255,255,255,0.22)",
-                    background: "rgba(255,255,255,0.06)",
-                    color: "rgba(255,255,255,0.92)",
-                    fontWeight: 800,
-                    cursor: "pointer",
-                  }}
-                >
-                  2) Build Payload (Data URI → Hex)
-                </button>
-
-                <button
-                  onClick={downloadPayload}
-                  disabled={!payloadReady}
-                  style={{
-                    padding: "0.65rem 0.95rem",
-                    borderRadius: 10,
-                    border: "1px solid rgba(255,255,255,0.22)",
-                    background: payloadReady ? "rgba(255,255,255,0.06)" : "rgba(255,255,255,0.03)",
-                    color: payloadReady ? "rgba(255,255,255,0.92)" : "rgba(255,255,255,0.45)",
-                    fontWeight: 800,
-                    cursor: payloadReady ? "pointer" : "not-allowed",
-                  }}
-                >
-                  3) Download Payload File
-                </button>
-
-                <button
-                  onClick={submitInscriptionTx}
-                  disabled={!account || !payloadReady || !downloaded}
-                  style={{
-                    padding: "0.65rem 0.95rem",
-                    borderRadius: 10,
-                    border: "1px solid rgba(255,255,255,0.22)",
-                    background:
-                      !account || !payloadReady || !downloaded
-                        ? "rgba(255,255,255,0.03)"
-                        : "rgba(255,255,255,0.06)",
-                    color:
-                      !account || !payloadReady || !downloaded
-                        ? "rgba(255,255,255,0.45)"
-                        : "rgba(255,255,255,0.92)",
-                    fontWeight: 800,
-                    cursor: !account || !payloadReady || !downloaded ? "not-allowed" : "pointer",
-                  }}
-                >
-                  4) Send Inscription Transaction
-                </button>
-              </div>
-
-              <div style={{ marginTop: 10, fontSize: 12, opacity: 0.8, lineHeight: 1.45 }}>
-                <strong>Recipient (to):</strong> {CALLDATA_SINK}
-                <br />
-                <span style={{ opacity: 0.85 }}>
-                  Using a sink address avoids Coinbase “internal accounts cannot include data” errors. The Ethscription indexes to your{" "}
-                  <strong>from</strong> (sender) address.
-                </span>
-              </div>
             </div>
-          </div>
+          </Card>
 
-          {/* ---------- Status output ---------- */}
+          {/* ===================== STEP 2 + 3 ACTIONS ===================== */}
+          <Card>
+            <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
+              <Button onClick={buildPayload} disabled={!file}>
+                2) Build Payload (Data URI → Calldata)
+              </Button>
+
+              <Button onClick={submitInscriptionTx} disabled={!account || !payloadReady || isSending}>
+                3) Send Inscription Transaction
+              </Button>
+            </div>
+
+            <div style={{ marginTop: 12, fontSize: 12, opacity: 0.78, lineHeight: 1.55 }}>
+              If MetaMask hangs on “Review alert”, try:
+              <br />• Use a smaller file (aim under ~80–100KB). Data URI grows vs the original image.
+              <br />• Tap “Speed / Advanced” and confirm gas (we try to estimate gas automatically).
+              <br />• If you’re in a wallet browser, refresh and reconnect wallet, then rebuild payload.
+            </div>
+          </Card>
+
+          {/* ===================== STATUS ===================== */}
           {status && (
             <div
               style={{
                 marginTop: 12,
-                padding: "0.75rem 0.9rem",
+                padding: "0.85rem 0.9rem",
                 borderRadius: 12,
                 border: "1px solid rgba(255,255,255,0.14)",
                 background: "rgba(255,255,255,0.04)",
-                color: "rgba(255,255,255,0.86)",
+                color: "rgba(255,255,255,0.82)",
                 fontSize: 13,
-                lineHeight: 1.5,
+                lineHeight: 1.55,
                 whiteSpace: "pre-wrap",
               }}
             >
@@ -559,24 +632,28 @@ export default function EthscriptionsMintPage() {
           )}
 
           {txHash && (
-            <div style={{ marginTop: 12, fontSize: 13, opacity: 0.9 }}>
+            <div style={{ marginTop: 12, fontSize: 13, opacity: 0.88 }}>
               <strong>Tx Hash:</strong> {txHash}
             </div>
           )}
 
-          {/* Optional footer gif (kept small, doesn’t break layout) */}
+          {/* ===== Footer GIF ===== */}
           <div
             style={{
-              marginTop: "3rem",
+              marginTop: "4rem",
               marginBottom: "2rem",
-              width: "60%",
+              width: "50%",
               maxWidth: "720px",
               marginLeft: "auto",
               marginRight: "auto",
               opacity: 0.9,
             }}
           >
-            <img src="/brain-evolution.gif" alt="Brain evolution" style={{ width: "100%", height: "auto", display: "block" }} />
+            <img
+              src="/brain-evolution.gif"
+              alt="Brain evolution"
+              style={{ width: "100%", height: "auto", display: "block" }}
+            />
           </div>
         </div>
       </section>
