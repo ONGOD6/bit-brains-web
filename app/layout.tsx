@@ -20,12 +20,31 @@ export default function RootLayout({
           <Link href="/pocc">POCC</Link>
           <Link href="/manifesto">Protocol Standards</Link>
           <Link href="/ens">ENS</Link>
-          <Link href="/mint">Genesis</Link>
 
-          {/* Ethscriptions (Mint) */}
-          <Link href="/ethscriptions/mint">
-            <span style={{ display: "inline-block", lineHeight: 1.05, textAlign: "center" }}>
-              Ethscriptions
+          {/* Genesis Mints */}
+          <Link href="/bitbrains/mint">
+            <span
+              style={{
+                display: "inline-block",
+                lineHeight: 1.05,
+                textAlign: "center",
+              }}
+            >
+              Bit Brains
+              <br />
+              Genesis Mint
+            </span>
+          </Link>
+
+          <Link href="/picklepunks/mint">
+            <span
+              style={{
+                display: "inline-block",
+                lineHeight: 1.05,
+                textAlign: "center",
+              }}
+            >
+              Pickle Punks
               <br />
               Mint
             </span>
