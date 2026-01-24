@@ -19,7 +19,7 @@ declare global {
 }
 
 /* ================= CONFIG ================= */
-const MINTING_ENABLED = false;
+const MINTING_ENABLED = true;
 
 /**
  * "to" can be almost anything. Many people use a "dead" address.
