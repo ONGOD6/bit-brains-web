@@ -3,34 +3,28 @@
 import React, { useMemo, useState } from "react";
 
 /**
- * Pickle Punks — Clean One-Page Mint (Vercel Safe)
+ * Pickle Punks — Ethscriptions Mint Page
  *
- * ✅ Banner: /public/IMG_2082.jpeg
- * ✅ 3 steps only
- * ✅ Ethscription Metadata Artifact = calldata (Etherscan Input Data)
- * ✅ NO BigInt
- * ✅ NO for..of Uint8Array
- * ✅ Passes Next.js 14 + Vercel TS build
+ * - Ethscription = immutable calldata artifact
+ * - Verifiable forever via Etherscan → Input Data
+ * - Vercel / Next.js 14 safe
  */
 
 declare global {
   interface Window {
     ethereum?: {
       request: (args: { method: string; params?: any[] | object }) => Promise<any>;
-      on?: (event: string, cb: (...args: any[]) => void) => void;
-      removeListener?: (event: string, cb: (...args: any[]) => void) => void;
       isMetaMask?: boolean;
     };
   }
 }
 
 /* ================= CONFIG ================= */
-const MINTING_ENABLED = false; // flip true when ready
-const PICKLEPUNKS_NFT_CONTRACT = "TBD";
+const MINTING_ENABLED = false;
 
 /* ================= CONSTANTS ================= */
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
-const GAS_LIMIT_ETHSCRIPTION = "0x186A0"; // ~100k
+const GAS_LIMIT = "0x186A0";
 
 /* ================= HELPERS ================= */
 function shorten(addr: string) {
@@ -46,61 +40,59 @@ function utf8ToHex(str: string): string {
   return hex;
 }
 
-function safeJsonParse<T>(s: string): { ok: true; value: T } | { ok: false; error: string } {
+function safeJsonParse(s: string):
+  | { ok: true; value: unknown }
+  | { ok: false } {
   try {
-    return { ok: true, value: JSON.parse(s) as T };
-  } catch (e: any) {
-    return { ok: false, error: e?.message || "Invalid JSON" };
+    return { ok: true, value: JSON.parse(s) };
+  } catch {
+    return { ok: false };
   }
 }
 
-function buildEthscriptionDataUrl(opts: {
+function buildEthscriptionPayload(opts: {
   name: string;
   description: string;
-  imageUrl: string;
-  externalUrl?: string;
-  attributes?: Array<{ trait_type: string; value: string | number }>;
+  image: string;
+  external_url: string;
+  attributes: Array<{ trait_type: string; value: string | number }>;
 }) {
-  const metadata = {
+  return `data:application/json,${JSON.stringify({
     name: opts.name,
     description: opts.description,
-    image: opts.imageUrl,
-    external_url: opts.externalUrl || "",
-    attributes: opts.attributes || [],
+    image: opts.image,
+    external_url: opts.external_url,
+    attributes: opts.attributes,
     ethscriptions: {
-      type: "PicklePunks-MetadataArtifact",
-      storage: "Ethereum calldata",
-      verification: "Etherscan → Input Data",
+      type: "metadata",
+      storage: "ethereum-calldata",
+      verification: "etherscan-input-data",
     },
-  };
-
-  return `data:application/json,${JSON.stringify(metadata)}`;
+  })}`;
 }
 
 /* ================= UI ================= */
-type BtnProps = {
+function Button(props: {
   children: React.ReactNode;
   onClick?: () => void;
   disabled?: boolean;
-};
-
-function Btn({ children, onClick, disabled }: BtnProps) {
+}) {
   return (
     <button
-      onClick={onClick}
-      disabled={disabled}
+      onClick={props.onClick}
+      disabled={props.disabled}
       style={{
-        padding: "10px 14px",
-        borderRadius: 12,
-        border: "1px solid rgba(255,255,255,0.18)",
-        background: "rgba(255,255,255,0.10)",
+        padding: "10px 16px",
+        borderRadius: 14,
+        border: "1px solid rgba(255,255,255,0.2)",
+        background: "rgba(255,255,255,0.08)",
         color: "white",
         fontWeight: 800,
-        cursor: disabled ? "not-allowed" : "pointer",
-        opacity: disabled ? 0.6 : 1,
+        cursor: props.disabled ? "not-allowed" : "pointer",
+        opacity: props.disabled ? 0.5 : 1,
       }}
     >
-      {children}
+      {props.children}
     </button>
   );
 }
@@ -108,84 +100,71 @@ function Btn({ children, onClick, disabled }: BtnProps) {
 /* ================= PAGE ================= */
 export default function PicklePunksMintPage() {
   const [account, setAccount] = useState("");
-  const [chainId, setChainId] = useState("");
-  const [ethscriptionTx, setEthscriptionTx] = useState("");
+  const [txHash, setTxHash] = useState("");
   const [error, setError] = useState("");
   const [sending, setSending] = useState(false);
 
-  const hasWallet = typeof window !== "undefined" && Boolean(window.ethereum);
-
-  const [name, setName] = useState("Pickle Punks — Ethscription Metadata Artifact");
-  const [description, setDescription] = useState(
-    "Immutable Pickle Punks metadata artifact. Stored on Ethereum as calldata and verifiable forever via transaction Input Data."
-  );
-
-  const [attributesJson, setAttributesJson] = useState(
+  const [attributesJson] = useState(
     JSON.stringify(
       [
         { trait_type: "Collection", value: "Pickle Punks" },
-        { trait_type: "Artifact", value: "Ethscription Metadata" },
-        { trait_type: "Proof", value: "Calldata (Etherscan Input Data)" },
+        { trait_type: "Artifact", value: "Ethscription" },
+        { trait_type: "Storage", value: "Ethereum Calldata" },
       ],
       null,
       2
     )
   );
 
-  const parsedAttrs = useMemo(() => safeJsonParse<any>(attributesJson), [attributesJson]);
-  const attrsOk = parsedAttrs.ok && Array.isArray(parsedAttrs.value);
+  const parsed = useMemo(() => safeJsonParse(attributesJson), [attributesJson]);
+  const attributes =
+    parsed.ok && Array.isArray(parsed.value)
+      ? parsed.value
+      : [];
 
   const payload = useMemo(
     () =>
-      buildEthscriptionDataUrl({
-        name,
-        description,
-        imageUrl: "/IMG_2082.jpeg",
-        externalUrl: "https://bitbrains.us",
-        attributes: attrsOk ? parsedAttrs.value : [],
+      buildEthscriptionPayload({
+        name: "Pickle Punks — Genesis Ethscription",
+        description:
+          "Immutable Pickle Punks metadata stored as an Ethscription. Permanently verifiable on Ethereum.",
+        image: "/IMG_2082.jpeg",
+        external_url: "https://bitbrains.us",
+        attributes,
       }),
-    [name, description, attrsOk, parsedAttrs]
+    [attributes]
   );
 
   async function connect() {
     try {
-      setError("");
-      if (!window.ethereum) throw new Error("No wallet detected. Use MetaMask or a wallet browser.");
-
-      const accs = (await window.ethereum.request({ method: "eth_requestAccounts" })) as string[];
-      setAccount(accs?.[0] || "");
-
-      const cid = (await window.ethereum.request({ method: "eth_chainId" })) as string;
-      setChainId(cid || "");
+      const accounts = (await window.ethereum?.request({
+        method: "eth_requestAccounts",
+      })) as string[];
+      if (accounts?.[0]) setAccount(accounts[0]);
     } catch (e: any) {
-      setError(e?.message || "Failed to connect wallet");
+      setError(e?.message || "Wallet connection failed");
     }
   }
 
-  async function mintEthscriptionArtifact() {
+  async function mintEthscription() {
     try {
       setSending(true);
       setError("");
 
-      if (!window.ethereum) throw new Error("No wallet detected.");
-      if (!account) throw new Error("Connect your wallet first.");
-      if (!attrsOk) throw new Error("Attributes JSON must be a valid array.");
-
-      // Ethscriptions-style artifact: calldata payload in tx data
-      const tx = (await window.ethereum.request({
+      const tx = (await window.ethereum?.request({
         method: "eth_sendTransaction",
         params: [
           {
             from: account,
             to: ZERO_ADDRESS,
             value: "0x0",
-            gas: GAS_LIMIT_ETHSCRIPTION,
+            gas: GAS_LIMIT,
             data: utf8ToHex(payload),
           },
         ],
       })) as string;
 
-      setEthscriptionTx(tx || "");
+      setTxHash(tx);
     } catch (e: any) {
       setError(e?.message || "Transaction failed");
     } finally {
@@ -194,123 +173,57 @@ export default function PicklePunksMintPage() {
   }
 
   return (
-    <main style={{ maxWidth: 900, margin: "0 auto", padding: 24, color: "white" }}>
+    <main style={{ maxWidth: 900, margin: "0 auto", padding: 28, color: "white" }}>
       <img
         src="/IMG_2082.jpeg"
         alt="Pickle Punks"
         style={{
           width: "100%",
-          maxWidth: 880,
           borderRadius: 18,
-          border: "3px solid rgba(202,162,74,0.95)",
-          display: "block",
-          margin: "0 auto 16px",
+          border: "3px solid rgba(202,162,74,0.9)",
+          marginBottom: 18,
         }}
       />
 
-      <div style={{ textAlign: "center", fontWeight: 900, letterSpacing: 2, marginBottom: 24 }}>
+      <div style={{ textAlign: "center", fontWeight: 900, letterSpacing: 2 }}>
         MINTING SOON
       </div>
 
-      <h3>Step 1 — Connect Wallet</h3>
-      {!hasWallet ? (
-        <p style={{ color: "#ff8080" }}>No wallet detected. Use MetaMask or a wallet browser.</p>
-      ) : account ? (
-        <p>
-          Connected: <strong>{shorten(account)}</strong>{" "}
-          <span style={{ opacity: 0.7, fontSize: 12 }}>({chainId || "unknown chain"})</span>
-        </p>
+      <h3 style={{ marginTop: 28 }}>Step 1 — Connect Wallet</h3>
+      {account ? (
+        <p>Connected: {shorten(account)}</p>
       ) : (
-        <Btn onClick={connect}>Connect Wallet</Btn>
+        <Button onClick={connect}>Connect Wallet</Button>
       )}
 
-      <h3 style={{ marginTop: 20 }}>Step 2 — Mint Ethscription Metadata Artifact</h3>
-      <p style={{ opacity: 0.78, marginTop: 6 }}>
-        This creates an immutable on-chain artifact stored in Ethereum calldata. Anyone can verify it on Etherscan by
-        opening the transaction and viewing <strong>Input Data</strong>.
-      </p>
+      <h3 style={{ marginTop: 24 }}>
+        Step 2 — Mint Ethscription (Immutable)
+      </h3>
+      <Button
+        disabled={!account || sending || !MINTING_ENABLED}
+        onClick={mintEthscription}
+      >
+        {MINTING_ENABLED ? "Mint Ethscription" : "Minting Disabled"}
+      </Button>
 
-      <div style={{ display: "grid", gap: 10, marginTop: 10, maxWidth: 760 }}>
-        <label style={{ fontSize: 12, opacity: 0.8 }}>Name</label>
-        <input
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          style={{
-            padding: "10px 12px",
-            borderRadius: 12,
-            border: "1px solid rgba(255,255,255,0.16)",
-            background: "rgba(255,255,255,0.06)",
-            color: "white",
-            outline: "none",
-          }}
-        />
+      {txHash && (
+        <p style={{ marginTop: 16 }}>
+          Ethscription TX:{" "}
+          <a
+            href={`https://etherscan.io/tx/${txHash}`}
+            target="_blank"
+            rel="noreferrer"
+          >
+            View on Etherscan
+          </a>
+        </p>
+      )}
 
-        <label style={{ fontSize: 12, opacity: 0.8 }}>Description</label>
-        <textarea
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          style={{
-            padding: "10px 12px",
-            borderRadius: 12,
-            border: "1px solid rgba(255,255,255,0.16)",
-            background: "rgba(255,255,255,0.06)",
-            color: "white",
-            outline: "none",
-            minHeight: 90,
-          }}
-        />
+      {error && <p style={{ color: "#ff8080" }}>{error}</p>}
 
-        <label style={{ fontSize: 12, opacity: 0.8 }}>Attributes (JSON array)</label>
-        <textarea
-          value={attributesJson}
-          onChange={(e) => setAttributesJson(e.target.value)}
-          spellCheck={false}
-          style={{
-            padding: "10px 12px",
-            borderRadius: 12,
-            border: "1px solid rgba(255,255,255,0.16)",
-            background: "rgba(255,255,255,0.06)",
-            color: "white",
-            outline: "none",
-            minHeight: 120,
-          }}
-        />
-
-        {!attrsOk && (
-          <p style={{ color: "#ff8080", margin: 0 }}>
-            Attributes JSON must be a valid array.{" "}
-            {parsedAttrs.ok ? "Currently it is not an array." : `Error: ${parsedAttrs.error}`}
-          </p>
-        )}
-
-        <Btn disabled={!account || sending || !attrsOk || !MINTING_ENABLED} onClick={mintEthscriptionArtifact}>
-          {MINTING_ENABLED ? (sending ? "Minting…" : "Mint Ethscription") : "Minting Disabled"}
-        </Btn>
-
-        {ethscriptionTx && (
-          <p style={{ marginTop: 8 }}>
-            Ethscription TX:{" "}
-            <a href={`https://etherscan.io/tx/${ethscriptionTx}`} target="_blank" rel="noreferrer">
-              View on Etherscan
-            </a>
-          </p>
-        )}
-
-        {error && <p style={{ color: "#ff8080", marginTop: 6 }}>{error}</p>}
-      </div>
-
-      <h3 style={{ marginTop: 26 }}>Step 3 — Mint NFT (Coming Soon)</h3>
-      <p style={{ opacity: 0.78 }}>
-        The tradable ERC-721 mint will go here once the contract and mint function ABI/signature are finalized.
-      </p>
-
-      <div style={{ marginTop: 16, fontSize: 12, opacity: 0.65 }}>
-        Contract: <strong>{PICKLEPUNKS_NFT_CONTRACT}</strong>
-      </div>
-
-      <p style={{ marginTop: 24, opacity: 0.7 }}>
-        This Ethscription metadata artifact is stored forever in Ethereum calldata and can always be verified via
-        Etherscan Input Data.
+      <p style={{ marginTop: 28, opacity: 0.75 }}>
+        This Ethscription is stored permanently in Ethereum calldata and can
+        always be verified via Etherscan Input Data.
       </p>
     </main>
   );
