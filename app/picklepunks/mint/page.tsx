@@ -14,24 +14,22 @@ declare global {
 /**
  * Pickle Punks — ETHSCRIPTIONS TEST MODE (ERC-721 DISABLED)
  *
- * ✅ Banner on top: /public/IMG_2082.jpeg
+ * ✅ Banner: /public/IMG_2082.jpeg
  * ✅ Wallet connect
- * ✅ Mint Ethscription (single tx)
- * ✅ No burn address warning (self-send: to = account)
- * ✅ Payload is readable on Etherscan Input Data
- * ✅ Payload includes ENS anchors (bitbrains.eth + picklepunks.eth)
- *
- * ERC-721 mint stays locked OFF until HashLips JSON metadata is ready.
+ * ✅ Mint Ethscription with readable Input Data
+ * ✅ Avoids MetaMask "internal account cannot include data" by NOT self-sending
+ * ✅ Uses a normal external recipient address (Vitalik)
  */
 
-/* ================= CONFIG ================= */
 const ETHSCRIPTIONS_ENABLED = true;
 const ERC721_ENABLED = false;
+
+// Recipient for the Ethscription tx (external address; avoids MetaMask internal-account rule)
+const TO_ADDRESS = "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045"; // Vitalik
 
 // Gas limit for inscription tx (hex string)
 const GAS_LIMIT_ETHSCRIPTION_HEX = "0x186A0"; // 100,000 (adjust if needed)
 
-/* ================= HELPERS ================= */
 function shorten(addr: string) {
   return addr ? `${addr.slice(0, 6)}…${addr.slice(-4)}` : "";
 }
@@ -45,12 +43,6 @@ function utf8ToHex(str: string): string {
   return hex;
 }
 
-/**
- * Build a VALID data URI. We embed "roots" by including ENS anchors
- * inside the JSON itself (not by sending to an ENS recipient).
- *
- * Readable on Etherscan -> Input Data
- */
 function buildEthscriptionTestDataUri() {
   const payload = {
     type: "bitbrains.ethscriptions.test",
@@ -64,12 +56,10 @@ function buildEthscriptionTestDataUri() {
     timestamp: new Date().toISOString(),
   };
 
-  // ✅ MUST be percent-encoded to remain a valid data URI
   const encoded = encodeURIComponent(JSON.stringify(payload));
   return `data:application/json,${encoded}`;
 }
 
-/* ================= UI ================= */
 function Button(props: {
   children: React.ReactNode;
   onClick?: () => void;
@@ -130,14 +120,13 @@ export default function PicklePunksMintPage() {
 
       const dataUri = buildEthscriptionTestDataUri();
 
-      // ✅ Self-send avoids MetaMask burn address warning
       const tx = (await window.ethereum.request({
         method: "eth_sendTransaction",
         params: [
           {
             from: account,
-            to: account,
-            value: "0x0",
+            to: TO_ADDRESS,
+            value: "0x0", // ✅ sends 0 ETH (no funds leave, just gas)
             gas: GAS_LIMIT_ETHSCRIPTION_HEX,
             data: utf8ToHex(dataUri),
           },
@@ -154,7 +143,6 @@ export default function PicklePunksMintPage() {
 
   return (
     <main style={{ maxWidth: 900, margin: "0 auto", padding: 28, color: "white" }}>
-      {/* ✅ TOP BANNER */}
       <img
         src="/IMG_2082.jpeg"
         alt="Pickle Punks Banner"
@@ -189,10 +177,11 @@ export default function PicklePunksMintPage() {
 
       <h3 style={{ marginTop: 22 }}>Step 3 — Mint Ethscription (Test)</h3>
       <p style={{ opacity: 0.8, marginTop: 6 }}>
-        This sends a transaction whose <b>Input Data</b> is a JSON data URI containing:
-        <br />
+        This sends a tx whose <b>Input Data</b> is a JSON data URI containing:{" "}
         <code>testing bitbrains</code> + ENS anchors (<code>bitbrains.eth</code>,{" "}
-        <code>picklepunks.eth</code>)
+        <code>picklepunks.eth</code>).
+        <br />
+        Recipient is an external address to avoid MetaMask internal-account restrictions.
       </p>
 
       <Button disabled={!account || sending || !ETHSCRIPTIONS_ENABLED} onClick={mintEthscription}>
@@ -214,11 +203,6 @@ export default function PicklePunksMintPage() {
       )}
 
       {error && <p style={{ color: "#ff8080", marginTop: 14 }}>{error}</p>}
-
-      <p style={{ marginTop: 22, opacity: 0.75 }}>
-        After minting, open the tx on Etherscan → find <b>Input Data</b>. You should see a{" "}
-        <code>data:application/json</code> payload with the message and ENS anchors.
-      </p>
     </main>
   );
 }
