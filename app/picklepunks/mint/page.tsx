@@ -1,6 +1,20 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
+
+/**
+ * Pickle Punks — Mint Page (LOCKED / PARKED)
+ *
+ * STATUS:
+ * - Minting scheduled: March 1
+ * - ERC-721 mint: DISABLED
+ * - Ethscriptions mint: DISABLED (logic preserved & tested)
+ *
+ * PURPOSE:
+ * - Keep full mint logic in place
+ * - Prevent any transactions until launch window
+ * - Avoid breaking tested Ethscriptions calldata flow
+ */
 
 declare global {
   interface Window {
@@ -11,25 +25,24 @@ declare global {
   }
 }
 
-/**
- * Pickle Punks — ETHSCRIPTIONS TEST MODE (ERC-721 DISABLED)
- *
- * ✅ Banner: /public/IMG_2082.jpeg
- * ✅ Wallet connect
- * ✅ Mint Ethscription with readable Input Data
- * ✅ Avoids MetaMask "internal account cannot include data" by NOT self-sending
- * ✅ Uses a normal external recipient address (Vitalik)
- */
-
-const ETHSCRIPTIONS_ENABLED = true;
+/* ===================== LAUNCH FLAGS ===================== */
+const MINTING_LIVE = false; // 🔒 flip to true when ready
 const ERC721_ENABLED = false;
+const ETHSCRIPTIONS_ENABLED = false;
 
-// Recipient for the Ethscription tx (external address; avoids MetaMask internal-account rule)
-const TO_ADDRESS = "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045"; // Vitalik
+/* ===================== CONSTANTS ===================== */
+const BANNER_IMAGE = "/IMG_2082.jpeg";
 
-// Gas limit for inscription tx (hex string)
-const GAS_LIMIT_ETHSCRIPTION_HEX = "0x186A0"; // 100,000 (adjust if needed)
+/**
+ * External EOA used previously for successful Ethscriptions indexing.
+ * Kept here to preserve exact working logic.
+ */
+const ETHSCRIPTION_TO_ADDRESS =
+  "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045"; // Vitalik
 
+const GAS_LIMIT_ETHSCRIPTION = "0x186A0"; // 100,000
+
+/* ===================== HELPERS ===================== */
 function shorten(addr: string) {
   return addr ? `${addr.slice(0, 6)}…${addr.slice(-4)}` : "";
 }
@@ -43,23 +56,7 @@ function utf8ToHex(str: string): string {
   return hex;
 }
 
-function buildEthscriptionTestDataUri() {
-  const payload = {
-    type: "bitbrains.ethscriptions.test",
-    version: "1.0",
-    message: "testing bitbrains",
-    anchors: {
-      protocol_ens: "bitbrains.eth",
-      collection_ens: "picklepunks.eth",
-      site: "https://bitbrains.us",
-    },
-    timestamp: new Date().toISOString(),
-  };
-
-  const encoded = encodeURIComponent(JSON.stringify(payload));
-  return `data:application/json,${encoded}`;
-}
-
+/* ===================== UI ===================== */
 function Button(props: {
   children: React.ReactNode;
   onClick?: () => void;
@@ -70,9 +67,9 @@ function Button(props: {
       onClick={props.onClick}
       disabled={props.disabled}
       style={{
-        padding: "10px 16px",
+        padding: "12px 18px",
         borderRadius: 14,
-        border: "1px solid rgba(255,255,255,0.2)",
+        border: "1px solid rgba(255,255,255,0.25)",
         background: "rgba(255,255,255,0.08)",
         color: "white",
         fontWeight: 800,
@@ -85,124 +82,161 @@ function Button(props: {
   );
 }
 
+/* ===================== PAGE ===================== */
 export default function PicklePunksMintPage() {
   const [account, setAccount] = useState("");
-  const [ethscriptionTxHash, setEthscriptionTxHash] = useState("");
-  const [sending, setSending] = useState(false);
+  const [txHash, setTxHash] = useState("");
   const [error, setError] = useState("");
 
-  async function connect() {
+  /* ---------- LOCKED ETHSCRIPTION PAYLOAD (TESTED) ---------- */
+  const payloadObject = useMemo(
+    () => ({
+      type: "bitbrains.ethscriptions.test",
+      version: "1.0",
+      message: "testing bitbrains",
+      anchors: {
+        protocol_ens: "bitbrains.eth",
+        collection_ens: "picklepunks.eth",
+        site: "https://bitbrains.us",
+      },
+      timestamp: new Date().toISOString(),
+    }),
+    []
+  );
+
+  const ethscriptionPayload = useMemo(() => {
+    const encoded = encodeURIComponent(JSON.stringify(payloadObject));
+    return `data:application/json,${encoded}`;
+  }, [payloadObject]);
+
+  /* ===================== ACTIONS ===================== */
+  async function connectWallet() {
     try {
       setError("");
       if (!window.ethereum) {
-        setError("No wallet found. Install MetaMask.");
+        setError("Wallet not found.");
         return;
       }
       const accounts = (await window.ethereum.request({
         method: "eth_requestAccounts",
       })) as string[];
-
       if (accounts?.[0]) setAccount(accounts[0]);
     } catch (e: any) {
-      setError(e?.message || "Wallet connection failed");
+      setError(e?.message || "Failed to connect wallet.");
     }
   }
 
   async function mintEthscription() {
-    try {
-      setSending(true);
-      setError("");
-      setEthscriptionTxHash("");
+    // 🔒 HARD STOP — parked until launch
+    setError("Minting is disabled until March 1.");
+    return;
 
-      if (!window.ethereum) throw new Error("No wallet found.");
-      if (!account) throw new Error("Connect your wallet first.");
-      if (!ETHSCRIPTIONS_ENABLED) throw new Error("Ethscriptions minting is disabled.");
-
-      const dataUri = buildEthscriptionTestDataUri();
-
-      const tx = (await window.ethereum.request({
-        method: "eth_sendTransaction",
-        params: [
-          {
-            from: account,
-            to: TO_ADDRESS,
-            value: "0x0", // ✅ sends 0 ETH (no funds leave, just gas)
-            gas: GAS_LIMIT_ETHSCRIPTION_HEX,
-            data: utf8ToHex(dataUri),
-          },
-        ],
-      })) as string;
-
-      setEthscriptionTxHash(tx);
-    } catch (e: any) {
-      setError(e?.message || "Ethscription mint failed");
-    } finally {
-      setSending(false);
-    }
+    /*
+    // --- PRESERVED, TESTED LOGIC (DO NOT DELETE) ---
+    const tx = await window.ethereum.request({
+      method: "eth_sendTransaction",
+      params: [
+        {
+          from: account,
+          to: ETHSCRIPTION_TO_ADDRESS,
+          value: "0x0",
+          gas: GAS_LIMIT_ETHSCRIPTION,
+          data: utf8ToHex(ethscriptionPayload),
+        },
+      ],
+    });
+    setTxHash(tx as string);
+    */
   }
 
+  /* ===================== RENDER ===================== */
   return (
-    <main style={{ maxWidth: 900, margin: "0 auto", padding: 28, color: "white" }}>
-      <img
-        src="/IMG_2082.jpeg"
-        alt="Pickle Punks Banner"
-        style={{
-          width: "100%",
-          borderRadius: 18,
-          border: "3px solid rgba(202,162,74,0.9)",
-          marginBottom: 18,
-        }}
-      />
+    <main
+      style={{
+        minHeight: "100vh",
+        background: "#0b0b0b",
+        color: "white",
+        padding: 28,
+      }}
+    >
+      <div style={{ maxWidth: 960, margin: "0 auto" }}>
+        {/* ===== Banner ===== */}
+        <img
+          src={BANNER_IMAGE}
+          alt="Pickle Punks"
+          style={{
+            width: "100%",
+            borderRadius: 18,
+            border: "3px solid rgba(202,162,74,0.9)",
+            marginBottom: 18,
+          }}
+        />
 
-      <div style={{ textAlign: "center", fontWeight: 900, letterSpacing: 2 }}>
-        PICKLE PUNKS — ETHSCRIPTIONS TEST MODE
-      </div>
+        {/* ===== Status ===== */}
+        <div
+          style={{
+            textAlign: "center",
+            fontWeight: 900,
+            fontSize: 22,
+            letterSpacing: 2,
+            marginBottom: 6,
+          }}
+        >
+          MINTING MARCH 1
+        </div>
 
-      <p style={{ marginTop: 12, opacity: 0.8 }}>
-        ERC-721 mint is locked <b>OFF</b> until HashLips JSON metadata is finished.
-      </p>
-
-      <h3 style={{ marginTop: 18 }}>Step 1 — Connect Wallet</h3>
-      {account ? (
-        <p>Connected: {shorten(account)}</p>
-      ) : (
-        <Button onClick={connect}>Connect Wallet</Button>
-      )}
-
-      <h3 style={{ marginTop: 22 }}>Step 2 — Mint Pickle Punk (ERC-721)</h3>
-      <p style={{ opacity: 0.75, marginTop: 6 }}>
-        Coming soon — disabled until metadata JSON is ready.
-      </p>
-      <Button disabled={!ERC721_ENABLED}>Mint ERC-721 (Disabled)</Button>
-
-      <h3 style={{ marginTop: 22 }}>Step 3 — Mint Ethscription (Test)</h3>
-      <p style={{ opacity: 0.8, marginTop: 6 }}>
-        This sends a tx whose <b>Input Data</b> is a JSON data URI containing:{" "}
-        <code>testing bitbrains</code> + ENS anchors (<code>bitbrains.eth</code>,{" "}
-        <code>picklepunks.eth</code>).
-        <br />
-        Recipient is an external address to avoid MetaMask internal-account restrictions.
-      </p>
-
-      <Button disabled={!account || sending || !ETHSCRIPTIONS_ENABLED} onClick={mintEthscription}>
-        {sending ? "Minting…" : "Mint Ethscription"}
-      </Button>
-
-      {ethscriptionTxHash && (
-        <p style={{ marginTop: 12 }}>
-          Ethscription TX:{" "}
-          <a
-            href={`https://etherscan.io/tx/${ethscriptionTxHash}`}
-            target="_blank"
-            rel="noreferrer"
-            style={{ textDecoration: "underline" }}
-          >
-            View on Etherscan
-          </a>
+        <p style={{ textAlign: "center", opacity: 0.8 }}>
+          Minting is temporarily disabled while final ERC-721 metadata is completed.
         </p>
-      )}
 
-      {error && <p style={{ color: "#ff8080", marginTop: 14 }}>{error}</p>}
+        {/* ===== Wallet ===== */}
+        <h3 style={{ marginTop: 28 }}>Step 1 — Connect Wallet</h3>
+        {account ? (
+          <p>Connected: {shorten(account)}</p>
+        ) : (
+          <Button onClick={connectWallet} disabled={!MINTING_LIVE}>
+            Connect Wallet
+          </Button>
+        )}
+
+        {/* ===== ERC-721 ===== */}
+        <h3 style={{ marginTop: 24 }}>Step 2 — Mint Pickle Punk (ERC-721)</h3>
+        <p style={{ opacity: 0.7 }}>
+          ERC-721 minting will open on March 1.
+        </p>
+        <Button disabled>Mint ERC-721 (Disabled)</Button>
+
+        {/* ===== Ethscriptions ===== */}
+        <h3 style={{ marginTop: 24 }}>Step 3 — Mint Ethscription</h3>
+        <p style={{ opacity: 0.7 }}>
+          Ethscriptions logic is tested and locked. Minting opens March 1.
+        </p>
+        <Button disabled onClick={mintEthscription}>
+          Mint Ethscription (Disabled)
+        </Button>
+
+        {/* ===== Debug / Status ===== */}
+        {txHash && (
+          <p style={{ marginTop: 16 }}>
+            TX:{" "}
+            <a
+              href={`https://etherscan.io/tx/${txHash}`}
+              target="_blank"
+              rel="noreferrer"
+            >
+              {txHash}
+            </a>
+          </p>
+        )}
+
+        {error && (
+          <p style={{ marginTop: 16, color: "#ff8080" }}>{error}</p>
+        )}
+
+        <p style={{ marginTop: 32, opacity: 0.6 }}>
+          This page is intentionally locked to prevent accidental mints before launch.
+        </p>
+      </div>
     </main>
   );
 }
