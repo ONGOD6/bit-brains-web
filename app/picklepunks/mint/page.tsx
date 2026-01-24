@@ -1,11 +1,11 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 
 /* ======================================================
-   CONFIG FLAGS
+   CONFIG
    ====================================================== */
-const MINTING_ENABLED = false; // 🔒 flip to true when live
+const MINTING_ENABLED = false;
 
 /* ======================================================
    GLOBAL TYPES
@@ -14,8 +14,6 @@ declare global {
   interface Window {
     ethereum?: {
       request: (args: { method: string; params?: any[] | object }) => Promise<any>;
-      on?: (event: string, cb: (...args: any[]) => void) => void;
-      removeListener?: (event: string, cb: (...args: any[]) => void) => void;
       isMetaMask?: boolean;
     };
   }
@@ -44,7 +42,7 @@ function utf8ToHex(str: string): string {
 /* ======================================================
    PAGE
    ====================================================== */
-export default function EthscriptionsMintPage() {
+export default function PicklePunksMintPage() {
   const [account, setAccount] = useState("");
   const [txHash, setTxHash] = useState("");
   const [error, setError] = useState("");
@@ -70,7 +68,7 @@ export default function EthscriptionsMintPage() {
       setSending(true);
       setError("");
 
-      const payload = `data:application/json,{"name":"Bit Brains Ethscription","status":"genesis"}`;
+      const payload = `data:application/json,{"collection":"Pickle Punks","status":"genesis"}`;
       const dataHex = utf8ToHex(payload);
 
       const tx = await window.ethereum!.request({
@@ -94,7 +92,7 @@ export default function EthscriptionsMintPage() {
     }
   }
 
-  /* ---------- step logic (3 steps ONLY) ---------- */
+  /* ---------- steps (3 only) ---------- */
   const step = useMemo(() => {
     if (!account) return 1;
     if (!txHash) return 2;
@@ -102,31 +100,34 @@ export default function EthscriptionsMintPage() {
   }, [account, txHash]);
 
   return (
-    <main style={{ maxWidth: 900, margin: "0 auto", padding: 24, color: "#fff" }}>
+    <main style={{ maxWidth: 960, margin: "0 auto", padding: 24, color: "#fff" }}>
       
       {/* ================= BANNER ================= */}
-      <div
-        style={{
-          marginBottom: 24,
-          padding: "14px 18px",
-          borderRadius: 14,
-          background: "linear-gradient(135deg,#2b2b2b,#111)",
-          border: "1px solid rgba(255,255,255,0.15)",
-          textAlign: "center",
-          fontWeight: 800,
-          letterSpacing: 1,
-        }}
-      >
-        🧠 MINTING SOON
+      <div style={{ textAlign: "center", marginBottom: 28 }}>
+        <img
+          src="/images/picklepunks-banner.jpg"
+          alt="Pickle Punks"
+          style={{
+            width: "100%",
+            maxWidth: 820,
+            borderRadius: 16,
+            border: "3px solid #caa24a",
+          }}
+        />
+        <div
+          style={{
+            marginTop: 10,
+            fontWeight: 900,
+            letterSpacing: 2,
+            opacity: 0.85,
+          }}
+        >
+          MINTING SOON
+        </div>
       </div>
 
-      <h1 style={{ marginBottom: 8 }}>Ethscriptions Mint</h1>
-      <p style={{ opacity: 0.7, marginBottom: 20 }}>
-        3-step flow · ENS-routed · Immutable calldata artifact
-      </p>
-
       {/* ================= STEP 1 ================= */}
-      <section style={{ marginBottom: 18 }}>
+      <section style={{ marginBottom: 22 }}>
         <h3>Step 1 — Connect Wallet</h3>
         {account ? (
           <p>Connected: <strong>{shorten(account)}</strong></p>
@@ -136,7 +137,7 @@ export default function EthscriptionsMintPage() {
       </section>
 
       {/* ================= STEP 2 ================= */}
-      <section style={{ marginBottom: 18 }}>
+      <section style={{ marginBottom: 22 }}>
         <h3>Step 2 — Create Ethscription</h3>
         <button
           disabled={!account || sending || !MINTING_ENABLED}
@@ -145,7 +146,7 @@ export default function EthscriptionsMintPage() {
           {MINTING_ENABLED
             ? sending
               ? "Minting…"
-              : "Mint Ethscription"
+              : "Mint Pickle Punk"
             : "Minting Disabled"}
         </button>
       </section>
