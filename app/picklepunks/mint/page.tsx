@@ -122,15 +122,15 @@ export default function EthscriptionsMintPage() {
       const cid: string = await window.ethereum!.request({ method: "eth_chainId" });
       setChainId(cid ?? "");
 
-      console.log("[ethscribe] connected", { account: accounts?.[0], chainId: cid });
+      console.log("[ethscriptions] connected", { account: accounts?.[0], chainId: cid });
       setStatus("Wallet connected.");
     } catch (e: any) {
-      console.log("[ethscribe] connect error", e);
+      console.log("[ethscriptions] connect error", e);
       setStatus(e?.message || "Wallet connection failed.");
     }
   }
 
-  /* ---------- build payload (same logic you had) ---------- */
+  /* ---------- build payload (your existing logic, kept) ---------- */
   async function buildPayload() {
     setStatus("");
     setTxHash("");
@@ -169,7 +169,7 @@ export default function EthscriptionsMintPage() {
       const sha = await sha256HexUtf8(uri);
       setPayloadSha(sha);
 
-      console.log("[ethscribe] payload built", {
+      console.log("[ethscriptions] payload built", {
         fileName: file.name,
         fileBytes: file.size,
         encodedBytes: bytes.length,
@@ -180,7 +180,7 @@ export default function EthscriptionsMintPage() {
       try {
         const r = await fetch(`${ETHS_API_BASE}/ethscriptions/exists/${sha}`);
         const j = await r.json();
-        console.log("[ethscribe] exists check", j);
+        console.log("[ethscriptions] exists check", j);
 
         const exists =
           typeof j?.exists === "boolean"
@@ -194,12 +194,12 @@ export default function EthscriptionsMintPage() {
           return;
         }
       } catch (apiErr) {
-        console.log("[ethscribe] exists check skipped/failed", apiErr);
+        console.log("[ethscriptions] exists check skipped/failed", apiErr);
       }
 
       setStatus("Payload ready. Step 3: (optional) download payload. Step 4: send inscription transaction.");
     } catch (e: any) {
-      console.log("[ethscribe] build error", e);
+      console.log("[ethscriptions] build error", e);
       setStatus(e?.message || "Failed to build payload.");
     }
   }
@@ -220,7 +220,11 @@ export default function EthscriptionsMintPage() {
     setStatus("Payload downloaded. Final step: send the inscription transaction.");
   }
 
-  /* ---------- send tx (ETHSCRIBE.XYZ STYLE) ---------- */
+  /* ============================================================
+     ✅ FIXED SEND TX (MetaMask-safe + NOT contract deploy)
+     - MUST include `to`
+     - self-send makes recipient (to) = user wallet
+     ============================================================ */
   async function submitInscriptionTx() {
     setStatus("");
     setTxHash("");
@@ -241,15 +245,14 @@ export default function EthscriptionsMintPage() {
     }
 
     try {
-      // ✅ CRITICAL: ethscribe.xyz style = data-only transaction
-      // Do NOT set `to` (MetaMask often blocks self-send with data).
       const txParams: any = {
         from: account,
-        data: hexData,
+        to: account, // ✅ IMPORTANT: include `to` so MetaMask doesn't treat it as contract deploy
         value: "0x0",
+        data: hexData,
       };
 
-      console.log("[ethscribe] sending data-only tx", txParams);
+      console.log("[ethscriptions] sending self-send tx", txParams);
 
       const hash: string = await window.ethereum!.request({
         method: "eth_sendTransaction",
@@ -258,9 +261,10 @@ export default function EthscriptionsMintPage() {
 
       setTxHash(hash);
       setStatus("Transaction submitted. Once mined, the Ethscription should index under your wallet on ethscriptions.com.");
-      console.log("[ethscribe] tx submitted", { hash });
 
-      // Best-effort: poll the API for the minted ethscription by tx hash
+      console.log("[ethscriptions] tx submitted", { hash });
+
+      // Best-effort: poll the API for indexing by tx hash
       (async () => {
         try {
           for (let i = 0; i < 20; i++) {
@@ -268,16 +272,16 @@ export default function EthscriptionsMintPage() {
             const r0 = await fetch(`${ETHS_API_BASE}/ethscriptions/${hash}`);
             if (!r0.ok) continue;
             const j = await r0.json();
-            console.log("[ethscribe] indexed", j);
+            console.log("[ethscriptions] indexed", j);
             setStatus("✅ Indexed on Ethscriptions. Check your wallet view on ethscriptions.com.");
             break;
           }
         } catch (e) {
-          console.log("[ethscribe] poll error", e);
+          console.log("[ethscriptions] poll error", e);
         }
       })();
     } catch (e: any) {
-      console.log("[ethscribe] tx error", e);
+      console.log("[ethscriptions] tx error", e);
       setStatus(e?.message || "Transaction failed.");
     }
   }
@@ -531,15 +535,15 @@ export default function EthscriptionsMintPage() {
                     cursor: !account || !payloadReady ? "not-allowed" : "pointer",
                   }}
                 >
-                  4) Send Inscription Transaction (Ethscribe Style)
+                  4) Send Inscription Transaction (Self-Send)
                 </button>
               </div>
 
               <div style={{ marginTop: 10, fontSize: 12, opacity: 0.8, lineHeight: 1.45 }}>
-                <strong>Tx style:</strong> Data-only transaction (no <code>to</code>) for MetaMask compatibility.
+                <strong>Recipient (to):</strong> {account || "--"}
                 <br />
                 <span style={{ opacity: 0.85 }}>
-                  If you see a scary warning in MetaMask, that’s normal for calldata mints.
+                  This uses a self-send so MetaMask treats it as a normal transaction (not contract deployment).
                 </span>
               </div>
             </div>
