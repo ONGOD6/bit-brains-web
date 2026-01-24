@@ -3,17 +3,15 @@
 import React, { useEffect, useMemo, useState } from "react";
 
 /**
- * Pickle Punks — Clean Mint Page (1 page)
+ * Pickle Punks — Clean One-Page Mint (Repository-Ready)
  *
- * ✅ Banner (IMG_2082.jpeg)
- * ✅ 3-step flow only: Connect → Mint Description (Ethscription) → Mint NFT (ERC-721)
- * ✅ “Mental Logic” panel explains: NFT is tradable token, Description is immutable calldata proof
- * ✅ Proof: Description tx is always verifiable on Etherscan (calldata) + indexers (optional)
+ * ✅ Banner uses /public/IMG_2082.jpeg (your repo already has it)
+ * ✅ 3 steps only: Connect → Mint Description (calldata proof) → Mint NFT (placeholder until ABI known)
+ * ✅ “Mental Logic” included on page
+ * ✅ Etherscan proof links for Description + NFT tx
  *
- * IMPORTANT:
- * - Put the Pickle Punks banner at: /public/IMG_2082.jpeg  (you already have it)
- * - Set PICKLEPUNKS_NFT_CONTRACT and PICKLEPUNKS_NFT_ABI when your NFT contract is ready
- * - Description mint uses a calldata tx to ZERO_ADDRESS (Ethscription-style). This is your immutable proof.
+ * Build fix included:
+ * - utf8ToHex() uses index loop (NOT for..of) to satisfy Vercel/TS target
  */
 
 declare global {
@@ -32,23 +30,18 @@ declare global {
    ========================= */
 const MINTING_ENABLED = false; // flip true when live
 
-// ERC-721 contract address for Pickle Punks (put real value when deployed)
+// Put your real Pickle Punks ERC-721 contract here when deployed:
 const PICKLEPUNKS_NFT_CONTRACT = "TBD"; // e.g. "0xabc...123"
 
-// ABI for your mint function (update to match your deployed contract)
-const PICKLEPUNKS_NFT_ABI = [
-  // Example mint() payable; change this to your real mint function
-  // { "inputs": [], "name": "mint", "outputs": [], "stateMutability": "payable", "type": "function" }
-];
-
-// If your mint requires a price, set it here (in ETH). Otherwise set "0"
-const NFT_MINT_PRICE_ETH = "0";
+// Your NFT mint wiring depends on your contract ABI.
+// Keep as TBD until you provide the mint() signature/ABI.
+const NFT_MINT_PRICE_ETH = "0"; // if payable mint, set like "0.01"
 
 /* =========================
-   ETHSCRIPTION / DESCRIPTION SETTINGS
+   DESCRIPTION / ETHSCRIPTION SETTINGS
    ========================= */
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
-const GAS_LIMIT_DESCRIPTION = "0x186A0"; // 100k, safe default
+const GAS_LIMIT_DESCRIPTION = "0x186A0"; // 100k
 
 /* =========================
    HELPERS
@@ -61,7 +54,9 @@ function shorten(addr: string) {
 function utf8ToHex(str: string): string {
   const bytes = new TextEncoder().encode(str);
   let hex = "0x";
-  for (const b of bytes) hex += b.toString(16).padStart(2, "0");
+  for (let i = 0; i < bytes.length; i++) {
+    hex += bytes[i].toString(16).padStart(2, "0");
+  }
   return hex;
 }
 
@@ -74,24 +69,20 @@ function safeJsonParse<T>(s: string): { ok: true; value: T } | { ok: false; erro
 }
 
 function toHexWeiFromEthString(eth: string): string {
-  // Minimal safe converter for small strings: "0", "0.01", "0.1", "1"
-  // For complex pricing use viem/ethers later. For now we keep it simple.
   if (!eth || eth === "0") return "0x0";
   const [whole, frac = ""] = eth.split(".");
-  const fracPadded = (frac + "000000000000000000").slice(0, 18); // 18 decimals
+  const fracPadded = (frac + "000000000000000000").slice(0, 18);
   const weiStr = BigInt(whole || "0") * 10n ** 18n + BigInt(fracPadded || "0");
   return "0x" + weiStr.toString(16);
 }
 
-/* =========================
-   BUILD IMMUTABLE DESCRIPTION PAYLOAD
-   ========================= */
 function buildDescriptionDataUrl(opts: {
   name: string;
   description: string;
   imageUrl: string;
   externalUrl?: string;
   attributes?: Array<{ trait_type: string; value: string | number }>;
+  parentContract?: string;
 }) {
   const metadata = {
     name: opts.name,
@@ -99,10 +90,14 @@ function buildDescriptionDataUrl(opts: {
     image: opts.imageUrl,
     external_url: opts.externalUrl || "",
     attributes: opts.attributes || [],
+    linkage: {
+      collection: "Pickle Punks",
+      nft_contract: opts.parentContract || "TBD",
+    },
     proof: {
       type: "PicklePunks-Description",
       method: "calldata",
-      verifier: "Etherscan input data",
+      verifier: "Etherscan → Input Data",
     },
   };
 
@@ -111,7 +106,7 @@ function buildDescriptionDataUrl(opts: {
 }
 
 /* =========================
-   SIMPLE UI COMPONENTS
+   UI
    ========================= */
 function Card({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -202,14 +197,13 @@ export default function PicklePunksMintPage() {
   const [account, setAccount] = useState("");
   const [chainId, setChainId] = useState("");
 
-  // Description metadata (ethscription payload)
+  // Description metadata
   const [name, setName] = useState("Pickle Punks — Genesis Description");
   const [description, setDescription] = useState(
     "Immutable Pickle Punks description artifact. This calldata inscription is permanent proof on Ethereum."
   );
-  const [imageUrl, setImageUrl] = useState("/IMG_2082.jpeg"); // you have this in /public
+  const [imageUrl, setImageUrl] = useState("/IMG_2082.jpeg");
   const [externalUrl, setExternalUrl] = useState("https://bitbrains.us");
-
   const [attributesJson, setAttributesJson] = useState(
     JSON.stringify(
       [
@@ -222,7 +216,7 @@ export default function PicklePunksMintPage() {
     )
   );
 
-  // Tx states
+  // Tx state
   const [descTxHash, setDescTxHash] = useState("");
   const [nftTxHash, setNftTxHash] = useState("");
   const [sendingDesc, setSendingDesc] = useState(false);
@@ -251,25 +245,23 @@ export default function PicklePunksMintPage() {
     };
   }, []);
 
-  const attributesParse = useMemo(() => safeJsonParse<any>(attributesJson), [attributesJson]);
-  const attrsOk = attributesParse.ok && Array.isArray(attributesParse.value);
+  const parsedAttrs = useMemo(() => safeJsonParse<any>(attributesJson), [attributesJson]);
+  const attrsOk = parsedAttrs.ok && Array.isArray(parsedAttrs.value);
 
   const descriptionPayload = useMemo(() => {
-    const attrs = attrsOk ? (attributesParse.value as Array<{ trait_type: string; value: any }>) : [];
+    const attrs = attrsOk ? (parsedAttrs.value as Array<{ trait_type: string; value: any }>) : [];
     return buildDescriptionDataUrl({
       name: name.trim() || "Pickle Punks — Description",
       description: description.trim(),
       imageUrl: imageUrl.trim(),
       externalUrl: externalUrl.trim(),
       attributes: attrs,
+      parentContract: PICKLEPUNKS_NFT_CONTRACT,
     });
-  }, [name, description, imageUrl, externalUrl, attributesJson, attrsOk, attributesParse]);
+  }, [name, description, imageUrl, externalUrl, attrsOk, parsedAttrs, attributesJson]);
 
+  // 3-step gating
   const step = useMemo(() => {
-    // 3-step only, with gating:
-    // 1) connect
-    // 2) mint description
-    // 3) mint nft
     if (!account) return 1;
     if (!descTxHash) return 2;
     return 3;
@@ -298,7 +290,6 @@ export default function PicklePunksMintPage() {
 
       setSendingDesc(true);
 
-      // Encode the data:application/json,... payload into tx calldata
       const dataHex = utf8ToHex(descriptionPayload);
 
       const hash = (await window.ethereum!.request({
@@ -329,20 +320,17 @@ export default function PicklePunksMintPage() {
       setErr("");
       if (!account) throw new Error("Connect wallet first.");
       if (!descTxHash) throw new Error("Mint the Description first (Step 2).");
+
+      // Placeholder until contract mint ABI/signature is provided.
       if (PICKLEPUNKS_NFT_CONTRACT === "TBD") {
-        throw new Error("NFT contract is not set yet. Add your deployed contract address.");
+        throw new Error("NFT contract address is TBD. Set PICKLEPUNKS_NFT_CONTRACT when deployed.");
       }
 
       setSendingNft(true);
 
-      // Minimal contract call without bringing in ethers/viem:
-      // We do it via eth_sendTransaction to the contract with encoded calldata.
-      // But encoding ABI manually is annoying, so until ABI is finalized,
-      // we keep NFT mint as a placeholder button with a clear message.
-      //
-      // ✅ You asked for “clean page” first; we’ll wire the ABI once the contract function is known.
+      // We keep this intentionally explicit so the page ships cleanly without guessing your ABI.
       throw new Error(
-        "NFT mint function not wired yet (needs ABI + mint function). Set PICKLEPUNKS_NFT_ABI + mint selector, then we encode calldata."
+        "NFT mint not wired yet. Provide your mint() ABI/signature and I will encode the calldata for a real contract call."
       );
     } catch (e: any) {
       setErr(e?.message || "NFT mint failed.");
@@ -378,36 +366,26 @@ export default function PicklePunksMintPage() {
         </div>
       </div>
 
-      {/* One-page layout */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "1fr",
-          gap: 14,
-        }}
-      >
-        {/* Mental logic */}
+      <div style={{ display: "grid", gap: 14 }}>
         <Card title="Mental Logic — NFT + Description (Immutable Proof)">
           <div style={{ opacity: 0.88, lineHeight: 1.45 }}>
             <div style={{ marginBottom: 10 }}>
               <strong>NFT (ERC-721)</strong> is the tradable token marketplaces recognize.
             </div>
             <div style={{ marginBottom: 10 }}>
-              <strong>Description (Ethscription-style calldata)</strong> is an immutable artifact minted as a transaction
-              whose <strong>input data</strong> permanently contains your metadata.
+              <strong>Description (calldata inscription)</strong> is an immutable artifact: the metadata is permanently
+              stored inside the transaction’s <strong>Input Data</strong>.
             </div>
             <div style={{ marginBottom: 10 }}>
-              Once you mint the Description, the proof can always be verified on <strong>Etherscan</strong> by opening
-              the transaction and inspecting the <strong>Input Data</strong>. That means your Description is forever
-              documented on-chain — even if websites/indexers change.
+              Once you mint the Description, it can always be proven on <strong>Etherscan</strong> by opening the tx and
+              viewing <strong>Input Data</strong>. Even if websites change, the proof stays.
             </div>
             <div style={{ fontSize: 12, opacity: 0.7 }}>
-              Flow on this page is intentionally simple: Step 2 (Description) → Step 3 (NFT). No extra steps.
+              This page is intentionally a single clean flow: Step 2 (Description) → Step 3 (NFT). No extra steps.
             </div>
           </div>
         </Card>
 
-        {/* Steps */}
         <Card title="Mint — 3 Steps (One Page)">
           <div style={{ display: "grid", gap: 14 }}>
             {/* Step 1 */}
@@ -457,13 +435,15 @@ export default function PicklePunksMintPage() {
                   {!attrsOk && (
                     <div style={{ marginTop: 6, color: "#ffb4b4", fontSize: 12 }}>
                       Attributes JSON must be a valid array. Current error:{" "}
-                      {attributesParse.ok ? "Not an array" : attributesParse.error}
+                      {parsedAttrs.ok ? "Not an array" : parsedAttrs.error}
                     </div>
                   )}
                 </div>
 
                 <div>
-                  <div style={{ fontSize: 12, opacity: 0.75, marginBottom: 6 }}>Preview (this is what goes into calldata)</div>
+                  <div style={{ fontSize: 12, opacity: 0.75, marginBottom: 6 }}>
+                    Preview (this exact string is stored forever in tx Input Data)
+                  </div>
                   <Textarea value={descriptionPayload} readOnly spellCheck={false} style={{ minHeight: 110 }} />
                 </div>
 
@@ -496,7 +476,7 @@ export default function PicklePunksMintPage() {
             <div style={{ padding: 12, borderRadius: 14, border: "1px solid rgba(255,255,255,0.14)" }}>
               <div style={{ fontWeight: 900, marginBottom: 6 }}>Step 3 — Mint NFT (ERC-721)</div>
               <div style={{ fontSize: 13, opacity: 0.8, marginBottom: 10 }}>
-                Requires Description proof first. Once the NFT mint is wired, this will call your contract.
+                This will mint the tradable NFT. It is gated by the immutable Description proof (Step 2).
               </div>
 
               <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
@@ -516,14 +496,20 @@ export default function PicklePunksMintPage() {
 
               {!descTxHash && (
                 <div style={{ marginTop: 10, fontSize: 12, color: "#ffd6a6" }}>
-                  Mint the Description first (Step 2). That tx is your permanent, immutable proof on Etherscan.
+                  Mint the Description first (Step 2). That tx is your permanent proof on Etherscan.
                 </div>
               )}
+
+              <div style={{ marginTop: 10, fontSize: 12, opacity: 0.7 }}>
+                NFT Mint Price (if applicable):{" "}
+                <span style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace" }}>
+                  {NFT_MINT_PRICE_ETH} ETH
+                </span>
+              </div>
             </div>
           </div>
         </Card>
 
-        {/* Errors */}
         {err && (
           <Card title="Error">
             <div style={{ color: "#ffb4b4", whiteSpace: "pre-wrap" }}>{err}</div>
