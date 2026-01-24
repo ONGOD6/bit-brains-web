@@ -12,24 +12,24 @@ declare global {
 }
 
 /**
- * Pickle Punks — Ethscriptions ONLY (Testing Mode)
+ * Pickle Punks — ETHSCRIPTIONS TEST MODE (ERC-721 DISABLED)
  *
+ * ✅ Banner on top: /public/IMG_2082.jpeg
  * ✅ Wallet connect
  * ✅ Mint Ethscription (single tx)
+ * ✅ No burn address warning (self-send: to = account)
  * ✅ Payload is readable on Etherscan Input Data
+ * ✅ Payload includes ENS anchors (bitbrains.eth + picklepunks.eth)
  *
- * ERC-721 mint is DISABLED until JSON/HashLips metadata is ready.
+ * ERC-721 mint stays locked OFF until HashLips JSON metadata is ready.
  */
 
 /* ================= CONFIG ================= */
 const ETHSCRIPTIONS_ENABLED = true;
 const ERC721_ENABLED = false;
 
-// Common “dead address” recipient for ethscription txs
-const DEAD_ADDRESS = "0x000000000000000000000000000000000000dEaD";
-
 // Gas limit for inscription tx (hex string)
-const GAS_LIMIT_ETHSCRIPTION_HEX = "0x186A0"; // 100,000
+const GAS_LIMIT_ETHSCRIPTION_HEX = "0x186A0"; // 100,000 (adjust if needed)
 
 /* ================= HELPERS ================= */
 function shorten(addr: string) {
@@ -46,11 +46,27 @@ function utf8ToHex(str: string): string {
 }
 
 /**
- * Minimal readable Ethscription test payload.
- * Shows up in Etherscan -> Input Data as a data URI.
+ * Build a VALID data URI. We embed "roots" by including ENS anchors
+ * inside the JSON itself (not by sending to an ENS recipient).
+ *
+ * Readable on Etherscan -> Input Data
  */
-function buildTestEthscriptionDataUri(): string {
-  return "data:text/plain," + encodeURIComponent("testing bitbrains");
+function buildEthscriptionTestDataUri() {
+  const payload = {
+    type: "bitbrains.ethscriptions.test",
+    version: "1.0",
+    message: "testing bitbrains",
+    anchors: {
+      protocol_ens: "bitbrains.eth",
+      collection_ens: "picklepunks.eth",
+      site: "https://bitbrains.us",
+    },
+    timestamp: new Date().toISOString(),
+  };
+
+  // ✅ MUST be percent-encoded to remain a valid data URI
+  const encoded = encodeURIComponent(JSON.stringify(payload));
+  return `data:application/json,${encoded}`;
 }
 
 /* ================= UI ================= */
@@ -112,14 +128,15 @@ export default function PicklePunksMintPage() {
       if (!account) throw new Error("Connect your wallet first.");
       if (!ETHSCRIPTIONS_ENABLED) throw new Error("Ethscriptions minting is disabled.");
 
-      const dataUri = buildTestEthscriptionDataUri();
+      const dataUri = buildEthscriptionTestDataUri();
 
+      // ✅ Self-send avoids MetaMask burn address warning
       const tx = (await window.ethereum.request({
         method: "eth_sendTransaction",
         params: [
           {
             from: account,
-            to: DEAD_ADDRESS,
+            to: account,
             value: "0x0",
             gas: GAS_LIMIT_ETHSCRIPTION_HEX,
             data: utf8ToHex(dataUri),
@@ -137,6 +154,18 @@ export default function PicklePunksMintPage() {
 
   return (
     <main style={{ maxWidth: 900, margin: "0 auto", padding: 28, color: "white" }}>
+      {/* ✅ TOP BANNER */}
+      <img
+        src="/IMG_2082.jpeg"
+        alt="Pickle Punks Banner"
+        style={{
+          width: "100%",
+          borderRadius: 18,
+          border: "3px solid rgba(202,162,74,0.9)",
+          marginBottom: 18,
+        }}
+      />
+
       <div style={{ textAlign: "center", fontWeight: 900, letterSpacing: 2 }}>
         PICKLE PUNKS — ETHSCRIPTIONS TEST MODE
       </div>
@@ -160,8 +189,10 @@ export default function PicklePunksMintPage() {
 
       <h3 style={{ marginTop: 22 }}>Step 3 — Mint Ethscription (Test)</h3>
       <p style={{ opacity: 0.8, marginTop: 6 }}>
-        This sends a transaction whose <b>Input Data</b> is a data URI:{" "}
-        <code>testing bitbrains</code>
+        This sends a transaction whose <b>Input Data</b> is a JSON data URI containing:
+        <br />
+        <code>testing bitbrains</code> + ENS anchors (<code>bitbrains.eth</code>,{" "}
+        <code>picklepunks.eth</code>)
       </p>
 
       <Button disabled={!account || sending || !ETHSCRIPTIONS_ENABLED} onClick={mintEthscription}>
@@ -185,8 +216,8 @@ export default function PicklePunksMintPage() {
       {error && <p style={{ color: "#ff8080", marginTop: 14 }}>{error}</p>}
 
       <p style={{ marginTop: 22, opacity: 0.75 }}>
-        After minting, open the tx on Etherscan → find <b>Input Data</b>. You should see a
-        <code>data:text/plain</code> payload containing <code>testing bitbrains</code>.
+        After minting, open the tx on Etherscan → find <b>Input Data</b>. You should see a{" "}
+        <code>data:application/json</code> payload with the message and ENS anchors.
       </p>
     </main>
   );
