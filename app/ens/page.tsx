@@ -15,66 +15,90 @@ export default function ENSPage() {
         lineHeight: 1.65,
       }}
     >
-      {/* Inline keyframes (no css file needed) */}
       <style>{`
-        @keyframes floatInOut {
-          0%   { transform: translateY(0px); opacity: .92; letter-spacing: 0.02em; }
-          50%  { transform: translateY(-6px); opacity: 1;   letter-spacing: 0.06em; }
-          100% { transform: translateY(0px); opacity: .92; letter-spacing: 0.02em; }
+        :root{
+          --g1: rgba(40, 255, 170, 0.95);
+          --g2: rgba(40, 255, 170, 0.35);
+          --g3: rgba(40, 255, 170, 0.18);
+          --card: rgba(255,255,255,0.03);
+          --line: rgba(255,255,255,0.14);
         }
-        @keyframes shimmer {
-          0%   { background-position: 0% 50%; }
-          50%  { background-position: 100% 50%; }
+
+        @keyframes breathe {
+          0%   { transform: translateY(0px); filter: drop-shadow(0 0 0px rgba(40,255,170,0.0)); opacity: .96; }
+          50%  { transform: translateY(-5px); filter: drop-shadow(0 0 18px rgba(40,255,170,0.38)); opacity: 1; }
+          100% { transform: translateY(0px); filter: drop-shadow(0 0 0px rgba(40,255,170,0.0)); opacity: .96; }
+        }
+
+        @keyframes scan {
+          0% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
           100% { background-position: 0% 50%; }
         }
       `}</style>
 
-      {/* Banner */}
+      {/* FULL-WIDTH GREEN BANNER */}
       <section
         style={{
-          border: "1px solid rgba(255,255,255,0.14)",
-          background: "rgba(255,255,255,0.03)",
+          border: "1px solid rgba(40,255,170,0.35)",
+          background:
+            "linear-gradient(135deg, rgba(40,255,170,0.10), rgba(255,255,255,0.02), rgba(40,255,170,0.08))",
           borderRadius: 18,
-          padding: "1.25rem 1.25rem",
+          padding: "1.25rem",
           marginBottom: "1.25rem",
+          boxShadow: "0 0 0 1px rgba(40,255,170,0.08) inset",
         }}
       >
-        <div style={{ textAlign: "center" }}>
+        <div
+          style={{
+            textAlign: "center",
+            display: "grid",
+            gap: 10,
+            justifyItems: "center",
+          }}
+        >
+          {/* Big full-width header */}
           <div
             style={{
-              display: "inline-block",
-              fontSize: "2.6rem",
-              fontWeight: 900,
-              lineHeight: 1.05,
-              padding: "0.35rem 0.6rem",
-              borderRadius: 14,
-              border: "1px solid rgba(255,255,255,0.16)",
+              width: "100%",
+              borderRadius: 16,
+              border: "1px solid rgba(40,255,170,0.28)",
               background:
-                "linear-gradient(90deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02), rgba(255,255,255,0.08))",
+                "linear-gradient(90deg, rgba(40,255,170,0.14), rgba(255,255,255,0.03), rgba(40,255,170,0.14))",
               backgroundSize: "200% 200%",
-              animation: "shimmer 6s ease-in-out infinite",
+              animation: "scan 7s ease-in-out infinite",
+              padding: "0.85rem 1rem",
             }}
           >
-            <span
+            <div
               style={{
-                display: "inline-block",
-                animation: "floatInOut 3.2s ease-in-out infinite",
+                fontSize: "3.2rem",
+                fontWeight: 950,
+                lineHeight: 1.05,
+                letterSpacing: "0.04em",
+                textTransform: "lowercase",
+                animation: "breathe 3.4s ease-in-out infinite",
+                color: "rgba(235,255,245,1)",
+                textShadow:
+                  "0 0 14px rgba(40,255,170,0.20), 0 0 30px rgba(40,255,170,0.10)",
+                wordBreak: "break-word",
               }}
             >
               {ensRoot}
-            </span>
+            </div>
           </div>
 
-          <div style={{ marginTop: 10, opacity: 0.72, fontSize: "1rem" }}>
+          <div style={{ opacity: 0.82, fontSize: "1.05rem" }}>
             ENS is the canonical reward destination for BitBrains.
           </div>
 
           <div
             style={{
-              marginTop: 14,
+              marginTop: 2,
               fontWeight: 900,
-              letterSpacing: 2.5,
-              opacity: 0.9,
+              letterSpacing: 3,
+              color: "rgba(40,255,170,0.95)",
+              textShadow: "0 0 14px rgba(40,255,170,0.22)",
             }}
           >
             MINTING SOON
@@ -82,17 +106,19 @@ export default function ENSPage() {
         </div>
       </section>
 
-      {/* Core explanation */}
+      {/* ENS + ZK EXPLANATION */}
       <section
         style={{
-          border: "1px solid rgba(255,255,255,0.14)",
+          border: "1px solid rgba(40,255,170,0.18)",
           background: "rgba(255,255,255,0.03)",
           borderRadius: 18,
           padding: "1.25rem",
           marginBottom: "1.25rem",
         }}
       >
-        <h1 style={{ fontSize: "1.75rem", margin: "0 0 0.65rem 0" }}>ENS Wallet Resolution</h1>
+        <h1 style={{ fontSize: "1.75rem", margin: "0 0 0.65rem 0" }}>
+          ENS Wallet Resolution
+        </h1>
 
         <p style={{ opacity: 0.9, marginTop: 0 }}>
           To receive staking rewards, each Brain holder must resolve their ENS subdomain to a wallet they control.
@@ -104,46 +130,51 @@ export default function ENSPage() {
             marginTop: "1rem",
             padding: "1rem",
             borderRadius: 14,
-            border: "1px solid rgba(255,255,255,0.12)",
-            background: "rgba(0,0,0,0.15)",
+            border: "1px solid rgba(40,255,170,0.16)",
+            background: "rgba(0,0,0,0.18)",
           }}
         >
-          <h2 style={{ fontSize: "1.2rem", margin: "0 0 0.6rem 0" }}>How ENS + ZK Proofs Work Together</h2>
+          <h2 style={{ fontSize: "1.2rem", margin: "0 0 0.6rem 0" }}>
+            How ENS + ZK Proofs Work Together
+          </h2>
 
-          <ul style={{ opacity: 0.9, paddingLeft: "1.2rem", margin: 0 }}>
+          <ul style={{ opacity: 0.92, paddingLeft: "1.2rem", margin: 0 }}>
             <li style={{ marginBottom: 8 }}>
-              <strong>ENS is the payout destination.</strong> Rewards route to the <strong>resolved address</strong> of
-              your ENS name.
+              <strong style={{ color: "rgba(40,255,170,0.92)" }}>ENS is the payout destination.</strong>{" "}
+              Rewards route to the <strong>resolved address</strong> of your ENS name.
             </li>
             <li style={{ marginBottom: 8 }}>
-              <strong>ZK proofs handle eligibility privately.</strong> Proofs can verify that you’re eligible to claim
-              (staking history, epochs, PoC checkpoints, etc.) without revealing everything publicly.
+              <strong style={{ color: "rgba(40,255,170,0.92)" }}>ZK proofs handle eligibility privately.</strong>{" "}
+              Proofs can verify claim eligibility (staking history, epochs, PoC checkpoints) without exposing everything publicly.
             </li>
             <li style={{ marginBottom: 8 }}>
-              <strong>Separation of concerns:</strong> ZK = “you qualify”, ENS = “where the funds go”.
+              <strong style={{ color: "rgba(40,255,170,0.92)" }}>Separation of concerns:</strong>{" "}
+              ZK = “you qualify”; ENS = “where the funds go”.
             </li>
             <li>
-              <strong>You control the destination</strong> by updating ENS records (you pay ENS gas when updating).
+              <strong style={{ color: "rgba(40,255,170,0.92)" }}>You control the destination</strong>{" "}
+              by updating ENS records (you pay ENS gas when updating).
             </li>
           </ul>
         </div>
       </section>
 
-      {/* Requirements */}
+      {/* REQUIREMENTS */}
       <section
         style={{
-          border: "1px solid rgba(255,255,255,0.14)",
+          border: "1px solid rgba(40,255,170,0.14)",
           background: "rgba(255,255,255,0.03)",
           borderRadius: 18,
           padding: "1.25rem",
           marginBottom: "1.25rem",
         }}
       >
-        <h2 style={{ fontSize: "1.25rem", margin: "0 0 0.65rem 0" }}>Requirements (Non-Negotiable)</h2>
-        <ul style={{ opacity: 0.9, paddingLeft: "1.2rem", margin: 0 }}>
+        <h2 style={{ fontSize: "1.25rem", margin: "0 0 0.65rem 0" }}>
+          Requirements (Non-Negotiable)
+        </h2>
+        <ul style={{ opacity: 0.92, paddingLeft: "1.2rem", margin: 0 }}>
           <li style={{ marginBottom: 8 }}>
-            Your Brain subdomain (example: <strong>brain-###.bitbrains.eth</strong>) must resolve to a wallet you
-            control.
+            Your Brain subdomain (example: <strong>brain-###.bitbrains.eth</strong>) must resolve to a wallet you control.
           </li>
           <li style={{ marginBottom: 8 }}>
             Rewards are paid to the <strong>resolved address</strong> for that ENS name.
@@ -157,7 +188,7 @@ export default function ENSPage() {
         </ul>
       </section>
 
-      {/* Actions */}
+      {/* ACTIONS */}
       <section style={{ display: "grid", gap: "0.9rem", marginBottom: "1.25rem" }}>
         <a
           href="https://app.ens.domains/"
@@ -168,10 +199,11 @@ export default function ENSPage() {
             textDecoration: "none",
             padding: "0.95rem 1.25rem",
             borderRadius: "999px",
-            border: "1px solid rgba(255,255,255,0.30)",
+            border: "1px solid rgba(40,255,170,0.30)",
             textAlign: "center",
             fontSize: "1rem",
-            opacity: 0.95,
+            opacity: 0.98,
+            boxShadow: "0 0 18px rgba(40,255,170,0.08)",
           }}
         >
           Open ENS Manager (Set / Resolve My Subdomain) →
@@ -184,7 +216,7 @@ export default function ENSPage() {
             textDecoration: "none",
             padding: "0.95rem 1.25rem",
             borderRadius: "999px",
-            border: "1px solid rgba(255,255,255,0.18)",
+            border: "1px solid rgba(40,255,170,0.18)",
             textAlign: "center",
             fontSize: "1rem",
             opacity: 0.9,
@@ -194,10 +226,10 @@ export default function ENSPage() {
         </a>
       </section>
 
-      {/* Claim block */}
+      {/* CLAIM */}
       <section
         style={{
-          border: "1px solid rgba(255,255,255,0.14)",
+          border: "1px solid rgba(40,255,170,0.14)",
           background: "rgba(255,255,255,0.03)",
           borderRadius: 18,
           padding: "1.25rem",
@@ -214,11 +246,12 @@ export default function ENSPage() {
             marginTop: "0.85rem",
             padding: "0.9rem 1rem",
             borderRadius: "12px",
-            background: "rgba(255,255,255,0.06)",
-            opacity: 0.92,
+            background: "rgba(40,255,170,0.06)",
+            border: "1px solid rgba(40,255,170,0.14)",
+            opacity: 0.95,
           }}
         >
-          <strong>Status:</strong> Claim UI is coming next.
+          <strong style={{ color: "rgba(40,255,170,0.92)" }}>Status:</strong> Claim UI is coming next.
           <br />
           For now, resolve your ENS so you are eligible to receive rewards.
         </div>
