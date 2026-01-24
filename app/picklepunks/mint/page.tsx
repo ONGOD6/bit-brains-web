@@ -5,9 +5,8 @@ import React, { useMemo, useState } from "react";
 /**
  * Pickle Punks — Ethscriptions Mint Page
  *
- * - Ethscription = immutable calldata artifact
- * - Verifiable forever via Etherscan → Input Data
- * - Vercel / Next.js 14 safe
+ * Key rule: Ethscription exists if tx input data (UTF-8) is a VALID data: URI.
+ * Ownership attribution is to the tx "from" (the connected wallet).
  */
 
 declare global {
@@ -22,15 +21,25 @@ declare global {
 /* ================= CONFIG ================= */
 const MINTING_ENABLED = false;
 
-/* ================= CONSTANTS ================= */
+/**
+ * "to" can be almost anything. Many people use a "dead" address.
+ * If you run into odd edge cases, swap between DEAD_ADDRESS and ZERO_ADDRESS.
+ */
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
-const GAS_LIMIT = "0x186A0";
+const DEAD_ADDRESS = "0x000000000000000000000000000000000000dEaD";
+
+/** Keep as hex string for MetaMask compatibility */
+const GAS_LIMIT_HEX = "0x186A0"; // 100,000
 
 /* ================= HELPERS ================= */
 function shorten(addr: string) {
   return addr ? `${addr.slice(0, 6)}…${addr.slice(-4)}` : "";
 }
 
+/**
+ * Convert UTF-8 string to 0x-prefixed hex for eth_sendTransaction "data".
+ * No BigInt, no for..of — Vercel/Next-safe.
+ */
 function utf8ToHex(str: string): string {
   const bytes = new TextEncoder().encode(str);
   let hex = "0x";
@@ -40,16 +49,10 @@ function utf8ToHex(str: string): string {
   return hex;
 }
 
-function safeJsonParse(s: string):
-  | { ok: true; value: unknown }
-  | { ok: false } {
-  try {
-    return { ok: true, value: JSON.parse(s) };
-  } catch {
-    return { ok: false };
-  }
-}
-
+/**
+ * IMPORTANT: Make the content a VALID data URI.
+ * Use encodeURIComponent on the JSON string. This is the big fix.
+ */
 function buildEthscriptionPayload(opts: {
   name: string;
   description: string;
@@ -57,7 +60,7 @@ function buildEthscriptionPayload(opts: {
   external_url: string;
   attributes: Array<{ trait_type: string; value: string | number }>;
 }) {
-  return `data:application/json,${JSON.stringify({
+  const obj = {
     name: opts.name,
     description: opts.description,
     image: opts.image,
@@ -68,10 +71,14 @@ function buildEthscriptionPayload(opts: {
       storage: "ethereum-calldata",
       verification: "etherscan-input-data",
     },
-  })}`;
+  };
+
+  // ✅ percent-encode JSON to be a valid RFC2397-style data URI
+  const encoded = encodeURIComponent(JSON.stringify(obj));
+  return `data:application/json,${encoded}`;
 }
 
-/* ================= UI ================= */
+/* ================= UI BUTTON ================= */
 function Button(props: {
   children: React.ReactNode;
   onClick?: () => void;
@@ -97,7 +104,6 @@ function Button(props: {
   );
 }
 
-/* ================= PAGE ================= */
 export default function PicklePunksMintPage() {
   const [account, setAccount] = useState("");
   const [txHash, setTxHash] = useState("");
@@ -116,30 +122,40 @@ export default function PicklePunksMintPage() {
     )
   );
 
-  const parsed = useMemo(() => safeJsonParse(attributesJson), [attributesJson]);
-  const attributes =
-    parsed.ok && Array.isArray(parsed.value)
-      ? parsed.value
-      : [];
+  const parsedAttributes = useMemo(() => {
+    try {
+      const val = JSON.parse(attributesJson);
+      return Array.isArray(val) ? val : [];
+    } catch {
+      return [];
+    }
+  }, [attributesJson]);
 
-  const payload = useMemo(
-    () =>
-      buildEthscriptionPayload({
-        name: "Pickle Punks — Genesis Ethscription",
-        description:
-          "Immutable Pickle Punks metadata stored as an Ethscription. Permanently verifiable on Ethereum.",
-        image: "/IMG_2082.jpeg",
-        external_url: "https://bitbrains.us",
-        attributes,
-      }),
-    [attributes]
-  );
+  const payload = useMemo(() => {
+    return buildEthscriptionPayload({
+      name: "Pickle Punks — Genesis Ethscription",
+      description:
+        "Immutable Pickle Punks metadata stored as an Ethscription. Permanently verifiable via Etherscan Input Data.",
+      image: "/IMG_2082.jpeg",
+      external_url: "https://bitbrains.us",
+      attributes: parsedAttributes,
+    });
+  }, [parsedAttributes]);
 
   async function connect() {
     try {
-      const accounts = (await window.ethereum?.request({
+      setError("");
+      setTxHash("");
+
+      if (!window.ethereum) {
+        setError("No wallet found. Install MetaMask.");
+        return;
+      }
+
+      const accounts = (await window.ethereum.request({
         method: "eth_requestAccounts",
       })) as string[];
+
       if (accounts?.[0]) setAccount(accounts[0]);
     } catch (e: any) {
       setError(e?.message || "Wallet connection failed");
@@ -150,15 +166,28 @@ export default function PicklePunksMintPage() {
     try {
       setSending(true);
       setError("");
+      setTxHash("");
 
-      const tx = (await window.ethereum?.request({
+      if (!window.ethereum) {
+        setError("No wallet found.");
+        return;
+      }
+      if (!account) {
+        setError("Connect your wallet first.");
+        return;
+      }
+
+      // 🔁 Try DEAD_ADDRESS first; if you suspect weird behavior, swap to ZERO_ADDRESS.
+      const toAddress = DEAD_ADDRESS;
+
+      const tx = (await window.ethereum.request({
         method: "eth_sendTransaction",
         params: [
           {
             from: account,
-            to: ZERO_ADDRESS,
+            to: toAddress,
             value: "0x0",
-            gas: GAS_LIMIT,
+            gas: GAS_LIMIT_HEX,
             data: utf8ToHex(payload),
           },
         ],
@@ -196,14 +225,9 @@ export default function PicklePunksMintPage() {
         <Button onClick={connect}>Connect Wallet</Button>
       )}
 
-      <h3 style={{ marginTop: 24 }}>
-        Step 2 — Mint Ethscription (Immutable)
-      </h3>
-      <Button
-        disabled={!account || sending || !MINTING_ENABLED}
-        onClick={mintEthscription}
-      >
-        {MINTING_ENABLED ? "Mint Ethscription" : "Minting Disabled"}
+      <h3 style={{ marginTop: 24 }}>Step 2 — Mint Ethscription (Immutable)</h3>
+      <Button disabled={!account || sending || !MINTING_ENABLED} onClick={mintEthscription}>
+        {MINTING_ENABLED ? (sending ? "Minting…" : "Mint Ethscription") : "Minting Disabled"}
       </Button>
 
       {txHash && (
@@ -213,6 +237,7 @@ export default function PicklePunksMintPage() {
             href={`https://etherscan.io/tx/${txHash}`}
             target="_blank"
             rel="noreferrer"
+            style={{ textDecoration: "underline" }}
           >
             View on Etherscan
           </a>
@@ -222,8 +247,8 @@ export default function PicklePunksMintPage() {
       {error && <p style={{ color: "#ff8080" }}>{error}</p>}
 
       <p style={{ marginTop: 28, opacity: 0.75 }}>
-        This Ethscription is stored permanently in Ethereum calldata and can
-        always be verified via Etherscan Input Data.
+        This Ethscription is stored permanently in Ethereum calldata and can always be verified via
+        Etherscan Input Data.
       </p>
     </main>
   );
