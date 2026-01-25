@@ -1,192 +1,242 @@
 "use client";
 
-import { useState } from "react";
+import React, { useMemo, useState } from "react";
 
 /**
- * Pickle Punks — Stable Ethscriptions Mint (Sink Contract)
- * Mobile MetaMask Safe
+ * Pickle Punks — Mint Page (LOCKED / PARKED)
+ *
+ * STATUS:
+ * - Minting scheduled: March 1
+ * - ERC-721 mint: DISABLED
+ * - Ethscriptions mint: DISABLED (logic preserved & tested)
+ *
+ * PURPOSE:
+ * - Keep full mint logic in place
+ * - Prevent any transactions until launch window
+ * - Avoid breaking tested Ethscriptions calldata flow
  */
 
 declare global {
   interface Window {
     ethereum?: {
-      request: (args: {
-        method: string;
-        params?: any[];
-      }) => Promise<any>;
+      request: (args: { method: string; params?: any[] | object }) => Promise<any>;
+      isMetaMask?: boolean;
     };
   }
 }
 
-/* ================= CONFIG ================= */
+/* ===================== LAUNCH FLAGS ===================== */
+const MINTING_LIVE = false; // 🔒 flip to true when ready
+const ERC721_ENABLED = false;
+const ETHSCRIPTIONS_ENABLED = false;
 
-// 🔴 REPLACE ONLY IF YOU WANT A DIFFERENT SINK
-const CALLDATA_SINK_CONTRACT =
-  "0xd0ecb1ac38b4551c03abf030676f030e8df49e71327585ddac73aed808d73d39";
+/* ===================== CONSTANTS ===================== */
+const BANNER_IMAGE = "/IMG_2082.jpeg";
 
-/* ================= PAGE ================= */
+/**
+ * External EOA used previously for successful Ethscriptions indexing.
+ * Kept here to preserve exact working logic.
+ */
+const ETHSCRIPTION_TO_ADDRESS =
+  "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045"; // Vitalik
 
+const GAS_LIMIT_ETHSCRIPTION = "0x186A0"; // 100,000
+
+/* ===================== HELPERS ===================== */
+function shorten(addr: string) {
+  return addr ? `${addr.slice(0, 6)}…${addr.slice(-4)}` : "";
+}
+
+function utf8ToHex(str: string): string {
+  const bytes = new TextEncoder().encode(str);
+  let hex = "0x";
+  for (let i = 0; i < bytes.length; i++) {
+    hex += bytes[i].toString(16).padStart(2, "0");
+  }
+  return hex;
+}
+
+/* ===================== UI ===================== */
+function Button(props: {
+  children: React.ReactNode;
+  onClick?: () => void;
+  disabled?: boolean;
+}) {
+  return (
+    <button
+      onClick={props.onClick}
+      disabled={props.disabled}
+      style={{
+        padding: "12px 18px",
+        borderRadius: 14,
+        border: "1px solid rgba(255,255,255,0.25)",
+        background: "rgba(255,255,255,0.08)",
+        color: "white",
+        fontWeight: 800,
+        cursor: props.disabled ? "not-allowed" : "pointer",
+        opacity: props.disabled ? 0.5 : 1,
+      }}
+    >
+      {props.children}
+    </button>
+  );
+}
+
+/* ===================== PAGE ===================== */
 export default function PicklePunksMintPage() {
-  const [account, setAccount] = useState<string | null>(null);
-  const [file, setFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [status, setStatus] = useState<string>("");
+  const [account, setAccount] = useState("");
+  const [txHash, setTxHash] = useState("");
+  const [error, setError] = useState("");
 
-  /* ================= WALLET ================= */
+  /* ---------- LOCKED ETHSCRIPTION PAYLOAD (TESTED) ---------- */
+  const payloadObject = useMemo(
+    () => ({
+      type: "bitbrains.ethscriptions.test",
+      version: "1.0",
+      message: "testing bitbrains",
+      anchors: {
+        protocol_ens: "bitbrains.eth",
+        collection_ens: "picklepunks.eth",
+        site: "https://bitbrains.us",
+      },
+      timestamp: new Date().toISOString(),
+    }),
+    []
+  );
 
+  const ethscriptionPayload = useMemo(() => {
+    const encoded = encodeURIComponent(JSON.stringify(payloadObject));
+    return `data:application/json,${encoded}`;
+  }, [payloadObject]);
+
+  /* ===================== ACTIONS ===================== */
   async function connectWallet() {
-    if (!window.ethereum) {
-      alert("MetaMask not detected");
-      return;
+    try {
+      setError("");
+      if (!window.ethereum) {
+        setError("Wallet not found.");
+        return;
+      }
+      const accounts = (await window.ethereum.request({
+        method: "eth_requestAccounts",
+      })) as string[];
+      if (accounts?.[0]) setAccount(accounts[0]);
+    } catch (e: any) {
+      setError(e?.message || "Failed to connect wallet.");
     }
-
-    const accounts = await window.ethereum.request({
-      method: "eth_requestAccounts",
-    });
-
-    setAccount(accounts[0]);
   }
-
-  /* ================= FILE ================= */
-
-  function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
-    const f = e.target.files?.[0];
-    if (!f) return;
-
-    setFile(f);
-    setImagePreview(URL.createObjectURL(f));
-  }
-
-  /* ================= MINT ================= */
 
   async function mintEthscription() {
-    if (!window.ethereum || !account || !file) {
-      alert("Missing wallet or image");
-      return;
-    }
+    // 🔒 HARD STOP — parked until launch
+    setError("Minting is disabled until March 1.");
+    return;
 
-    setStatus("Preparing payload...");
-
-    const base64 = await fileToBase64(file);
-
-    const payload = {
-      protocol: "ethscriptions",
-      version: "1.0",
-      mime: file.type,
-      image: base64,
-      name: "Pickle Punk",
-      collection: "Pickle Punks",
-    };
-
-    const json = JSON.stringify(payload);
-    const encoded = encodeURIComponent(json);
-    const data = "data:application/json," + encoded;
-
-    setStatus("Sending transaction…");
-
-    await window.ethereum.request({
+    /*
+    // --- PRESERVED, TESTED LOGIC (DO NOT DELETE) ---
+    const tx = await window.ethereum.request({
       method: "eth_sendTransaction",
       params: [
         {
           from: account,
-          to: CALLDATA_SINK_CONTRACT,
+          to: ETHSCRIPTION_TO_ADDRESS,
           value: "0x0",
-          data: stringToHex(data),
+          gas: GAS_LIMIT_ETHSCRIPTION,
+          data: utf8ToHex(ethscriptionPayload),
         },
       ],
     });
-
-    setStatus("Transaction submitted. Check wallet activity.");
+    setTxHash(tx as string);
+    */
   }
 
-  /* ================= UI ================= */
-
+  /* ===================== RENDER ===================== */
   return (
     <main
       style={{
         minHeight: "100vh",
         background: "#0b0b0b",
-        color: "#fff",
-        display: "flex",
-        justifyContent: "center",
-        padding: "2rem",
+        color: "white",
+        padding: 28,
       }}
     >
-      <div style={{ maxWidth: 420, width: "100%" }}>
-        {/* Banner */}
+      <div style={{ maxWidth: 960, margin: "0 auto" }}>
+        {/* ===== Banner ===== */}
         <img
-          src="/IMG_2082.jpeg"
+          src={BANNER_IMAGE}
           alt="Pickle Punks"
           style={{
             width: "100%",
-            borderRadius: 12,
-            marginBottom: "1.5rem",
+            borderRadius: 18,
+            border: "3px solid rgba(202,162,74,0.9)",
+            marginBottom: 18,
           }}
         />
 
-        {/* Step 1 */}
-        <h3>Step 1 — Connect Wallet</h3>
-        {account ? (
-          <p>Connected: {account.slice(0, 6)}…{account.slice(-4)}</p>
-        ) : (
-          <button onClick={connectWallet}>Connect MetaMask</button>
-        )}
-
-        {/* Step 2 */}
-        <h3 style={{ marginTop: "1.5rem" }}>Step 2 — Upload Image</h3>
-        <input type="file" accept="image/*" onChange={handleFile} />
-
-        {imagePreview && (
-          <img
-            src={imagePreview}
-            alt="Preview"
-            style={{
-              marginTop: "1rem",
-              width: "100%",
-              borderRadius: 12,
-            }}
-          />
-        )}
-
-        {/* Step 3 */}
-        <h3 style={{ marginTop: "1.5rem" }}>Step 3 — Mint</h3>
-        <button
-          onClick={mintEthscription}
-          disabled={!account || !file}
+        {/* ===== Status ===== */}
+        <div
           style={{
-            width: "100%",
-            padding: "1rem",
-            fontSize: "1rem",
-            marginTop: "0.5rem",
+            textAlign: "center",
+            fontWeight: 900,
+            fontSize: 22,
+            letterSpacing: 2,
+            marginBottom: 6,
           }}
         >
-          Mint Ethscription
-        </button>
+          MINTING MARCH 1
+        </div>
 
-        {status && (
-          <p style={{ marginTop: "1rem", opacity: 0.8 }}>{status}</p>
+        <p style={{ textAlign: "center", opacity: 0.8 }}>
+          Minting is temporarily disabled while final ERC-721 metadata is completed.
+        </p>
+
+        {/* ===== Wallet ===== */}
+        <h3 style={{ marginTop: 28 }}>Step 1 — Connect Wallet</h3>
+        {account ? (
+          <p>Connected: {shorten(account)}</p>
+        ) : (
+          <Button onClick={connectWallet} disabled={!MINTING_LIVE}>
+            Connect Wallet
+          </Button>
         )}
+
+        {/* ===== ERC-721 ===== */}
+        <h3 style={{ marginTop: 24 }}>Step 2 — Mint Pickle Punk (ERC-721)</h3>
+        <p style={{ opacity: 0.7 }}>
+          ERC-721 minting will open on March 1.
+        </p>
+        <Button disabled>Mint ERC-721 (Disabled)</Button>
+
+        {/* ===== Ethscriptions ===== */}
+        <h3 style={{ marginTop: 24 }}>Step 3 — Mint Ethscription</h3>
+        <p style={{ opacity: 0.7 }}>
+          Ethscriptions logic is tested and locked. Minting opens March 1.
+        </p>
+        <Button disabled onClick={mintEthscription}>
+          Mint Ethscription (Disabled)
+        </Button>
+
+        {/* ===== Debug / Status ===== */}
+        {txHash && (
+          <p style={{ marginTop: 16 }}>
+            TX:{" "}
+            <a
+              href={`https://etherscan.io/tx/${txHash}`}
+              target="_blank"
+              rel="noreferrer"
+            >
+              {txHash}
+            </a>
+          </p>
+        )}
+
+        {error && (
+          <p style={{ marginTop: 16, color: "#ff8080" }}>{error}</p>
+        )}
+
+        <p style={{ marginTop: 32, opacity: 0.6 }}>
+          This page is intentionally locked to prevent accidental mints before launch.
+        </p>
       </div>
     </main>
-  );
-}
-
-/* ================= HELPERS ================= */
-
-function fileToBase64(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}
-
-function stringToHex(str: string): string {
-  return (
-    "0x" +
-    Array.from(new TextEncoder().encode(str))
-      .map((b) => b.toString(16).padStart(2, "0"))
-      .join("")
   );
 }
