@@ -1,54 +1,71 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 
 /**
- * Pickle Punks — Mint Page (LOCKED / PARKED)
- *
- * STATUS:
- * - Minting scheduled: March 1
- * - ERC-721 mint: DISABLED
- * - Ethscriptions mint: DISABLED (logic preserved & tested)
- *
- * PURPOSE:
- * - Keep full mint logic in place
- * - Prevent any transactions until launch window
- * - Avoid breaking tested Ethscriptions calldata flow
+ * Pickle Punks — Ethscriptions Mint (Option A)
+ * - ✅ Next.js 14 / Vercel build-safe (NO global Window.ethereum redeclare)
+ * - ✅ Mobile MetaMask friendly
+ * - ✅ No payload preview spam
+ * - ✅ Clean UI with Pickle Punks banner
  */
 
-declare global {
-  interface Window {
-    ethereum?: {
-      request: (args: { method: string; params?: any[] | object }) => Promise<any>;
-      isMetaMask?: boolean;
-    };
-  }
+type EthereumProvider = {
+  request: (args: { method: string; params?: any[] }) => Promise<any>;
+  on?: (event: string, handler: (...args: any[]) => void) => void;
+  removeListener?: (event: string, handler: (...args: any[]) => void) => void;
+  isMetaMask?: boolean;
+};
+
+/* ================= CONFIG ================= */
+const MINTING_ENABLED = true;
+
+// Option A sink (DO NOT use 0x0…dEaD; MetaMask flags it as "internal account" on mobile sometimes)
+const SINK_TO_ADDRESS = "0x0000000000000000000000000000000000000001";
+
+// Safety cap: many wallets/providers will refuse very large calldata
+const MAX_DATA_BYTES = 110_000; // ~110 KB
+
+// Banner image (must exist in /public)
+const BANNER_SRC = "/IMG_2082.jpeg";
+
+/* ================= HELPERS ================= */
+function getEthereum(): EthereumProvider | undefined {
+  if (typeof window === "undefined") return undefined;
+  return (window as any).ethereum as EthereumProvider | undefined;
 }
 
-/* ===================== LAUNCH FLAGS ===================== */
-const MINTING_LIVE = false; // 🔒 flip to true when ready
-const ERC721_ENABLED = false;
-const ETHSCRIPTIONS_ENABLED = false;
+function bytesLengthFromDataUrl(dataUrl: string): number {
+  // data:image/png;base64,AAAA...
+  const comma = dataUrl.indexOf(",");
+  if (comma === -1) return 0;
+  const b64 = dataUrl.slice(comma + 1);
 
-/* ===================== CONSTANTS ===================== */
-const BANNER_IMAGE = "/IMG_2082.jpeg";
-
-/**
- * External EOA used previously for successful Ethscriptions indexing.
- * Kept here to preserve exact working logic.
- */
-const ETHSCRIPTION_TO_ADDRESS =
-  "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045"; // Vitalik
-
-const GAS_LIMIT_ETHSCRIPTION = "0x186A0"; // 100,000
-
-/* ===================== HELPERS ===================== */
-function shorten(addr: string) {
-  return addr ? `${addr.slice(0, 6)}…${addr.slice(-4)}` : "";
+  // Base64 -> bytes (approx): 3/4 of chars (minus padding)
+  const padding = b64.endsWith("==") ? 2 : b64.endsWith("=") ? 1 : 0;
+  return Math.floor((b64.length * 3) / 4) - padding;
 }
 
-function utf8ToHex(str: string): string {
-  const bytes = new TextEncoder().encode(str);
+function buildEthscriptionsPayload(dataUrl: string): string {
+  // Canonical payload: JSON with a type field + image data URL
+  const obj = {
+    type: "picklepunks.ethscriptions.image",
+    version: "1.0",
+    image: dataUrl, // must be a data:image/*;base64,... URL
+    createdAt: new Date().toISOString(),
+    site: "https://www.bitbrains.us",
+  };
+
+  return "data:application/json," + encodeURIComponent(JSON.stringify(obj));
+}
+
+function toHexData(utf8: string): string {
+  // Convert UTF-8 string to hex (0x...)
+  // Use TextEncoder (supported broadly)
+  const enc = new TextEncoder();
+  const bytes = enc.encode(utf8);
+
+  // IMPORTANT: do NOT use for..of on Uint8Array (older TS builds can be weird in strict settings)
   let hex = "0x";
   for (let i = 0; i < bytes.length; i++) {
     hex += bytes[i].toString(16).padStart(2, "0");
@@ -56,186 +73,362 @@ function utf8ToHex(str: string): string {
   return hex;
 }
 
-/* ===================== UI ===================== */
-function Button(props: {
-  children: React.ReactNode;
-  onClick?: () => void;
-  disabled?: boolean;
-}) {
-  return (
-    <button
-      onClick={props.onClick}
-      disabled={props.disabled}
-      style={{
-        padding: "12px 18px",
-        borderRadius: 14,
-        border: "1px solid rgba(255,255,255,0.25)",
-        background: "rgba(255,255,255,0.08)",
-        color: "white",
-        fontWeight: 800,
-        cursor: props.disabled ? "not-allowed" : "pointer",
-        opacity: props.disabled ? 0.5 : 1,
-      }}
-    >
-      {props.children}
-    </button>
-  );
+function shorten(addr: string): string {
+  if (!addr) return "";
+  return addr.slice(0, 6) + "..." + addr.slice(-4);
 }
 
-/* ===================== PAGE ===================== */
+/* ================= PAGE ================= */
 export default function PicklePunksMintPage() {
-  const [account, setAccount] = useState("");
-  const [txHash, setTxHash] = useState("");
-  const [error, setError] = useState("");
+  const [account, setAccount] = useState<string>("");
+  const [status, setStatus] = useState<string>("");
+  const [error, setError] = useState<string>("");
+  const [busy, setBusy] = useState<boolean>(false);
 
-  /* ---------- LOCKED ETHSCRIPTION PAYLOAD (TESTED) ---------- */
-  const payloadObject = useMemo(
-    () => ({
-      type: "bitbrains.ethscriptions.test",
-      version: "1.0",
-      message: "testing bitbrains",
-      anchors: {
-        protocol_ens: "bitbrains.eth",
-        collection_ens: "picklepunks.eth",
-        site: "https://bitbrains.us",
-      },
-      timestamp: new Date().toISOString(),
-    }),
-    []
-  );
+  const [fileName, setFileName] = useState<string>("");
+  const [dataUrl, setDataUrl] = useState<string>("");
+  const [dataBytes, setDataBytes] = useState<number>(0);
 
-  const ethscriptionPayload = useMemo(() => {
-    const encoded = encodeURIComponent(JSON.stringify(payloadObject));
-    return `data:application/json,${encoded}`;
-  }, [payloadObject]);
+  const payload = useMemo(() => {
+    if (!dataUrl) return "";
+    return buildEthscriptionsPayload(dataUrl);
+  }, [dataUrl]);
 
-  /* ===================== ACTIONS ===================== */
+  const payloadHex = useMemo(() => {
+    if (!payload) return "";
+    return toHexData(payload);
+  }, [payload]);
+
+  useEffect(() => {
+    const eth = getEthereum();
+    if (!eth?.on) return;
+
+    const onAccountsChanged = (accs: any) => {
+      const a = Array.isArray(accs) && accs.length ? String(accs[0]) : "";
+      setAccount(a);
+    };
+
+    eth.on("accountsChanged", onAccountsChanged);
+    return () => {
+      eth.removeListener?.("accountsChanged", onAccountsChanged);
+    };
+  }, []);
+
   async function connectWallet() {
+    setError("");
+    setStatus("");
+
+    const eth = getEthereum();
+    if (!eth) {
+      setError("MetaMask not detected. Open this page inside MetaMask browser.");
+      return;
+    }
+
     try {
-      setError("");
-      if (!window.ethereum) {
-        setError("Wallet not found.");
-        return;
-      }
-      const accounts = (await window.ethereum.request({
-        method: "eth_requestAccounts",
-      })) as string[];
-      if (accounts?.[0]) setAccount(accounts[0]);
+      const accs = (await eth.request({ method: "eth_requestAccounts" })) as any[];
+      const a = Array.isArray(accs) && accs.length ? String(accs[0]) : "";
+      setAccount(a);
+      setStatus("Wallet connected.");
     } catch (e: any) {
-      setError(e?.message || "Failed to connect wallet.");
+      setError(e?.message || "Wallet connect failed.");
     }
   }
 
-  async function mintEthscription() {
-    // 🔒 HARD STOP — parked until launch
-    setError("Minting is disabled until March 1.");
-    return;
+  async function onChooseFile(e: React.ChangeEvent<HTMLInputElement>) {
+    setError("");
+    setStatus("");
 
-    /*
-    // --- PRESERVED, TESTED LOGIC (DO NOT DELETE) ---
-    const tx = await window.ethereum.request({
-      method: "eth_sendTransaction",
-      params: [
-        {
-          from: account,
-          to: ETHSCRIPTION_TO_ADDRESS,
-          value: "0x0",
-          gas: GAS_LIMIT_ETHSCRIPTION,
-          data: utf8ToHex(ethscriptionPayload),
-        },
-      ],
-    });
-    setTxHash(tx as string);
-    */
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setFileName(file.name);
+
+    // Read file -> data URL
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = String(reader.result || "");
+      setDataUrl(result);
+      setDataBytes(bytesLengthFromDataUrl(result));
+
+      if (!result.startsWith("data:image/")) {
+        setError("File must be an image (png/jpg/webp).");
+      } else {
+        setStatus("Image loaded.");
+      }
+    };
+    reader.onerror = () => setError("Failed reading file.");
+    reader.readAsDataURL(file);
   }
 
-  /* ===================== RENDER ===================== */
+  async function mintOptionA() {
+    setError("");
+    setStatus("");
+
+    if (!MINTING_ENABLED) {
+      setError("Minting is currently disabled.");
+      return;
+    }
+
+    const eth = getEthereum();
+    if (!eth) {
+      setError("MetaMask not detected. Open inside MetaMask browser.");
+      return;
+    }
+    if (!account) {
+      setError("Connect your wallet first.");
+      return;
+    }
+    if (!dataUrl || !payloadHex) {
+      setError("Upload an image first.");
+      return;
+    }
+
+    // Safety checks
+    if (!dataUrl.startsWith("data:image/")) {
+      setError("Invalid image data URL.");
+      return;
+    }
+    if (dataBytes > MAX_DATA_BYTES) {
+      setError(
+        `Image too large for reliable calldata minting on mobile. Your image is ~${dataBytes.toLocaleString()} bytes. Try a smaller PNG (target < ${MAX_DATA_BYTES.toLocaleString()} bytes).`
+      );
+      return;
+    }
+
+    setBusy(true);
+    setStatus("Opening MetaMask… confirm the transaction.");
+    try {
+      // eth_sendTransaction with 0 value + calldata payload
+      const txHash = await eth.request({
+        method: "eth_sendTransaction",
+        params: [
+          {
+            from: account,
+            to: SINK_TO_ADDRESS,
+            value: "0x0",
+            data: payloadHex,
+          },
+        ],
+      });
+
+      setStatus(`Submitted: ${String(txHash)}`);
+    } catch (e: any) {
+      setError(e?.message || "Transaction failed.");
+      setStatus("");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <main
       style={{
         minHeight: "100vh",
-        background: "#0b0b0b",
-        color: "white",
-        padding: 28,
+        background: "#070707",
+        color: "#fff",
+        display: "flex",
+        justifyContent: "center",
+        padding: "24px 14px 60px",
       }}
     >
-      <div style={{ maxWidth: 960, margin: "0 auto" }}>
-        {/* ===== Banner ===== */}
-        <img
-          src={BANNER_IMAGE}
-          alt="Pickle Punks"
+      <div style={{ width: "100%", maxWidth: 520 }}>
+        {/* Banner */}
+        <div
           style={{
             width: "100%",
             borderRadius: 18,
-            border: "3px solid rgba(202,162,74,0.9)",
+            overflow: "hidden",
+            border: "1px solid rgba(255,255,255,0.10)",
+            boxShadow: "0 0 0 1px rgba(255,255,255,0.03) inset",
             marginBottom: 18,
           }}
-        />
-
-        {/* ===== Status ===== */}
-        <div
-          style={{
-            textAlign: "center",
-            fontWeight: 900,
-            fontSize: 22,
-            letterSpacing: 2,
-            marginBottom: 6,
-          }}
         >
-          MINTING MARCH 1
+          <img
+            src={BANNER_SRC}
+            alt="Pickle Punks"
+            style={{ width: "100%", display: "block" }}
+          />
         </div>
 
-        <p style={{ textAlign: "center", opacity: 0.8 }}>
-          Minting is temporarily disabled while final ERC-721 metadata is completed.
-        </p>
-
-        {/* ===== Wallet ===== */}
-        <h3 style={{ marginTop: 28 }}>Step 1 — Connect Wallet</h3>
-        {account ? (
-          <p>Connected: {shorten(account)}</p>
-        ) : (
-          <Button onClick={connectWallet} disabled={!MINTING_LIVE}>
-            Connect Wallet
-          </Button>
-        )}
-
-        {/* ===== ERC-721 ===== */}
-        <h3 style={{ marginTop: 24 }}>Step 2 — Mint Pickle Punk (ERC-721)</h3>
-        <p style={{ opacity: 0.7 }}>
-          ERC-721 minting will open on March 1.
-        </p>
-        <Button disabled>Mint ERC-721 (Disabled)</Button>
-
-        {/* ===== Ethscriptions ===== */}
-        <h3 style={{ marginTop: 24 }}>Step 3 — Mint Ethscription</h3>
-        <p style={{ opacity: 0.7 }}>
-          Ethscriptions logic is tested and locked. Minting opens March 1.
-        </p>
-        <Button disabled onClick={mintEthscription}>
-          Mint Ethscription (Disabled)
-        </Button>
-
-        {/* ===== Debug / Status ===== */}
-        {txHash && (
-          <p style={{ marginTop: 16 }}>
-            TX:{" "}
-            <a
-              href={`https://etherscan.io/tx/${txHash}`}
-              target="_blank"
-              rel="noreferrer"
-            >
-              {txHash}
-            </a>
+        {/* Card */}
+        <section
+          style={{
+            background: "rgba(255,255,255,0.04)",
+            border: "1px solid rgba(255,255,255,0.10)",
+            borderRadius: 18,
+            padding: 18,
+          }}
+        >
+          <h1 style={{ margin: 0, fontSize: 24, letterSpacing: 0.2 }}>
+            Pickle Punks — Ethscriptions Mint
+          </h1>
+          <p style={{ marginTop: 8, marginBottom: 14, opacity: 0.8, lineHeight: 1.4 }}>
+            Upload an image to mint an Ethscription via calldata (Option A).
           </p>
-        )}
 
-        {error && (
-          <p style={{ marginTop: 16, color: "#ff8080" }}>{error}</p>
-        )}
+          {/* Step 1 */}
+          <div
+            style={{
+              padding: "14px 14px 10px",
+              borderRadius: 14,
+              border: "1px solid rgba(255,255,255,0.10)",
+              background: "rgba(0,0,0,0.25)",
+              marginBottom: 12,
+            }}
+          >
+            <div style={{ fontWeight: 700, marginBottom: 10 }}>Step 1 — Connect Wallet</div>
 
-        <p style={{ marginTop: 32, opacity: 0.6 }}>
-          This page is intentionally locked to prevent accidental mints before launch.
-        </p>
+            <button
+              onClick={connectWallet}
+              disabled={busy}
+              style={{
+                width: "100%",
+                padding: "12px 14px",
+                borderRadius: 12,
+                border: "1px solid rgba(255,255,255,0.14)",
+                background: "#101822",
+                color: "#fff",
+                fontWeight: 700,
+                cursor: "pointer",
+              }}
+            >
+              {account ? `Connected: ${shorten(account)}` : "Connect MetaMask"}
+            </button>
+          </div>
+
+          {/* Step 2 */}
+          <div
+            style={{
+              padding: "14px 14px 10px",
+              borderRadius: 14,
+              border: "1px solid rgba(255,255,255,0.10)",
+              background: "rgba(0,0,0,0.25)",
+              marginBottom: 12,
+            }}
+          >
+            <div style={{ fontWeight: 700, marginBottom: 10 }}>Step 2 — Upload Image</div>
+
+            <label
+              style={{
+                display: "flex",
+                gap: 10,
+                alignItems: "center",
+                justifyContent: "space-between",
+                flexWrap: "wrap",
+              }}
+            >
+              <input
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                onChange={onChooseFile}
+                disabled={busy}
+                style={{ color: "#fff" }}
+              />
+              {fileName ? (
+                <span style={{ opacity: 0.85, fontSize: 13 }}>
+                  {fileName} ({dataBytes.toLocaleString()} bytes)
+                </span>
+              ) : (
+                <span style={{ opacity: 0.6, fontSize: 13 }}>PNG / JPG / WEBP</span>
+              )}
+            </label>
+
+            {dataUrl ? (
+              <div
+                style={{
+                  marginTop: 12,
+                  display: "flex",
+                  justifyContent: "center",
+                }}
+              >
+                <img
+                  src={dataUrl}
+                  alt="Preview"
+                  style={{
+                    width: 240,
+                    height: 240,
+                    objectFit: "cover",
+                    borderRadius: 16,
+                    border: "1px solid rgba(255,255,255,0.12)",
+                    background: "rgba(255,255,255,0.02)",
+                  }}
+                />
+              </div>
+            ) : null}
+          </div>
+
+          {/* Step 3 */}
+          <div
+            style={{
+              padding: "14px 14px 10px",
+              borderRadius: 14,
+              border: "1px solid rgba(255,255,255,0.10)",
+              background: "rgba(0,0,0,0.25)",
+              marginBottom: 6,
+            }}
+          >
+            <div style={{ fontWeight: 700, marginBottom: 10 }}>Step 3 — Mint</div>
+
+            <button
+              onClick={mintOptionA}
+              disabled={busy || !account || !dataUrl}
+              style={{
+                width: "100%",
+                padding: "14px 14px",
+                borderRadius: 14,
+                border: "1px solid rgba(255,255,255,0.14)",
+                background: busy ? "#1a1a1a" : "#17263a",
+                color: "#fff",
+                fontWeight: 800,
+                cursor: busy ? "not-allowed" : "pointer",
+              }}
+            >
+              {busy ? "Opening MetaMask…" : "Mint Ethscription (Option A)"}
+            </button>
+
+            <div style={{ marginTop: 10, fontSize: 12, opacity: 0.7, lineHeight: 1.35 }}>
+              Destination (sink): <span style={{ fontFamily: "monospace" }}>{SINK_TO_ADDRESS}</span>
+              <br />
+              Note: No payload preview is shown. We send a 0 ETH tx with calldata (your JSON payload),
+              which is what Ethscriptions indexers read.
+            </div>
+          </div>
+
+          {/* Status / Errors */}
+          {status ? (
+            <div
+              style={{
+                marginTop: 10,
+                padding: 12,
+                borderRadius: 12,
+                background: "rgba(40,140,80,0.12)",
+                border: "1px solid rgba(40,140,80,0.25)",
+                color: "#d6ffe2",
+                fontSize: 13,
+                lineHeight: 1.4,
+              }}
+            >
+              {status}
+            </div>
+          ) : null}
+
+          {error ? (
+            <div
+              style={{
+                marginTop: 10,
+                padding: 12,
+                borderRadius: 12,
+                background: "rgba(180,40,40,0.12)",
+                border: "1px solid rgba(180,40,40,0.25)",
+                color: "#ffd6d6",
+                fontSize: 13,
+                lineHeight: 1.4,
+              }}
+            >
+              {error}
+            </div>
+          ) : null}
+        </section>
       </div>
     </main>
   );
