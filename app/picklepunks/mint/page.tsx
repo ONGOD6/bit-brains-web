@@ -1,623 +1,522 @@
 "use client";
 
+import React, { useEffect, useMemo, useState } from "react";
+
 /**
- * Pickle Punks — Ethscriptions Image Mint (Single File, Vercel Safe)
+ * Pickle Punks — Ethscriptions Image Mint (Simple / Option A)
  *
- * ✅ Upload image (PNG/JPG/WebP) with max size (default 128 KB)
- * ✅ Builds a canonical data:application/json,<urlencoded-json> payload
- * ✅ Mints via eth_sendTransaction with calldata (tx.data)
- * ✅ Uses a sink "to" address by default (avoids MetaMask "internal accounts cannot include data")
- * ✅ Hides payload preview (no giant text on screen)
- * ✅ Optional Advanced: Decode from TX hash -> reconstruct image + download
+ * ✅ Banner on top
+ * ✅ No payload preview
+ * ✅ No “download image” button (not needed for minting)
+ * ✅ Build-safe: no window usage during prerender, no for..of on Uint8Array
+ * ✅ Sends a 0 ETH tx with calldata to a configurable destination (default burn/sink)
  *
- * COMMIT (use in GitHub): fix: vercel-safe image ethscription mint + tx decode (no payload preview)
+ * File: /app/picklepunkss/mint/page.tsx
  */
 
-import React, { useCallback, useMemo, useState } from "react";
+declare global {
+  interface Window {
+    ethereum?: {
+      request: (args: { method: string; params?: any }) => Promise<any>;
+      on?: (event: string, cb: (...args: any[]) => void) => void;
+      removeListener?: (event: string, cb: (...args: any[]) => void) => void;
+      isMetaMask?: boolean;
+    };
+  }
+}
 
 /* ================= CONFIG ================= */
-const SITE_URL = "https://bitbrains.us";
-const DEFAULT_MAX_KB = 128;
-
-// Default sink address (safe for calldata tx; avoids MetaMask internal-account warning)
-const DEFAULT_SINK_TO = "0x000000000000000000000000000000000000dEaD";
-
-// Public RPC (client-side) for decoding tx input by hash
-const DEFAULT_PUBLIC_RPC = "https://cloudflare-eth.com";
+const DEFAULT_SINK = "0x000000000000000000000000000000000000dEaD"; // burn/sink address
 
 /* ================= HELPERS ================= */
-function isBrowser(): boolean {
-  return typeof window !== "undefined";
+function isAddress(addr: string) {
+  return /^0x[a-fA-F0-9]{40}$/.test(addr.trim());
 }
 
-function isHexAddress(v: string): boolean {
-  return /^0x[a-fA-F0-9]{40}$/.test(v.trim());
-}
-
-function utf8ToHex(str: string): string {
+// Build-safe: no for..of on Uint8Array
+function utf8ToHex(str: string) {
   const enc = new TextEncoder().encode(str);
   let hex = "0x";
-  // IMPORTANT: avoid for..of to keep TS build safe in some configs
   for (let i = 0; i < enc.length; i++) {
-    const b = enc[i]!;
-    hex += b.toString(16).padStart(2, "0");
+    const h = enc[i].toString(16).padStart(2, "0");
+    hex += h;
   }
   return hex;
 }
 
-function hexToUtf8(hex: string): string {
-  const h = hex.startsWith("0x") ? hex.slice(2) : hex;
-  if (h.length % 2 !== 0) return "";
-  const bytes = new Uint8Array(h.length / 2);
-  for (let i = 0; i < bytes.length; i++) {
-    bytes[i] = parseInt(h.slice(i * 2, i * 2 + 2), 16);
-  }
-  return new TextDecoder().decode(bytes);
-}
-
-function safeBytesOfHexData(hexData: string): number {
-  if (!hexData || !hexData.startsWith("0x")) return 0;
-  return Math.max(0, (hexData.length - 2) / 2);
-}
-
-function buildEthscriptionJsonDataUrl(imageDataUrl: string): string {
-  // Canonical ethscriptions payload style (what you were seeing in "Payload Preview")
-  // data:application/json,<URL-ENCODED JSON>
-  const obj = {
-    type: "bitbrains.ethscriptions.image",
-    version: "1.0",
-    image: imageDataUrl,
-    site: SITE_URL,
-    createdAt: new Date().toISOString(),
-  };
-  const json = JSON.stringify(obj);
+// Canonical Ethscriptions payload:
+// data:application/json,<urlencoded JSON>
+function makeEthscriptionsDataURI(jsonObj: any) {
+  const json = JSON.stringify(jsonObj);
   return `data:application/json,${encodeURIComponent(json)}`;
 }
 
-function extractImageDataUrlFromPayload(payloadDataUrl: string): string | null {
-  // payloadDataUrl is expected:
-  // data:application/json,<urlencoded-json>
-  if (!payloadDataUrl.startsWith("data:application/json,")) return null;
-  const encoded = payloadDataUrl.slice("data:application/json,".length);
-  try {
-    const jsonStr = decodeURIComponent(encoded);
-    const parsed = JSON.parse(jsonStr);
-    if (typeof parsed?.image === "string" && parsed.image.startsWith("data:image/")) {
-      return parsed.image;
-    }
-    return null;
-  } catch {
-    return null;
-  }
-}
-
-function downloadDataUrl(dataUrl: string, filename: string) {
-  // Avoid Blob typing issues; data URLs can be downloaded directly.
-  const a = document.createElement("a");
-  a.href = dataUrl;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-}
-
-/* ================= PAGE ================= */
 export default function PicklePunksMintPage() {
+  const [mounted, setMounted] = useState(false);
   const [account, setAccount] = useState<string>("");
+  const [chainId, setChainId] = useState<string>("");
   const [status, setStatus] = useState<string>("");
+  const [error, setError] = useState<string>("");
 
-  // Upload
-  const [maxKB, setMaxKB] = useState<number>(DEFAULT_MAX_KB);
+  const [sink, setSink] = useState<string>(DEFAULT_SINK);
+
   const [fileName, setFileName] = useState<string>("");
   const [fileSize, setFileSize] = useState<number>(0);
-  const [imageDataUrl, setImageDataUrl] = useState<string>("");
+  const [mime, setMime] = useState<string>("");
+  const [imageDataUrl, setImageDataUrl] = useState<string>(""); // data:image/...;base64,...
 
-  // Destination
-  const [useSinkTo, setUseSinkTo] = useState<boolean>(true);
-  const [customTo, setCustomTo] = useState<string>("");
+  const [isMinting, setIsMinting] = useState(false);
 
-  // Advanced decode
-  const [showAdvanced, setShowAdvanced] = useState<boolean>(false);
-  const [rpcUrl, setRpcUrl] = useState<string>(DEFAULT_PUBLIC_RPC);
-  const [txHash, setTxHash] = useState<string>("");
-  const [decodedImageDataUrl, setDecodedImageDataUrl] = useState<string>("");
-
-  const canUseEthereum = useMemo(() => {
-    if (!isBrowser()) return false;
-    return Boolean((window as any)?.ethereum?.request);
+  // Prevent Next prerender “window is not defined”
+  useEffect(() => {
+    setMounted(true);
   }, []);
 
-  const destinationTo = useMemo(() => {
-    if (useSinkTo) return DEFAULT_SINK_TO;
-    const v = customTo.trim();
-    return isHexAddress(v) ? v : "";
-  }, [useSinkTo, customTo]);
+  const hasEthereum = useMemo(() => {
+    if (!mounted) return false;
+    return typeof window !== "undefined" && !!window.ethereum;
+  }, [mounted]);
 
-  const payloadDataUrl = useMemo(() => {
-    if (!imageDataUrl) return "";
-    return buildEthscriptionJsonDataUrl(imageDataUrl);
-  }, [imageDataUrl]);
+  // Keep wallet state updated
+  useEffect(() => {
+    if (!hasEthereum) return;
 
-  const txDataHex = useMemo(() => {
-    if (!payloadDataUrl) return "";
-    return utf8ToHex(payloadDataUrl);
-  }, [payloadDataUrl]);
+    const eth = window.ethereum!;
+    const refresh = async () => {
+      try {
+        const accounts = await eth.request({ method: "eth_accounts" });
+        const acc = Array.isArray(accounts) && accounts.length ? accounts[0] : "";
+        setAccount(acc || "");
 
-  const txDataBytes = useMemo(() => safeBytesOfHexData(txDataHex), [txDataHex]);
+        const cid = await eth.request({ method: "eth_chainId" });
+        setChainId(typeof cid === "string" ? cid : "");
+      } catch {
+        // ignore
+      }
+    };
 
-  const connectWallet = useCallback(async () => {
+    refresh();
+
+    const onAccountsChanged = (accs: string[]) => {
+      setAccount(Array.isArray(accs) && accs.length ? accs[0] : "");
+    };
+    const onChainChanged = (cid: string) => {
+      setChainId(cid);
+    };
+
+    eth.on?.("accountsChanged", onAccountsChanged);
+    eth.on?.("chainChanged", onChainChanged);
+
+    return () => {
+      eth.removeListener?.("accountsChanged", onAccountsChanged);
+      eth.removeListener?.("chainChanged", onChainChanged);
+    };
+  }, [hasEthereum]);
+
+  const short = (addr: string) => (addr ? `${addr.slice(0, 6)}…${addr.slice(-4)}` : "");
+
+  async function connectWallet() {
+    setError("");
     setStatus("");
-    setAccount("");
-    try {
-      if (!canUseEthereum) {
-        setStatus("MetaMask / injected wallet not detected in this browser.");
-        return;
-      }
-      const eth = (window as any).ethereum;
-      const accounts: string[] = await eth.request({ method: "eth_requestAccounts" });
-      const a = accounts?.[0] || "";
-      if (!a) {
-        setStatus("No account returned.");
-        return;
-      }
-      setAccount(a);
-      setStatus("Wallet connected.");
-    } catch (e: any) {
-      setStatus(e?.message || "Failed to connect wallet.");
+    if (!hasEthereum) {
+      setError("MetaMask not detected. Open this page inside the MetaMask browser.");
+      return;
     }
-  }, [canUseEthereum]);
+    try {
+      const eth = window.ethereum!;
+      const accounts = await eth.request({ method: "eth_requestAccounts" });
+      const acc = Array.isArray(accounts) && accounts.length ? accounts[0] : "";
+      setAccount(acc || "");
 
-  const onChooseFile = useCallback(
-    async (file: File | null) => {
-      setStatus("");
+      const cid = await eth.request({ method: "eth_chainId" });
+      setChainId(typeof cid === "string" ? cid : "");
+    } catch (e: any) {
+      setError(e?.message || "Wallet connection failed.");
+    }
+  }
+
+  async function onPickFile(file: File | null) {
+    setError("");
+    setStatus("");
+
+    if (!file) {
       setFileName("");
       setFileSize(0);
+      setMime("");
       setImageDataUrl("");
-      if (!file) return;
-
-      const maxBytes = Math.max(1, Math.floor((maxKB || DEFAULT_MAX_KB) * 1024));
-      if (file.size > maxBytes) {
-        setStatus(`File too large. Max ${maxKB} KB. Your file is ${(file.size / 1024).toFixed(1)} KB.`);
-        return;
-      }
-
-      if (!file.type.startsWith("image/")) {
-        setStatus("Please upload an image file (PNG/JPG/WebP).");
-        return;
-      }
-
-      setFileName(file.name);
-      setFileSize(file.size);
-
-      // Read as data URL (already base64 under the hood)
-      const reader = new FileReader();
-      reader.onload = () => {
-        const result = String(reader.result || "");
-        if (!result.startsWith("data:image/")) {
-          setStatus("Unexpected image encoding. Try a PNG/JPG/WebP.");
-          return;
-        }
-        setImageDataUrl(result);
-        setStatus("Image loaded.");
-      };
-      reader.onerror = () => setStatus("Failed to read file.");
-      reader.readAsDataURL(file);
-    },
-    [maxKB]
-  );
-
-  const mintEthscription = useCallback(async () => {
-    setStatus("");
-    try {
-      if (!canUseEthereum) {
-        setStatus("MetaMask / injected wallet not detected in this browser.");
-        return;
-      }
-      if (!account) {
-        setStatus("Connect wallet first.");
-        return;
-      }
-      if (!imageDataUrl) {
-        setStatus("Upload an image first.");
-        return;
-      }
-      if (!txDataHex) {
-        setStatus("Missing tx data.");
-        return;
-      }
-      if (!destinationTo) {
-        setStatus("Invalid destination address. Use sink or enter a valid 0x address.");
-        return;
-      }
-
-      // NOTE:
-      // Ethscriptions attribution is based on `from` + `data`.
-      // We use a sink `to` address to avoid MetaMask blocking calldata transfers to "internal accounts".
-      setStatus("Opening MetaMask confirmation…");
-
-      const eth = (window as any).ethereum;
-
-      const txParams = {
-        from: account,
-        to: destinationTo,
-        value: "0x0",
-        data: txDataHex,
-      };
-
-      const txid: string = await eth.request({
-        method: "eth_sendTransaction",
-        params: [txParams],
-      });
-
-      setStatus(`Submitted: ${txid}`);
-      setTxHash(txid);
-    } catch (e: any) {
-      setStatus(e?.message || "Mint failed.");
+      return;
     }
-  }, [account, canUseEthereum, destinationTo, imageDataUrl, txDataHex]);
 
-  const decodeFromTxHash = useCallback(async () => {
+    setFileName(file.name || "image");
+    setFileSize(file.size || 0);
+    setMime(file.type || "image/png");
+
+    // Use FileReader to safely produce a base64 data URL in-browser
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = typeof reader.result === "string" ? reader.result : "";
+      setImageDataUrl(result);
+    };
+    reader.onerror = () => {
+      setError("Failed to read image. Try a smaller PNG.");
+      setImageDataUrl("");
+    };
+    reader.readAsDataURL(file);
+  }
+
+  const canMint = !!account && !!imageDataUrl && isAddress(sink) && !isMinting;
+
+  async function mintEthscription() {
+    setError("");
     setStatus("");
-    setDecodedImageDataUrl("");
 
-    const h = txHash.trim();
-    if (!/^0x[a-fA-F0-9]{64}$/.test(h)) {
-      setStatus("Paste a valid transaction hash (0x… 64 hex chars).");
+    if (!hasEthereum) {
+      setError("MetaMask not detected. Open inside MetaMask browser.");
+      return;
+    }
+    if (!account) {
+      setError("Connect your wallet first.");
+      return;
+    }
+    if (!imageDataUrl) {
+      setError("Upload an image first.");
+      return;
+    }
+    if (!isAddress(sink)) {
+      setError("Destination address is invalid. Must be a 0x… address (40 hex chars).");
       return;
     }
 
     try {
-      setStatus("Fetching transaction input…");
-      const body = {
-        jsonrpc: "2.0",
-        id: 1,
-        method: "eth_getTransactionByHash",
-        params: [h],
+      setIsMinting(true);
+      setStatus("Preparing calldata…");
+
+      // ✅ Option A payload (simple & consistent)
+      const payload = {
+        type: "bitbrains.ethscriptions.image",
+        version: "1.0",
+        image: {
+          mime: mime || "image/png",
+          data: imageDataUrl, // already base64 data URL
+          name: fileName || "picklepunks.png",
+          size: fileSize || 0,
+        },
+        site: "https://bitbrains.us",
+        timestamp: new Date().toISOString(),
       };
 
-      const res = await fetch(rpcUrl, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify(body),
+      const dataUri = makeEthscriptionsDataURI(payload);
+      const txData = utf8ToHex(dataUri);
+
+      setStatus("Sending transaction… confirm in MetaMask.");
+
+      const eth = window.ethereum!;
+      // Important: gas will be estimated by wallet; if it fails, user can try again.
+      const txHash = await eth.request({
+        method: "eth_sendTransaction",
+        params: [
+          {
+            from: account,
+            to: sink,
+            value: "0x0",
+            data: txData,
+          },
+        ],
       });
 
-      const json = await res.json();
-      const input = json?.result?.input;
-
-      if (typeof input !== "string" || !input.startsWith("0x")) {
-        setStatus("No tx input found (or RPC blocked it). Try another RPC.");
-        return;
-      }
-
-      const payload = hexToUtf8(input);
-      const img = extractImageDataUrlFromPayload(payload);
-
-      if (!img) {
-        setStatus("Could not parse an image from tx input. (Maybe it wasn’t an image payload.)");
-        return;
-      }
-
-      setDecodedImageDataUrl(img);
-      setStatus("Decoded image from tx input.");
+      setStatus(`Sent! Tx: ${txHash}`);
     } catch (e: any) {
-      setStatus(e?.message || "Decode failed (RPC/network).");
+      const msg = e?.message || "Transaction failed.";
+      setError(msg);
+      setStatus("");
+    } finally {
+      setIsMinting(false);
     }
-  }, [rpcUrl, txHash]);
+  }
 
-  const downloadOriginal = useCallback(() => {
-    if (!imageDataUrl) return;
-    const name = fileName ? fileName.replace(/\s+/g, "_") : "ethscription_image.png";
-    downloadDataUrl(imageDataUrl, name);
-  }, [imageDataUrl, fileName]);
-
-  const downloadDecoded = useCallback(() => {
-    if (!decodedImageDataUrl) return;
-    downloadDataUrl(decodedImageDataUrl, "decoded_from_tx.png");
-  }, [decodedImageDataUrl]);
+  const networkLabel = useMemo(() => {
+    if (!chainId) return "";
+    // mainnet = 0x1
+    if (chainId === "0x1") return "Ethereum Mainnet";
+    return `Chain ${chainId}`;
+  }, [chainId]);
 
   return (
-    <main
-      style={{
-        minHeight: "100vh",
-        background: "#0b0b0b",
-        color: "#fff",
-        padding: "2rem 1.25rem",
-        display: "flex",
-        justifyContent: "center",
-      }}
-    >
-      <div style={{ width: "100%", maxWidth: 720 }}>
-        <h1 style={{ margin: 0, fontSize: 34, letterSpacing: 0.5 }}>Pickle Punks — Ethscriptions Mint</h1>
-        <p style={{ opacity: 0.8, marginTop: 10, lineHeight: 1.4 }}>
-          Upload an image (≤ {maxKB} KB), then mint via calldata. <br />
-          <span style={{ opacity: 0.75 }}>
-            Note: The “to” address is a sink; attribution comes from the sender + tx input.
-          </span>
-        </p>
+    <main style={styles.page}>
+      <div style={styles.card}>
+        {/* Banner */}
+        <img
+          src="/IMG_2082.jpeg"
+          alt="Pickle Punks"
+          style={styles.banner}
+        />
 
-        {/* STEP 1 */}
-        <section style={{ marginTop: 26 }}>
-          <h2 style={{ margin: "0 0 10px 0", fontSize: 26 }}>Step 1 — Connect Wallet</h2>
-          <button
-            onClick={connectWallet}
-            style={{
-              padding: "12px 16px",
-              borderRadius: 12,
-              border: "1px solid rgba(255,255,255,0.15)",
-              background: "rgba(255,255,255,0.06)",
-              color: "#fff",
-              fontSize: 16,
-              cursor: "pointer",
-            }}
-          >
-            {account ? "Connected" : "Connect MetaMask"}
-          </button>
-          {account ? (
-            <div style={{ marginTop: 10, opacity: 0.85 }}>Connected: {account.slice(0, 6)}…{account.slice(-4)}</div>
-          ) : null}
-        </section>
+        <div style={styles.header}>
+          <h1 style={styles.h1}>Pickle Punks — Mint</h1>
+          <p style={styles.sub}>
+            Wallet connect → upload image → mint Ethscription (calldata).
+          </p>
+        </div>
 
-        {/* STEP 2 */}
-        <section style={{ marginTop: 28 }}>
-          <h2 style={{ margin: "0 0 10px 0", fontSize: 26 }}>Step 2 — Upload Image</h2>
+        {/* Step 1 */}
+        <section style={styles.section}>
+          <h2 style={styles.h2}>Step 1 — Connect Wallet</h2>
 
-          <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
-            <label
-              style={{
-                padding: "10px 14px",
-                borderRadius: 12,
-                border: "1px solid rgba(255,255,255,0.15)",
-                background: "rgba(255,255,255,0.06)",
-                cursor: "pointer",
-              }}
-            >
-              Choose File
-              <input
-                type="file"
-                accept="image/png,image/jpeg,image/webp"
-                style={{ display: "none" }}
-                onChange={(e) => onChooseFile(e.target.files?.[0] || null)}
-              />
-            </label>
-
-            <div style={{ opacity: 0.85 }}>
-              Max:
-              <input
-                type="number"
-                value={maxKB}
-                min={1}
-                step={1}
-                onChange={(e) => setMaxKB(Number(e.target.value || DEFAULT_MAX_KB))}
-                style={{
-                  marginLeft: 8,
-                  width: 90,
-                  padding: "8px 10px",
-                  borderRadius: 10,
-                  border: "1px solid rgba(255,255,255,0.15)",
-                  background: "rgba(255,255,255,0.06)",
-                  color: "#fff",
-                }}
-              />{" "}
-              KB
-            </div>
-          </div>
-
-          {fileName ? (
-            <div style={{ marginTop: 12, opacity: 0.9 }}>
-              Loaded: <b>{fileName}</b> ({fileSize} bytes)
-            </div>
-          ) : null}
-
-          {imageDataUrl ? (
-            <div style={{ marginTop: 14 }}>
-              <img
-                src={imageDataUrl}
-                alt="Preview"
-                style={{
-                  width: 220,
-                  height: 220,
-                  objectFit: "contain",
-                  borderRadius: 16,
-                  border: "1px solid rgba(255,255,255,0.12)",
-                  background: "rgba(255,255,255,0.03)",
-                }}
-              />
-            </div>
-          ) : null}
-        </section>
-
-        {/* STEP 3 */}
-        <section style={{ marginTop: 28 }}>
-          <h2 style={{ margin: "0 0 10px 0", fontSize: 26 }}>Step 3 — Mint</h2>
-
-          <div style={{ marginBottom: 10, opacity: 0.85 }}>
-            <label style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <input
-                type="checkbox"
-                checked={useSinkTo}
-                onChange={(e) => setUseSinkTo(e.target.checked)}
-              />
-              Use sink address (recommended)
-            </label>
-
-            {!useSinkTo ? (
-              <div style={{ marginTop: 10 }}>
-                <div style={{ fontSize: 13, opacity: 0.75, marginBottom: 6 }}>Custom “to” address (0x…)</div>
-                <input
-                  value={customTo}
-                  onChange={(e) => setCustomTo(e.target.value)}
-                  placeholder="0x..."
-                  style={{
-                    width: "100%",
-                    padding: "10px 12px",
-                    borderRadius: 12,
-                    border: "1px solid rgba(255,255,255,0.15)",
-                    background: "rgba(255,255,255,0.06)",
-                    color: "#fff",
-                  }}
-                />
+          {!hasEthereum ? (
+            <p style={styles.muted}>
+              Open this page inside the <b>MetaMask in-app browser</b> to mint.
+            </p>
+          ) : account ? (
+            <div style={styles.row}>
+              <div style={styles.pill}>
+                Connected: <b>{short(account)}</b>
               </div>
-            ) : (
-              <div style={{ marginTop: 6, fontSize: 13, opacity: 0.75 }}>
-                Destination (sink): {DEFAULT_SINK_TO}
-              </div>
-            )}
-
-            {txDataHex ? (
-              <div style={{ marginTop: 10, fontSize: 13, opacity: 0.75 }}>
-                Calldata size: <b>{txDataBytes}</b> bytes (Ethscriptions max is ~90,000 bytes)
-              </div>
-            ) : null}
-          </div>
-
-          <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-            <button
-              onClick={mintEthscription}
-              disabled={!account || !imageDataUrl}
-              style={{
-                padding: "12px 16px",
-                borderRadius: 12,
-                border: "1px solid rgba(255,255,255,0.15)",
-                background: !account || !imageDataUrl ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.08)",
-                color: "#fff",
-                fontSize: 16,
-                cursor: !account || !imageDataUrl ? "not-allowed" : "pointer",
-              }}
-            >
-              Mint Ethscription (Calldata)
-            </button>
-
-            <button
-              onClick={downloadOriginal}
-              disabled={!imageDataUrl}
-              style={{
-                padding: "12px 16px",
-                borderRadius: 12,
-                border: "1px solid rgba(255,255,255,0.15)",
-                background: !imageDataUrl ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.08)",
-                color: "#fff",
-                fontSize: 16,
-                cursor: !imageDataUrl ? "not-allowed" : "pointer",
-              }}
-            >
-              Download Image (Original)
-            </button>
-          </div>
-
-          {status ? (
-            <div style={{ marginTop: 14, padding: "12px 14px", borderRadius: 12, border: "1px solid rgba(255,255,255,0.12)", background: "rgba(255,255,255,0.04)" }}>
-              {status}
-            </div>
-          ) : null}
-        </section>
-
-        {/* ADVANCED */}
-        <section style={{ marginTop: 28 }}>
-          <button
-            onClick={() => setShowAdvanced((v) => !v)}
-            style={{
-              padding: "10px 14px",
-              borderRadius: 12,
-              border: "1px solid rgba(255,255,255,0.15)",
-              background: "rgba(255,255,255,0.06)",
-              color: "#fff",
-              fontSize: 15,
-              cursor: "pointer",
-            }}
-          >
-            {showAdvanced ? "Hide" : "Show"} Advanced: Decode from TX Hash
-          </button>
-
-          {showAdvanced ? (
-            <div style={{ marginTop: 12, padding: "14px", borderRadius: 12, border: "1px solid rgba(255,255,255,0.12)", background: "rgba(255,255,255,0.04)" }}>
-              <div style={{ fontSize: 13, opacity: 0.75, marginBottom: 6 }}>Public RPC (for reading tx input)</div>
-              <input
-                value={rpcUrl}
-                onChange={(e) => setRpcUrl(e.target.value)}
-                style={{
-                  width: "100%",
-                  padding: "10px 12px",
-                  borderRadius: 12,
-                  border: "1px solid rgba(255,255,255,0.15)",
-                  background: "rgba(255,255,255,0.06)",
-                  color: "#fff",
-                }}
-              />
-
-              <div style={{ marginTop: 12, fontSize: 13, opacity: 0.75, marginBottom: 6 }}>Transaction Hash</div>
-              <input
-                value={txHash}
-                onChange={(e) => setTxHash(e.target.value)}
-                placeholder="0x..."
-                style={{
-                  width: "100%",
-                  padding: "10px 12px",
-                  borderRadius: 12,
-                  border: "1px solid rgba(255,255,255,0.15)",
-                  background: "rgba(255,255,255,0.06)",
-                  color: "#fff",
-                }}
-              />
-
-              <div style={{ marginTop: 12, display: "flex", gap: 12, flexWrap: "wrap" }}>
-                <button
-                  onClick={decodeFromTxHash}
-                  style={{
-                    padding: "10px 14px",
-                    borderRadius: 12,
-                    border: "1px solid rgba(255,255,255,0.15)",
-                    background: "rgba(255,255,255,0.08)",
-                    color: "#fff",
-                    fontSize: 15,
-                    cursor: "pointer",
-                  }}
-                >
-                  Decode TX Input
-                </button>
-
-                <button
-                  onClick={downloadDecoded}
-                  disabled={!decodedImageDataUrl}
-                  style={{
-                    padding: "10px 14px",
-                    borderRadius: 12,
-                    border: "1px solid rgba(255,255,255,0.15)",
-                    background: !decodedImageDataUrl ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.08)",
-                    color: "#fff",
-                    fontSize: 15,
-                    cursor: !decodedImageDataUrl ? "not-allowed" : "pointer",
-                  }}
-                >
-                  Download Decoded Image
-                </button>
-              </div>
-
-              {decodedImageDataUrl ? (
-                <div style={{ marginTop: 14 }}>
-                  <div style={{ fontSize: 13, opacity: 0.75, marginBottom: 8 }}>Decoded Preview</div>
-                  <img
-                    src={decodedImageDataUrl}
-                    alt="Decoded"
-                    style={{
-                      width: 220,
-                      height: 220,
-                      objectFit: "contain",
-                      borderRadius: 16,
-                      border: "1px solid rgba(255,255,255,0.12)",
-                      background: "rgba(255,255,255,0.03)",
-                    }}
-                  />
-                </div>
+              {networkLabel ? (
+                <div style={styles.pillMuted}>{networkLabel}</div>
               ) : null}
             </div>
+          ) : (
+            <button style={styles.btn} onClick={connectWallet}>
+              Connect MetaMask
+            </button>
+          )}
+        </section>
+
+        {/* Step 2 */}
+        <section style={styles.section}>
+          <h2 style={styles.h2}>Step 2 — Upload Image</h2>
+
+          <input
+            type="file"
+            accept="image/*"
+            onChange={(e) => onPickFile(e.target.files?.[0] || null)}
+            style={styles.file}
+          />
+
+          {fileName ? (
+            <p style={styles.muted}>
+              Loaded: <b>{fileName}</b> ({fileSize} bytes)
+            </p>
+          ) : (
+            <p style={styles.muted}>Choose a small PNG/JPG to test.</p>
+          )}
+
+          {imageDataUrl ? (
+            <div style={styles.previewWrap}>
+              <img src={imageDataUrl} alt="Preview" style={styles.previewImg} />
+            </div>
           ) : null}
         </section>
 
-        <div style={{ marginTop: 28, fontSize: 12, opacity: 0.6 }}>
-          Tip: If MetaMask “doesn’t pop” on iOS, make sure you’re opening the site inside MetaMask’s in-app browser (not Safari),
-          and you’re on Ethereum mainnet.
+        {/* Step 3 */}
+        <section style={styles.section}>
+          <h2 style={styles.h2}>Step 3 — Mint</h2>
+
+          <label style={styles.label}>Destination (sink)</label>
+          <input
+            value={sink}
+            onChange={(e) => setSink(e.target.value)}
+            placeholder={DEFAULT_SINK}
+            style={styles.input}
+            inputMode="text"
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
+          />
+
+          <p style={styles.note}>
+            Default is a burn/sink address so MetaMask is less likely to block “data”
+            transfers to internal/self accounts. You can paste a different public address
+            if you want to test (ex: Vitalik), but the standard Ethscriptions pattern is
+            a sink-style tx that carries the calldata.
+          </p>
+
+          <button
+            style={{
+              ...styles.btnPrimary,
+              opacity: canMint ? 1 : 0.5,
+              cursor: canMint ? "pointer" : "not-allowed",
+            }}
+            onClick={mintEthscription}
+            disabled={!canMint}
+          >
+            {isMinting ? "Minting…" : "Mint Ethscription (Calldata)"}
+          </button>
+
+          {status ? <p style={styles.status}>{status}</p> : null}
+          {error ? <p style={styles.error}>{error}</p> : null}
+        </section>
+
+        <div style={styles.footer}>
+          <div style={styles.footerRow}>
+            <span style={styles.footerKey}>Commit message:</span>
+            <span style={styles.footerVal}>
+              feat: simplify picklepunks mint; remove payload preview; add sink address + build-safe calldata
+            </span>
+          </div>
         </div>
       </div>
     </main>
   );
 }
+
+/* ================= STYLES ================= */
+const styles: Record<string, React.CSSProperties> = {
+  page: {
+    minHeight: "100vh",
+    background: "#07070a",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: "24px",
+    color: "#fff",
+  },
+  card: {
+    width: "100%",
+    maxWidth: 720,
+    background: "rgba(20,20,26,0.85)",
+    border: "1px solid rgba(255,255,255,0.10)",
+    borderRadius: 18,
+    overflow: "hidden",
+    boxShadow: "0 18px 60px rgba(0,0,0,0.55)",
+  },
+  banner: {
+    width: "100%",
+    height: "auto",
+    display: "block",
+  },
+  header: {
+    padding: "18px 18px 0 18px",
+  },
+  h1: {
+    margin: "0 0 6px 0",
+    fontSize: 28,
+    letterSpacing: 0.2,
+  },
+  sub: {
+    margin: 0,
+    color: "rgba(255,255,255,0.75)",
+    lineHeight: 1.35,
+  },
+  section: {
+    padding: 18,
+    borderTop: "1px solid rgba(255,255,255,0.08)",
+  },
+  h2: {
+    margin: "0 0 10px 0",
+    fontSize: 20,
+  },
+  row: {
+    display: "flex",
+    gap: 10,
+    flexWrap: "wrap",
+    alignItems: "center",
+  },
+  pill: {
+    padding: "8px 10px",
+    borderRadius: 999,
+    background: "rgba(255,255,255,0.08)",
+    border: "1px solid rgba(255,255,255,0.10)",
+    fontSize: 14,
+  },
+  pillMuted: {
+    padding: "8px 10px",
+    borderRadius: 999,
+    background: "rgba(255,255,255,0.05)",
+    border: "1px solid rgba(255,255,255,0.08)",
+    fontSize: 14,
+    color: "rgba(255,255,255,0.75)",
+  },
+  muted: {
+    margin: "10px 0 0 0",
+    color: "rgba(255,255,255,0.75)",
+    lineHeight: 1.35,
+  },
+  file: {
+    width: "100%",
+    marginTop: 6,
+  },
+  previewWrap: {
+    marginTop: 12,
+    display: "flex",
+    justifyContent: "center",
+  },
+  previewImg: {
+    width: 220,
+    height: 220,
+    objectFit: "contain",
+    borderRadius: 16,
+    border: "1px solid rgba(255,255,255,0.12)",
+    background: "rgba(0,0,0,0.35)",
+    padding: 10,
+  },
+  label: {
+    display: "block",
+    fontSize: 13,
+    color: "rgba(255,255,255,0.75)",
+    marginBottom: 6,
+  },
+  input: {
+    width: "100%",
+    padding: "12px 12px",
+    borderRadius: 12,
+    border: "1px solid rgba(255,255,255,0.14)",
+    background: "rgba(0,0,0,0.35)",
+    color: "#fff",
+    outline: "none",
+    fontSize: 14,
+  },
+  note: {
+    margin: "10px 0 14px 0",
+    color: "rgba(255,255,255,0.68)",
+    lineHeight: 1.4,
+    fontSize: 13,
+  },
+  btn: {
+    padding: "12px 14px",
+    borderRadius: 12,
+    border: "1px solid rgba(255,255,255,0.16)",
+    background: "rgba(255,255,255,0.08)",
+    color: "#fff",
+    fontSize: 15,
+    cursor: "pointer",
+    width: "100%",
+    maxWidth: 320,
+  },
+  btnPrimary: {
+    padding: "12px 14px",
+    borderRadius: 12,
+    border: "1px solid rgba(255,255,255,0.18)",
+    background: "rgba(120, 140, 255, 0.22)",
+    color: "#fff",
+    fontSize: 15,
+    width: "100%",
+  },
+  status: {
+    margin: "12px 0 0 0",
+    color: "rgba(255,255,255,0.85)",
+  },
+  error: {
+    margin: "12px 0 0 0",
+    color: "#ff5a5a",
+    whiteSpace: "pre-wrap",
+  },
+  footer: {
+    padding: 14,
+    borderTop: "1px solid rgba(255,255,255,0.08)",
+    background: "rgba(0,0,0,0.20)",
+  },
+  footerRow: {
+    display: "flex",
+    gap: 8,
+    flexWrap: "wrap",
+    alignItems: "center",
+    fontSize: 13,
+  },
+  footerKey: {
+    color: "rgba(255,255,255,0.70)",
+  },
+  footerVal: {
+    color: "rgba(255,255,255,0.92)",
+  },
+};
