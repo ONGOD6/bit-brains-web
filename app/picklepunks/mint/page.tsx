@@ -1,290 +1,143 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import { useState } from "react";
 
-/**
- * Pickle Punks — Ethscriptions Image Mint + Decode/Download (Build-Safe)
- *
- * ✅ No global Window.ethereum redeclare
- * ✅ No for..of on Uint8Array (avoids downlevelIteration issues)
- * ✅ No SharedArrayBuffer / Blob typing issues
- * ✅ Upload image <= 128 KB
- * ✅ Encode image -> data URI -> calldata hex
- * ✅ Mint transaction (0 ETH) to bitbrains.eth (TEST MODE)
- * ✅ Download original image directly from the stored data URI
- *
- * NOTE:
- * This version does NOT do RPC decode from tx hash yet.
- * It guarantees Vercel build passes and the mint calldata is correct.
- */
+const MAX_BYTES = 128 * 1024; // 128 KB
+const DESTINATION_ADDRESS = "0xdae49f6644b0f064f6d469f21afb9bb1321d9f67";
 
-const MAX_FILE_BYTES = 128 * 1024; // 128 KB
-const DESTINATION_ENS = "bitbrains.eth"; // TEST destination
-const GAS_LIMIT = "0x186A0"; // 100,000
-
-function shorten(addr: string) {
-  return addr ? `${addr.slice(0, 6)}…${addr.slice(-4)}` : "";
-}
-
-function utf8ToHex(str: string) {
-  const enc = new TextEncoder().encode(str);
-  let hex = "0x";
-  // IMPORTANT: NO for..of (Vercel TS config fails)
-  for (let i = 0; i < enc.length; i++) {
-    hex += enc[i].toString(16).padStart(2, "0");
-  }
-  return hex;
-}
-
-export default function PicklePunksMintPage() {
-  const [account, setAccount] = useState("");
-  const [error, setError] = useState("");
-  const [status, setStatus] = useState("");
-
-  const [fileName, setFileName] = useState("");
-  const [fileSize, setFileSize] = useState(0);
-  const [imageDataUrl, setImageDataUrl] = useState(""); // data:image/...;base64,...
-  const [txHash, setTxHash] = useState("");
+export default function PicklePunksImageMint() {
+  const [account, setAccount] = useState<string | null>(null);
+  const [file, setFile] = useState<File | null>(null);
+  const [dataUri, setDataUri] = useState<string | null>(null);
+  const [status, setStatus] = useState<string>("");
 
   async function connectWallet() {
-    try {
-      setError("");
-      setStatus("");
-
-      const eth = (window as any).ethereum;
-      if (!eth?.request) {
-        setError("MetaMask not found.");
-        return;
-      }
-
-      const accounts = (await eth.request({
-        method: "eth_requestAccounts",
-      })) as string[];
-
-      if (accounts?.[0]) {
-        setAccount(accounts[0]);
-        setStatus("Wallet connected.");
-      } else {
-        setError("No account returned.");
-      }
-    } catch (e: any) {
-      setError(e?.message || "Failed to connect wallet.");
+    if (!(window as any).ethereum) {
+      alert("MetaMask not found");
+      return;
     }
+
+    const accounts = await (window as any).ethereum.request({
+      method: "eth_requestAccounts",
+    });
+
+    setAccount(accounts[0]);
   }
 
-  function onFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    try {
-      setError("");
-      setStatus("");
-      setTxHash("");
-
-      const f = e.target.files?.[0];
-      if (!f) return;
-
-      if (!f.type.startsWith("image/")) {
-        setError("Upload an image only (PNG/JPG/WebP).");
-        return;
-      }
-
-      if (f.size > MAX_FILE_BYTES) {
-        setError("File too large. Max 128 KB.");
-        return;
-      }
-
-      setFileName(f.name);
-      setFileSize(f.size);
-
-      const reader = new FileReader();
-      reader.onerror = () => setError("Failed to read file.");
-      reader.onload = () => {
-        const result = String(reader.result || "");
-        setImageDataUrl(result); // data:image/...;base64,...
-        setStatus("Image loaded. Ready to mint.");
-      };
-      reader.readAsDataURL(f);
-    } catch (e: any) {
-      setError(e?.message || "Failed to load image.");
+  function handleFile(file: File) {
+    if (file.size > MAX_BYTES) {
+      alert("File exceeds 128 KB limit");
+      return;
     }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result as string;
+      setFile(file);
+      setDataUri(result);
+    };
+    reader.readAsDataURL(file);
   }
 
-  // Payload that gets written into calldata
-  const payload = useMemo(() => {
-    if (!imageDataUrl) return "";
-    const obj = {
+  function utf8ToHex(str: string): string {
+    const enc = new TextEncoder().encode(str);
+    let hex = "0x";
+    for (let i = 0; i < enc.length; i++) {
+      hex += enc[i].toString(16).padStart(2, "0");
+    }
+    return hex;
+  }
+
+  async function mintEthscription() {
+    if (!account || !dataUri) return;
+
+    setStatus("Sending transaction… confirm in MetaMask.");
+
+    const payload = {
       type: "bitbrains.ethscriptions.image",
       version: "1.0",
-      image: imageDataUrl,
+      image: dataUri,
       site: "https://bitbrains.us",
       timestamp: new Date().toISOString(),
     };
-    const encoded = encodeURIComponent(JSON.stringify(obj));
-    return `data:application/json,${encoded}`;
-  }, [imageDataUrl]);
 
-  async function mintEthscription() {
+    const calldata = utf8ToHex(
+      `data:application/json,${JSON.stringify(payload)}`
+    );
+
     try {
-      setError("");
-      setStatus("");
-
-      const eth = (window as any).ethereum;
-      if (!eth?.request) {
-        setError("MetaMask not found.");
-        return;
-      }
-      if (!account) {
-        setError("Connect wallet first.");
-        return;
-      }
-      if (!payload) {
-        setError("Upload an image first.");
-        return;
-      }
-
-      setStatus("Sending transaction… confirm in MetaMask.");
-
-      const tx = await eth.request({
+      await (window as any).ethereum.request({
         method: "eth_sendTransaction",
         params: [
           {
             from: account,
-            to: DESTINATION_ENS,
+            to: DESTINATION_ADDRESS,
+            data: calldata,
             value: "0x0",
-            gas: GAS_LIMIT,
-            data: utf8ToHex(payload),
           },
         ],
       });
 
-      setTxHash(String(tx));
       setStatus("Transaction sent.");
-    } catch (e: any) {
-      setError(e?.message || "Mint failed.");
+    } catch (err: any) {
+      setStatus(err?.message || "Transaction failed");
     }
   }
 
-  function downloadOriginalImage() {
-    if (!imageDataUrl) return;
+  function downloadOriginal() {
+    if (!file) return;
+
+    const url = URL.createObjectURL(file);
     const a = document.createElement("a");
-    a.href = imageDataUrl;
-    a.download = fileName ? `ethscription_${fileName}` : "ethscription_image";
-    document.body.appendChild(a);
+    a.href = url;
+    a.download = file.name;
     a.click();
-    a.remove();
+    URL.revokeObjectURL(url);
   }
 
   return (
-    <main
-      style={{
-        minHeight: "100vh",
-        background: "#0b0b0b",
-        color: "white",
-        padding: 24,
-      }}
-    >
-      <div style={{ maxWidth: 860, margin: "0 auto" }}>
-        <img
-          src="/IMG_2082.jpeg"
-          alt="Pickle Punks"
-          style={{
-            width: "100%",
-            borderRadius: 18,
-            border: "3px solid rgba(202,162,74,0.9)",
-            marginBottom: 18,
-          }}
-        />
+    <main style={{ padding: 24, maxWidth: 520, margin: "0 auto" }}>
+      <h2>Step 1 — Connect Wallet</h2>
+      {account ? (
+        <p>Connected: {account.slice(0, 6)}…{account.slice(-4)}</p>
+      ) : (
+        <button onClick={connectWallet}>Connect Wallet</button>
+      )}
 
-        <h1 style={{ margin: 0 }}>Ethscriptions Image Test</h1>
-        <p style={{ opacity: 0.8, marginTop: 6 }}>
-          Destination: <b>{DESTINATION_ENS}</b> • Max upload: <b>128 KB</b>
-        </p>
+      <h2 style={{ marginTop: 32 }}>Step 2 — Upload Image</h2>
+      <input
+        type="file"
+        accept="image/png,image/jpeg,image/webp"
+        onChange={(e) => e.target.files && handleFile(e.target.files[0])}
+      />
 
-        <hr style={{ opacity: 0.15, margin: "18px 0" }} />
-
-        <h3>Step 1 — Connect Wallet</h3>
-        {account ? (
+      {file && (
+        <>
           <p>
-            Connected: <b>{shorten(account)}</b>
+            Loaded: <strong>{file.name}</strong> ({file.size} bytes)
           </p>
-        ) : (
-          <button onClick={connectWallet} style={{ padding: 12, borderRadius: 10 }}>
-            Connect Wallet
-          </button>
-        )}
+          <img
+            src={dataUri || ""}
+            alt="preview"
+            style={{ maxWidth: "100%", borderRadius: 8 }}
+          />
+        </>
+      )}
 
-        <h3 style={{ marginTop: 22 }}>Step 2 — Upload Image</h3>
-        <input
-          type="file"
-          accept="image/png,image/jpeg,image/webp"
-          onChange={onFileChange}
-        />
+      <h2 style={{ marginTop: 32 }}>Step 3 — Mint</h2>
+      <button disabled={!account || !dataUri} onClick={mintEthscription}>
+        Mint Ethscription (Calldata)
+      </button>
 
-        {fileName && (
-          <p style={{ marginTop: 10, opacity: 0.85 }}>
-            Loaded: <b>{fileName}</b> ({fileSize} bytes)
-          </p>
-        )}
-
-        {imageDataUrl && (
-          <>
-            <div style={{ marginTop: 14 }}>
-              <img
-                src={imageDataUrl}
-                alt="Preview"
-                style={{
-                  width: 180,
-                  height: 180,
-                  objectFit: "cover",
-                  borderRadius: 16,
-                  border: "1px solid rgba(255,255,255,0.18)",
-                }}
-              />
-            </div>
-
-            <div style={{ marginTop: 14, fontWeight: 800 }}>Payload Preview</div>
-            <div style={{ fontSize: 12, opacity: 0.8, wordBreak: "break-word" }}>
-              {payload}
-            </div>
-          </>
-        )}
-
-        <h3 style={{ marginTop: 22 }}>Step 3 — Mint</h3>
-        <button
-          onClick={mintEthscription}
-          disabled={!account || !payload}
-          style={{
-            padding: 12,
-            borderRadius: 10,
-            opacity: !account || !payload ? 0.5 : 1,
-          }}
-        >
-          Mint Ethscription (Calldata)
-        </button>
-
-        {txHash && (
-          <p style={{ marginTop: 12 }}>
-            TX:{" "}
-            <a href={`https://etherscan.io/tx/${txHash}`} target="_blank" rel="noreferrer">
-              {txHash}
-            </a>
-          </p>
-        )}
-
-        {imageDataUrl && (
-          <button
-            onClick={downloadOriginalImage}
-            style={{ padding: 12, borderRadius: 10, marginTop: 12 }}
-          >
+      {file && (
+        <div style={{ marginTop: 12 }}>
+          <button onClick={downloadOriginal}>
             Download Image (Original)
           </button>
-        )}
+        </div>
+      )}
 
-        {status && <p style={{ marginTop: 12, opacity: 0.85 }}>{status}</p>}
-        {error && <p style={{ marginTop: 12, color: "#ff8080" }}>{error}</p>}
-
-        <p style={{ marginTop: 18, opacity: 0.6 }}>
-          Commit message: <b>fix: remove for..of on Uint8Array; restore build-safe calldata mint</b>
-        </p>
-      </div>
+      {status && <p style={{ marginTop: 16 }}>{status}</p>}
     </main>
   );
 }
