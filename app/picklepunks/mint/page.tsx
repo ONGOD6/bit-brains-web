@@ -1,13 +1,16 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 
 /**
  * Pickle Punks — Ethscriptions Mint (Option A)
  * ✅ Next.js 14 / Vercel build-safe (NO global Window.ethereum redeclare)
  * ✅ Mobile MetaMask friendly
- * ✅ Inscribes the IMAGE data URI directly so it renders on ethscriptions.com
- * ✅ Clean UI with Pickle Punks banner
+ * ✅ Mints DIRECT data URLs so ethscriptions.com renders + shows in wallet profile
+ *
+ * IMPORTANT:
+ * - For images, we send payload = data:image/*;base64,...
+ * - For text, we send payload = data:text/plain;charset=utf-8,...
  */
 
 type EthereumProvider = {
@@ -20,14 +23,14 @@ type EthereumProvider = {
 /* ================= CONFIG ================= */
 const MINTING_ENABLED = true;
 
-// MetaMask mobile sometimes flags 0x...dEaD as "internal account". Use a neutral sink.
+// ⚠️ Best practice: use a NORMAL-LOOKING EOA sink (not 0xdead / not 0x000..001)
+// Put any real address here (ideally one you control).
 const SINK_TO_ADDRESS = "0x0000000000000000000000000000000000000001";
 
-// Safety cap: huge calldata can be refused by mobile wallets/providers.
-// NOTE: Base64 expands size. Keep images small/compressed.
-const MAX_DATA_BYTES = 110_000; // ~110 KB (raw decoded bytes estimate)
+// Safety cap (calldata). Keep conservative for mobile.
+const MAX_DATA_BYTES = 110_000;
 
-// Banner image (must exist in /public)
+// Banner image in /public
 const BANNER_SRC = "/IMG_2082.jpeg";
 
 /* ================= HELPERS ================= */
@@ -42,21 +45,16 @@ function shorten(addr: string): string {
 }
 
 function bytesLengthFromDataUrl(dataUrl: string): number {
-  // data:image/png;base64,AAAA...
   const comma = dataUrl.indexOf(",");
   if (comma === -1) return 0;
   const b64 = dataUrl.slice(comma + 1);
-
-  // Base64 -> bytes (approx): 3/4 of chars (minus padding)
   const padding = b64.endsWith("==") ? 2 : b64.endsWith("=") ? 1 : 0;
   return Math.floor((b64.length * 3) / 4) - padding;
 }
 
 function toHexData(utf8: string): string {
-  // Convert UTF-8 string to hex (0x...)
   const enc = new TextEncoder();
   const bytes = enc.encode(utf8);
-
   let hex = "0x";
   for (let i = 0; i < bytes.length; i++) {
     hex += bytes[i].toString(16).padStart(2, "0");
@@ -64,26 +62,49 @@ function toHexData(utf8: string): string {
   return hex;
 }
 
-/**
- * ✅ IMPORTANT:
- * Ethscriptions renderers most reliably display a direct image data URI:
- *   data:image/png;base64,...
- * So we inscribe the image dataUrl itself (NOT a JSON wrapper).
- */
-function buildEthscriptionsPayloadFromImageDataUrl(imageDataUrl: string): string {
-  return imageDataUrl;
+// Build payload that Ethscriptions actually renders
+function buildPayloadImage(dataUrl: string): string {
+  // ✅ This is the key change: return the image data URL directly
+  // Example: data:image/png;base64,AAAA...
+  return dataUrl;
 }
 
-/* ================= PAGE ================= */
+function buildPayloadText(text: string): string {
+  // ✅ Direct text payload (renders as text on ethscriptions.com)
+  return "data:text/plain;charset=utf-8," + encodeURIComponent(text);
+}
+
 export default function PicklePunksMintPage() {
   const [account, setAccount] = useState<string>("");
+  const [busy, setBusy] = useState<boolean>(false);
   const [status, setStatus] = useState<string>("");
   const [error, setError] = useState<string>("");
-  const [busy, setBusy] = useState<boolean>(false);
 
+  // Mode: image or text
+  const [mode, setMode] = useState<"image" | "text">("image");
+
+  // Image state
   const [fileName, setFileName] = useState<string>("");
   const [dataUrl, setDataUrl] = useState<string>("");
   const [dataBytes, setDataBytes] = useState<number>(0);
+
+  // Text state
+  const [text, setText] = useState<string>("");
+
+  const payload = useMemo(() => {
+    if (mode === "image") {
+      if (!dataUrl) return "";
+      return buildPayloadImage(dataUrl);
+    }
+    // text mode
+    if (!text.trim()) return "";
+    return buildPayloadText(text.trim());
+  }, [mode, dataUrl, text]);
+
+  const payloadHex = useMemo(() => {
+    if (!payload) return "";
+    return toHexData(payload);
+  }, [payload]);
 
   useEffect(() => {
     const eth = getEthereum();
@@ -123,6 +144,9 @@ export default function PicklePunksMintPage() {
   async function onChooseFile(e: React.ChangeEvent<HTMLInputElement>) {
     setError("");
     setStatus("");
+    setDataUrl("");
+    setFileName("");
+    setDataBytes(0);
 
     const file = e.target.files?.[0];
     if (!file) return;
@@ -134,14 +158,22 @@ export default function PicklePunksMintPage() {
       const result = String(reader.result || "");
       setDataUrl(result);
 
+      if (!result.startsWith("data:image/")) {
+        setError("File must be an image (png/jpg/webp).");
+        return;
+      }
+
       const bytes = bytesLengthFromDataUrl(result);
       setDataBytes(bytes);
 
-      if (!result.startsWith("data:image/")) {
-        setError("File must be an image (png/jpg/webp).");
-      } else {
-        setStatus("Image loaded.");
+      if (bytes > MAX_DATA_BYTES) {
+        setError(
+          `Image too large for reliable calldata minting on mobile (~${bytes.toLocaleString()} bytes). Try compressing or smaller size (target < ${MAX_DATA_BYTES.toLocaleString()} bytes).`
+        );
+        return;
       }
+
+      setStatus("Image loaded (ready to mint).");
     };
     reader.onerror = () => setError("Failed reading file.");
     reader.readAsDataURL(file);
@@ -165,24 +197,22 @@ export default function PicklePunksMintPage() {
       setError("Connect your wallet first.");
       return;
     }
-    if (!dataUrl) {
-      setError("Upload an image first.");
-      return;
-    }
-    if (!dataUrl.startsWith("data:image/")) {
-      setError("Invalid image data URL.");
-      return;
-    }
-    if (dataBytes > MAX_DATA_BYTES) {
-      setError(
-        `Image too large for reliable calldata minting on mobile. Your image is ~${dataBytes.toLocaleString()} bytes (decoded). Try a smaller/compressed PNG/JPG (target < ${MAX_DATA_BYTES.toLocaleString()} bytes).`
-      );
+    if (!payload || !payloadHex) {
+      setError(mode === "image" ? "Upload an image first." : "Enter text first.");
       return;
     }
 
-    // Build payload (DIRECT image data URI) and hex it.
-    const payload = buildEthscriptionsPayloadFromImageDataUrl(dataUrl);
-    const payloadHex = toHexData(payload);
+    // extra safety for image
+    if (mode === "image") {
+      if (!dataUrl.startsWith("data:image/")) {
+        setError("Invalid image data URL.");
+        return;
+      }
+      if (dataBytes > MAX_DATA_BYTES) {
+        setError("Image too large for mobile calldata minting.");
+        return;
+      }
+    }
 
     setBusy(true);
     setStatus("Opening MetaMask… confirm the transaction.");
@@ -199,6 +229,7 @@ export default function PicklePunksMintPage() {
         ],
       });
 
+      // This is what users need to check on ethscriptions "Recent" immediately
       setStatus(`Submitted: ${String(txHash)}`);
     } catch (e: any) {
       setError(e?.message || "Transaction failed.");
@@ -231,7 +262,11 @@ export default function PicklePunksMintPage() {
             marginBottom: 18,
           }}
         >
-          <img src={BANNER_SRC} alt="Pickle Punks" style={{ width: "100%", display: "block" }} />
+          <img
+            src={BANNER_SRC}
+            alt="Pickle Punks"
+            style={{ width: "100%", display: "block" }}
+          />
         </div>
 
         {/* Card */}
@@ -247,9 +282,59 @@ export default function PicklePunksMintPage() {
             Pickle Punks — Ethscriptions Mint
           </h1>
           <p style={{ marginTop: 8, marginBottom: 14, opacity: 0.8, lineHeight: 1.4 }}>
-            Upload an image to mint an Ethscription via calldata (Option A). This version inscribes the
-            <b> image data URI directly</b> so it renders correctly on ethscriptions.com.
+            Mint an Ethscription via calldata (Option A). This version mints <b>direct</b> data URLs so
+            ethscriptions.com renders and shows it in your profile.
           </p>
+
+          {/* Mode Toggle */}
+          <div
+            style={{
+              display: "flex",
+              gap: 10,
+              marginBottom: 12,
+            }}
+          >
+            <button
+              onClick={() => {
+                setMode("image");
+                setError("");
+                setStatus("");
+              }}
+              disabled={busy}
+              style={{
+                flex: 1,
+                padding: "10px 12px",
+                borderRadius: 12,
+                border: "1px solid rgba(255,255,255,0.14)",
+                background: mode === "image" ? "#17263a" : "#101822",
+                color: "#fff",
+                fontWeight: 800,
+                cursor: "pointer",
+              }}
+            >
+              Image
+            </button>
+            <button
+              onClick={() => {
+                setMode("text");
+                setError("");
+                setStatus("");
+              }}
+              disabled={busy}
+              style={{
+                flex: 1,
+                padding: "10px 12px",
+                borderRadius: 12,
+                border: "1px solid rgba(255,255,255,0.14)",
+                background: mode === "text" ? "#17263a" : "#101822",
+                color: "#fff",
+                fontWeight: 800,
+                cursor: "pointer",
+              }}
+            >
+              Text
+            </button>
+          </div>
 
           {/* Step 1 */}
           <div
@@ -279,12 +364,6 @@ export default function PicklePunksMintPage() {
             >
               {account ? `Connected: ${shorten(account)}` : "Connect MetaMask"}
             </button>
-
-            <div style={{ marginTop: 10, fontSize: 12, opacity: 0.7, lineHeight: 1.35 }}>
-              If it mints but doesn’t show in your ethscriptions profile, MetaMask may be using a different
-              sender (Smart Account). Try MetaMask → Settings → Advanced → turn off <b>Use smart account</b>,
-              then mint again.
-            </div>
           </div>
 
           {/* Step 2 */}
@@ -297,49 +376,80 @@ export default function PicklePunksMintPage() {
               marginBottom: 12,
             }}
           >
-            <div style={{ fontWeight: 700, marginBottom: 10 }}>Step 2 — Upload Image</div>
+            <div style={{ fontWeight: 700, marginBottom: 10 }}>
+              Step 2 — {mode === "image" ? "Upload Image" : "Enter Text"}
+            </div>
 
-            <label
-              style={{
-                display: "flex",
-                gap: 10,
-                alignItems: "center",
-                justifyContent: "space-between",
-                flexWrap: "wrap",
-              }}
-            >
-              <input
-                type="file"
-                accept="image/png,image/jpeg,image/webp"
-                onChange={onChooseFile}
-                disabled={busy}
-                style={{ color: "#fff" }}
-              />
-              {fileName ? (
-                <span style={{ opacity: 0.85, fontSize: 13 }}>
-                  {fileName} (~{dataBytes.toLocaleString()} bytes)
-                </span>
-              ) : (
-                <span style={{ opacity: 0.6, fontSize: 13 }}>PNG / JPG / WEBP</span>
-              )}
-            </label>
-
-            {dataUrl ? (
-              <div style={{ marginTop: 12, display: "flex", justifyContent: "center" }}>
-                <img
-                  src={dataUrl}
-                  alt="Preview"
+            {mode === "image" ? (
+              <>
+                <label
                   style={{
-                    width: 240,
-                    height: 240,
-                    objectFit: "cover",
-                    borderRadius: 16,
-                    border: "1px solid rgba(255,255,255,0.12)",
-                    background: "rgba(255,255,255,0.02)",
+                    display: "flex",
+                    gap: 10,
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    flexWrap: "wrap",
+                  }}
+                >
+                  <input
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp"
+                    onChange={onChooseFile}
+                    disabled={busy}
+                    style={{ color: "#fff" }}
+                  />
+                  {fileName ? (
+                    <span style={{ opacity: 0.85, fontSize: 13 }}>
+                      {fileName} ({dataBytes.toLocaleString()} bytes)
+                    </span>
+                  ) : (
+                    <span style={{ opacity: 0.6, fontSize: 13 }}>PNG / JPG / WEBP</span>
+                  )}
+                </label>
+
+                {dataUrl ? (
+                  <div style={{ marginTop: 12, display: "flex", justifyContent: "center" }}>
+                    <img
+                      src={dataUrl}
+                      alt="Preview"
+                      style={{
+                        width: 240,
+                        height: 240,
+                        objectFit: "cover",
+                        borderRadius: 16,
+                        border: "1px solid rgba(255,255,255,0.12)",
+                        background: "rgba(255,255,255,0.02)",
+                      }}
+                    />
+                  </div>
+                ) : null}
+              </>
+            ) : (
+              <>
+                <textarea
+                  value={text}
+                  onChange={(e) => setText(e.target.value)}
+                  disabled={busy}
+                  placeholder="Enter the text you want to etchscribe..."
+                  style={{
+                    width: "100%",
+                    minHeight: 120,
+                    resize: "vertical",
+                    padding: 12,
+                    borderRadius: 12,
+                    border: "1px solid rgba(255,255,255,0.14)",
+                    background: "#0b0f15",
+                    color: "#fff",
+                    outline: "none",
+                    fontSize: 14,
+                    lineHeight: 1.4,
                   }}
                 />
-              </div>
-            ) : null}
+                <div style={{ marginTop: 8, fontSize: 12, opacity: 0.7 }}>
+                  Tip: keep it short for mobile stability. This mints as <code>data:text/plain</code>.
+                </div>
+              </>
+            )}
           </div>
 
           {/* Step 3 */}
@@ -356,7 +466,11 @@ export default function PicklePunksMintPage() {
 
             <button
               onClick={mintOptionA}
-              disabled={busy || !account || !dataUrl}
+              disabled={
+                busy ||
+                !account ||
+                (mode === "image" ? !dataUrl : !text.trim())
+              }
               style={{
                 width: "100%",
                 padding: "14px 14px",
@@ -372,14 +486,14 @@ export default function PicklePunksMintPage() {
             </button>
 
             <div style={{ marginTop: 10, fontSize: 12, opacity: 0.7, lineHeight: 1.35 }}>
-              Destination (sink):{" "}
-              <span style={{ fontFamily: "monospace" }}>{SINK_TO_ADDRESS}</span>
+              Sink: <span style={{ fontFamily: "monospace" }}>{SINK_TO_ADDRESS}</span>
               <br />
-              Payload: <span style={{ fontFamily: "monospace" }}>data:image/*;base64,...</span>
+              Payload type: <b>{mode === "image" ? "data:image/*;base64" : "data:text/plain"}</b>
+              <br />
+              This is a 0 ETH tx with calldata (the payload). Ethscriptions indexers read the tx input.
             </div>
           </div>
 
-          {/* Status / Errors */}
           {status ? (
             <div
               style={{
