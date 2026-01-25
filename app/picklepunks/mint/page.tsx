@@ -3,17 +3,25 @@
 import React, { useMemo, useState } from "react";
 
 /**
- * Pickle Punks — Mint Page (LOCKED / PARKED) + Ethscriptions Test Mode
+ * Pickle Punks — Ethscriptions Image Mint + Decode/Download (SINGLE FILE)
  *
- * ✅ TEST MODE (now):
- * - Sends a 0 ETH transaction with raw calldata (hex of UTF-8 data: URI)
- * - `to` = bitbrains.eth (ENS)  ✅ (no client-side ENS resolver needed)
+ * ✅ Upload image (PNG/JPG/WebP)
+ * ✅ Enforce MAX upload size (KB)
+ * ✅ Convert to base64 Data URI automatically
+ * ✅ Mint: 0 ETH tx with calldata = hex(utf8(dataUri))
  *
- * ✅ PROD MODE (later):
- * - `to` = connected wallet address (sender)
+ * ✅ Decode/Download:
+ * - Paste a TX hash
+ * - This page calls Ethereum RPC directly:
+ *   eth_getTransactionByHash -> tx.input (hex) -> hex->utf8 -> parse base64 -> bytes -> download
  *
- * NOTE:
- * - This is a calldata-indexing test harness. It does not affect ERC-721 mint.
+ * IMPORTANT:
+ * - Requires a PUBLIC RPC env var:
+ *   NEXT_PUBLIC_ETH_RPC_URL = https://... (Alchemy/Infura/QuickNode mainnet)
+ *
+ * DESTINATION:
+ * - TEST_MODE: to = bitbrains.eth
+ * - PROD later: to = sender (account)
  */
 
 declare global {
@@ -26,22 +34,22 @@ declare global {
 }
 
 /* ===================== FLAGS ===================== */
-const MINTING_LIVE = false; // March 1 switch (site-wide)
-const ERC721_ENABLED = false;
-
-// ✅ Allow Ethscriptions *testing* even while parked
 const ETHSCRIPTIONS_TESTING_ENABLED = true;
-
-/* ===================== DESTINATION MODE ===================== */
 const TEST_MODE = true;
 
-// TEST: send to your ENS
+/* ===================== DESTINATION ===================== */
 const TEST_TO_ENS = "bitbrains.eth";
+
+/* ===================== LIMITS ===================== */
+const MAX_FILE_KB = 128; // <-- your max upload in KB
+const MAX_FILE_BYTES = MAX_FILE_KB * 1024;
 
 /* ===================== CONSTANTS ===================== */
 const BANNER_IMAGE = "/IMG_2082.jpeg";
-const GAS_LIMIT_ETHSCRIPTION = "0x186A0"; // 100,000
-const MAX_DATA_URI_BYTES = 90_000;
+const GAS_LIMIT_ETHSCRIPTION = "0x30D40"; // 200,000 (safe for image calldata)
+
+/* ===================== RPC (PUBLIC) ===================== */
+const PUBLIC_RPC_URL = process.env.NEXT_PUBLIC_ETH_RPC_URL || "";
 
 /* ===================== HELPERS ===================== */
 function shorten(addr: string) {
@@ -57,8 +65,70 @@ function utf8ToHex(str: string): string {
   return hex;
 }
 
-function byteLengthUtf8(str: string) {
-  return new TextEncoder().encode(str).length;
+function hexToUtf8(hex: string): string {
+  const h = hex.startsWith("0x") ? hex.slice(2) : hex;
+  const bytes = new Uint8Array(h.length / 2);
+  for (let i = 0; i < bytes.length; i++) {
+    bytes[i] = parseInt(h.slice(i * 2, i * 2 + 2), 16);
+  }
+  return new TextDecoder().decode(bytes);
+}
+
+function bytesToKB(n: number) {
+  return (n / 1024).toFixed(1);
+}
+
+function base64ToBytesBrowser(b64: string): Uint8Array {
+  // Browser-safe base64 decoder
+  const bin = atob(b64);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return bytes;
+}
+
+function safeExtFromMime(mime: string) {
+  const m = (mime || "").toLowerCase();
+  if (m.includes("png")) return "png";
+  if (m.includes("jpeg") || m.includes("jpg")) return "jpg";
+  if (m.includes("webp")) return "webp";
+  return "bin";
+}
+
+function downloadBytes(bytes: Uint8Array, mime: string, filename: string) {
+  const blob = new Blob([bytes], { type: mime || "application/octet-stream" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+async function assertMainnetWallet() {
+  if (!window.ethereum) throw new Error("Wallet not found.");
+  const chainId = (await window.ethereum.request({ method: "eth_chainId" })) as string;
+  if (chainId !== "0x1") throw new Error("Wrong network. Switch MetaMask to Ethereum Mainnet.");
+}
+
+async function rpcPublic(method: string, params: any[]) {
+  if (!PUBLIC_RPC_URL) {
+    throw new Error(
+      "Missing NEXT_PUBLIC_ETH_RPC_URL. Add it in Vercel Env Vars, then redeploy."
+    );
+  }
+
+  const res = await fetch(PUBLIC_RPC_URL, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }),
+  });
+
+  if (!res.ok) throw new Error(`RPC HTTP ${res.status}`);
+  const json = await res.json();
+  if (json.error) throw new Error(json.error.message || "RPC error");
+  return json.result;
 }
 
 /* ===================== UI ===================== */
@@ -80,6 +150,8 @@ function Button(props: {
         fontWeight: 800,
         cursor: props.disabled ? "not-allowed" : "pointer",
         opacity: props.disabled ? 0.5 : 1,
+        width: "100%",
+        maxWidth: 420,
       }}
     >
       {props.children}
@@ -94,30 +166,19 @@ export default function PicklePunksMintPage() {
   const [error, setError] = useState("");
   const [status, setStatus] = useState("");
 
-  /* ---------- ETHSCRIPTION PAYLOAD (JSON -> data:application/json,...) ---------- */
-  const payloadObject = useMemo(
-    () => ({
-      type: "bitbrains.ethscriptions.test",
-      version: "1.0",
-      message: "calldata indexing test",
-      anchors: {
-        protocol_ens: "bitbrains.eth",
-        site: "https://bitbrains.us",
-      },
-      // NOTE: timestamp helps uniqueness if you mint again later
-      timestamp: new Date().toISOString(),
-    }),
-    []
-  );
+  // Upload state
+  const [fileName, setFileName] = useState("");
+  const [fileBytes, setFileBytes] = useState(0);
+  const [dataUri, setDataUri] = useState(""); // this is what we mint
+  const [previewUrl, setPreviewUrl] = useState(""); // object url preview
 
-  const ethscriptionPayload = useMemo(() => {
-    const encoded = encodeURIComponent(JSON.stringify(payloadObject));
-    return `data:application/json,${encoded}`;
-  }, [payloadObject]);
+  // Decode/download state
+  const [decodeTx, setDecodeTx] = useState("");
+  const [decodeStatus, setDecodeStatus] = useState("");
+  const [decodeError, setDecodeError] = useState("");
 
-  const payloadBytes = useMemo(() => byteLengthUtf8(ethscriptionPayload), [ethscriptionPayload]);
+  const toAddress = useMemo(() => (TEST_MODE ? TEST_TO_ENS : account), [account]);
 
-  /* ===================== ACTIONS ===================== */
   async function connectWallet() {
     try {
       setError("");
@@ -142,22 +203,55 @@ export default function PicklePunksMintPage() {
     }
   }
 
-  async function assertMainnet() {
-    if (!window.ethereum) throw new Error("Wallet not found.");
-    const chainId = (await window.ethereum.request({ method: "eth_chainId" })) as string;
-    if (chainId !== "0x1") {
-      throw new Error("Wrong network. Switch MetaMask to Ethereum Mainnet and try again.");
+  async function onSelectFile(e: React.ChangeEvent<HTMLInputElement>) {
+    try {
+      setError("");
+      setStatus("");
+      setTxHash("");
+
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      if (file.size > MAX_FILE_BYTES) {
+        setError(`File too large: ${bytesToKB(file.size)} KB. Max is ${MAX_FILE_KB} KB.`);
+        return;
+      }
+
+      if (!file.type.startsWith("image/")) {
+        setError("Please upload an image file (PNG/JPG/WebP).");
+        return;
+      }
+
+      setFileName(file.name);
+      setFileBytes(file.size);
+
+      // Preview URL
+      const objUrl = URL.createObjectURL(file);
+      setPreviewUrl(objUrl);
+
+      // FileReader returns full data URI: data:image/...;base64,....
+      const fullDataUri = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onerror = () => reject(new Error("Failed to read file."));
+        reader.onload = () => resolve(String(reader.result || ""));
+        reader.readAsDataURL(file);
+      });
+
+      setDataUri(fullDataUri);
+      setStatus("Image loaded. Ready to mint.");
+    } catch (e: any) {
+      setError(e?.message || "Failed to load image.");
     }
   }
 
-  async function mintEthscription() {
+  async function mintImageEthscription() {
     try {
       setError("");
       setStatus("");
       setTxHash("");
 
       if (!ETHSCRIPTIONS_TESTING_ENABLED) {
-        setError("Ethscriptions testing is disabled.");
+        setError("Minting is disabled.");
         return;
       }
 
@@ -171,20 +265,14 @@ export default function PicklePunksMintPage() {
         return;
       }
 
-      await assertMainnet();
+      await assertMainnetWallet();
 
-      if (payloadBytes > MAX_DATA_URI_BYTES) {
-        setError(`Payload too large (${payloadBytes} bytes). Max is ${MAX_DATA_URI_BYTES} bytes.`);
+      if (!dataUri) {
+        setError("Upload an image first.");
         return;
       }
 
-      // ✅ Destination logic:
-      // TEST: send to bitbrains.eth
-      // PROD: send to the connected wallet (sender)
-      const toAddress = TEST_MODE ? TEST_TO_ENS : account;
-
-      // ✅ Critical: raw calldata = hex(utf8("data:..."))
-      const dataHex = utf8ToHex(ethscriptionPayload);
+      const dataHex = utf8ToHex(dataUri);
 
       setStatus("Sending transaction… confirm in MetaMask.");
 
@@ -202,14 +290,71 @@ export default function PicklePunksMintPage() {
       });
 
       setTxHash(tx as string);
-      setStatus("Transaction submitted. Open Etherscan to view Input Data.");
+      setStatus("Transaction submitted. Copy the TX hash to decode/download.");
     } catch (e: any) {
       setError(e?.message || "Mint failed.");
     }
   }
 
-  /* ===================== RENDER ===================== */
-  const connectDisabled = !ETHSCRIPTIONS_TESTING_ENABLED && !MINTING_LIVE;
+  async function decodeAndDownload() {
+    try {
+      setDecodeError("");
+      setDecodeStatus("");
+
+      const hash = decodeTx.trim();
+      if (!hash || !hash.startsWith("0x") || hash.length < 20) {
+        setDecodeError("Paste a valid transaction hash (starts with 0x…).");
+        return;
+      }
+
+      setDecodeStatus("Fetching transaction from RPC…");
+
+      const tx = await rpcPublic("eth_getTransactionByHash", [hash]);
+      if (!tx) {
+        setDecodeError("Transaction not found.");
+        setDecodeStatus("");
+        return;
+      }
+
+      const inputHex: string = tx.input || "0x";
+      if (inputHex === "0x" || inputHex.length < 4) {
+        setDecodeError("No input data on tx.");
+        setDecodeStatus("");
+        return;
+      }
+
+      setDecodeStatus("Decoding hex → UTF-8 data URI…");
+      const utf8 = hexToUtf8(inputHex);
+
+      if (!utf8.startsWith("data:")) {
+        setDecodeError("Tx input is not a data: URI.");
+        setDecodeStatus("");
+        return;
+      }
+
+      if (!utf8.includes(";base64,")) {
+        setDecodeError("This TX is not a base64 image data URI (might be JSON).");
+        setDecodeStatus("");
+        return;
+      }
+
+      const headerEnd = utf8.indexOf(";base64,");
+      const mime = utf8.slice(5, headerEnd) || "application/octet-stream";
+      const b64 = utf8.slice(headerEnd + ";base64,".length);
+
+      setDecodeStatus("Decoding base64 → bytes…");
+      const bytes = base64ToBytesBrowser(b64);
+
+      const ext = safeExtFromMime(mime);
+      const filename = `ethscription_${hash.slice(0, 10)}.${ext}`;
+
+      downloadBytes(bytes, mime, filename);
+      setDecodeStatus("Downloaded.");
+    } catch (e: any) {
+      setDecodeError(e?.message || "Decode/download failed.");
+      setDecodeStatus("");
+    }
+  }
 
   return (
     <main
@@ -221,7 +366,7 @@ export default function PicklePunksMintPage() {
       }}
     >
       <div style={{ maxWidth: 960, margin: "0 auto" }}>
-        {/* ===== Banner ===== */}
+        {/* Banner */}
         <img
           src={BANNER_IMAGE}
           alt="Pickle Punks"
@@ -233,42 +378,29 @@ export default function PicklePunksMintPage() {
           }}
         />
 
-        {/* ===== Status ===== */}
-        <div
-          style={{
-            textAlign: "center",
-            fontWeight: 900,
-            fontSize: 22,
-            letterSpacing: 2,
-            marginBottom: 6,
-          }}
-        >
-          MINTING MARCH 1
+        <div style={{ textAlign: "center", fontWeight: 900, fontSize: 22, letterSpacing: 2 }}>
+          ETHSCRIPTIONS IMAGE TEST (CALLDATA)
         </div>
 
-        <p style={{ textAlign: "center", opacity: 0.8 }}>
-          ERC-721 minting remains disabled while metadata is finalized.
+        <p style={{ textAlign: "center", opacity: 0.8, marginTop: 8 }}>
+          Max upload: <b>{MAX_FILE_KB} KB</b> • Destination:{" "}
+          <b>{TEST_MODE ? TEST_TO_ENS : "sender wallet"}</b>
           <br />
-          Ethscriptions testing is {ETHSCRIPTIONS_TESTING_ENABLED ? "ENABLED" : "DISABLED"}.
+          Decoder uses: <b>NEXT_PUBLIC_ETH_RPC_URL</b>
         </p>
 
-        {/* ===== Wallet ===== */}
-        <h3 style={{ marginTop: 28 }}>Step 1 — Connect Wallet</h3>
+        {/* Wallet */}
+        <h3 style={{ marginTop: 26 }}>Step 1 — Connect Wallet</h3>
         {account ? (
-          <p>Connected: {shorten(account)}</p>
+          <p>
+            Connected: <b>{shorten(account)}</b>
+          </p>
         ) : (
-          <Button onClick={connectWallet} disabled={connectDisabled}>
-            Connect Wallet
-          </Button>
+          <Button onClick={connectWallet}>Connect Wallet</Button>
         )}
 
-        {/* ===== ERC-721 ===== */}
-        <h3 style={{ marginTop: 24 }}>Step 2 — Mint Pickle Punk (ERC-721)</h3>
-        <p style={{ opacity: 0.7 }}>ERC-721 minting will open on March 1.</p>
-        <Button disabled={!ERC721_ENABLED}>Mint ERC-721 (Disabled)</Button>
-
-        {/* ===== Ethscriptions ===== */}
-        <h3 style={{ marginTop: 24 }}>Step 3 — Mint Ethscription (Calldata)</h3>
+        {/* Upload */}
+        <h3 style={{ marginTop: 22 }}>Step 2 — Upload Image</h3>
 
         <div
           style={{
@@ -276,32 +408,52 @@ export default function PicklePunksMintPage() {
             borderRadius: 14,
             border: "1px solid rgba(255,255,255,0.14)",
             background: "rgba(255,255,255,0.04)",
-            marginBottom: 12,
           }}
         >
-          <div style={{ fontWeight: 800, marginBottom: 6 }}>Destination</div>
-          <div style={{ opacity: 0.85, fontSize: 14 }}>
-            Mode: <b>{TEST_MODE ? "TEST" : "PROD"}</b>
-            <br />
-            To: <b>{TEST_MODE ? TEST_TO_ENS : account || "(connect wallet)"}</b>
+          <div style={{ fontWeight: 800, marginBottom: 8 }}>
+            Upload (PNG/JPG/WebP) — Max {MAX_FILE_KB} KB
           </div>
 
-          <div style={{ fontWeight: 800, marginTop: 12, marginBottom: 6 }}>Payload Preview</div>
-          <div style={{ opacity: 0.85, fontSize: 13, wordBreak: "break-word" }}>
-            {ethscriptionPayload}
-          </div>
+          <input
+            type="file"
+            accept="image/png,image/jpeg,image/webp"
+            onChange={onSelectFile}
+            style={{ width: "100%", marginBottom: 10 }}
+          />
 
-          <div style={{ marginTop: 10, opacity: 0.7, fontSize: 13 }}>
-            Size: {payloadBytes.toLocaleString()} bytes (max {MAX_DATA_URI_BYTES.toLocaleString()}).
+          {fileName && (
+            <div style={{ opacity: 0.85, fontSize: 14 }}>
+              File: <b>{fileName}</b> • Size: <b>{bytesToKB(fileBytes)} KB</b>
+            </div>
+          )}
+
+          {previewUrl && (
+            <div style={{ marginTop: 12 }}>
+              <img
+                src={previewUrl}
+                alt="Preview"
+                style={{
+                  width: 160,
+                  height: 160,
+                  objectFit: "cover",
+                  borderRadius: 16,
+                  border: "1px solid rgba(255,255,255,0.18)",
+                }}
+              />
+            </div>
+          )}
+
+          <div style={{ marginTop: 12, fontWeight: 800 }}>Payload Preview (what gets minted)</div>
+          <div style={{ opacity: 0.8, fontSize: 12, wordBreak: "break-word", marginTop: 6 }}>
+            {dataUri ? dataUri : "(no image loaded yet)"}
           </div>
         </div>
 
-        <Button onClick={mintEthscription} disabled={!account || !ETHSCRIPTIONS_TESTING_ENABLED}>
-          Mint Ethscription (Test)
+        {/* Mint */}
+        <h3 style={{ marginTop: 22 }}>Step 3 — Mint Ethscription</h3>
+        <Button onClick={mintImageEthscription} disabled={!account || !dataUri}>
+          Mint Ethscription (Image)
         </Button>
-
-        {/* ===== Debug / Status ===== */}
-        {status && <p style={{ marginTop: 14, opacity: 0.85 }}>{status}</p>}
 
         {txHash && (
           <p style={{ marginTop: 12 }}>
@@ -309,25 +461,66 @@ export default function PicklePunksMintPage() {
             <a href={`https://etherscan.io/tx/${txHash}`} target="_blank" rel="noreferrer">
               {txHash}
             </a>
-            <br />
-            <span style={{ opacity: 0.7 }}>
-              On Etherscan: open <b>Input Data</b> → <b>View Input As</b> → <b>UTF-8</b>.
-            </span>
           </p>
         )}
 
-        {error && <p style={{ marginTop: 16, color: "#ff8080" }}>{error}</p>}
+        {status && <p style={{ marginTop: 12, opacity: 0.85 }}>{status}</p>}
+        {error && <p style={{ marginTop: 12, color: "#ff8080" }}>{error}</p>}
 
-        <p style={{ marginTop: 32, opacity: 0.6 }}>
-          Note: ERC-721 mint remains parked. This button only tests calldata-based Ethscriptions style
-          transactions.
+        {/* Decode/Download */}
+        <h3 style={{ marginTop: 30 }}>Decode & Download From TX Hash</h3>
+
+        <div
+          style={{
+            padding: 14,
+            borderRadius: 14,
+            border: "1px solid rgba(255,255,255,0.14)",
+            background: "rgba(255,255,255,0.04)",
+          }}
+        >
+          <div style={{ opacity: 0.85, marginBottom: 10 }}>
+            Paste a TX hash minted via calldata. This tool fetches tx.input, decodes it, and downloads
+            the original image.
+          </div>
+
+          <input
+            value={decodeTx}
+            onChange={(e) => setDecodeTx(e.target.value)}
+            placeholder="0x..."
+            style={{
+              width: "100%",
+              padding: 12,
+              borderRadius: 12,
+              border: "1px solid rgba(255,255,255,0.2)",
+              background: "rgba(0,0,0,0.35)",
+              color: "white",
+              marginBottom: 12,
+            }}
+          />
+
+          <Button onClick={decodeAndDownload} disabled={!decodeTx.trim()}>
+            Download Decoded File
+          </Button>
+
+          {decodeStatus && <p style={{ marginTop: 12, opacity: 0.85 }}>{decodeStatus}</p>}
+          {decodeError && <p style={{ marginTop: 12, color: "#ff8080" }}>{decodeError}</p>}
+
+          {!PUBLIC_RPC_URL && (
+            <p style={{ marginTop: 12, color: "#ffcf70" }}>
+              Missing NEXT_PUBLIC_ETH_RPC_URL. Add it in Vercel Env Vars and redeploy.
+            </p>
+          )}
+        </div>
+
+        <p style={{ marginTop: 28, opacity: 0.6 }}>
+          Note: This is a test harness inside the Pickle Punks mint page. Later you can move it to a
+          dedicated /ethscriptions/mint page.
+        </p>
+
+        <p style={{ marginTop: 10, opacity: 0.6 }}>
+          Commit message: <b>feat: add image upload ethscription mint + tx decode/download tool</b>
         </p>
       </div>
     </main>
   );
 }
-
-/**
- * COMMIT MESSAGE:
- * feat: enable calldata ethscription test mint to bitbrains.eth (no ENS resolver)
- */
