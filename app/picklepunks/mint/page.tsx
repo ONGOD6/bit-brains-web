@@ -269,6 +269,45 @@ export default function PicklePunksMintPage() {
           />
         </div>
 
+        {/* ================= MINT DATE HEADLINE (UI ONLY) ================= */}
+        <div
+          style={{
+            textAlign: "center",
+            fontWeight: 900,
+            fontSize: 22,
+            letterSpacing: 2,
+            marginBottom: 10,
+          }}
+        >
+          MINTING MARCH 1
+        </div>
+
+        {/* ================= COMMUNITY TEST DISCLAIMER (UI ONLY) ================= */}
+        <div
+          style={{
+            marginBottom: 14,
+            padding: "14px 16px",
+            borderRadius: 14,
+            background: "rgba(255,255,255,0.04)",
+            border: "1px solid rgba(255,255,255,0.12)",
+            lineHeight: 1.55,
+            fontSize: "0.95rem",
+          }}
+        >
+          <strong>🧪 Open Community Test</strong>
+          <br />
+          This Ethscriptions mint is open for public testing until{" "}
+          <strong>one week before the Pickle Punks mint (March 1)</strong>.
+          <br />
+          <br />
+          • Only <strong>one Ethscription</strong> can be minted per transaction
+          <br />
+          • All Ethscriptions are <strong>immutable</strong> and{" "}
+          <strong>indexed & viewable on ethscriptions.com</strong>
+          <br />
+          • Test responsibly — on-chain data is permanent
+        </div>
+
         {/* Card */}
         <section
           style={{
@@ -466,11 +505,7 @@ export default function PicklePunksMintPage() {
 
             <button
               onClick={mintOptionA}
-              disabled={
-                busy ||
-                !account ||
-                (mode === "image" ? !dataUrl : !text.trim())
-              }
+              disabled={busy || !account || (mode === "image" ? !dataUrl : !text.trim())}
               style={{
                 width: "100%",
                 padding: "14px 14px",
