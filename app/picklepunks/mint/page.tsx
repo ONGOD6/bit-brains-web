@@ -5,11 +5,15 @@ import React, { useMemo, useState } from "react";
 /**
  * Pickle Punks — Mint Page (LOCKED / PARKED) + Ethscriptions Test Mode
  *
- * TEST MODE:
- * - Sends to TEST_TO_ENS (bitbrains.eth) AFTER resolving ENS -> 0x address
+ * ✅ TEST MODE (now):
+ * - Sends a 0 ETH transaction with raw calldata (hex of UTF-8 data: URI)
+ * - `to` = bitbrains.eth (ENS)  ✅ (no client-side ENS resolver needed)
  *
- * PROD MODE (later):
- * - Sends to connected wallet address (sender)
+ * ✅ PROD MODE (later):
+ * - `to` = connected wallet address (sender)
+ *
+ * NOTE:
+ * - This is a calldata-indexing test harness. It does not affect ERC-721 mint.
  */
 
 declare global {
@@ -22,15 +26,17 @@ declare global {
 }
 
 /* ===================== FLAGS ===================== */
-const MINTING_LIVE = false;
+const MINTING_LIVE = false; // March 1 switch (site-wide)
 const ERC721_ENABLED = false;
 
-// ✅ Allow Ethscriptions testing even while parked
+// ✅ Allow Ethscriptions *testing* even while parked
 const ETHSCRIPTIONS_TESTING_ENABLED = true;
 
 /* ===================== DESTINATION MODE ===================== */
 const TEST_MODE = true;
-const TEST_TO_ENS = "bitbrains.eth"; // <-- your ENS for testing
+
+// TEST: send to your ENS
+const TEST_TO_ENS = "bitbrains.eth";
 
 /* ===================== CONSTANTS ===================== */
 const BANNER_IMAGE = "/IMG_2082.jpeg";
@@ -53,133 +59,6 @@ function utf8ToHex(str: string): string {
 
 function byteLengthUtf8(str: string) {
   return new TextEncoder().encode(str).length;
-}
-
-/* ===================== ENS RESOLUTION (MAINNET) ===================== */
-/**
- * We resolve ENS ourselves so the transaction `to` is a real 0x address.
- * Uses:
- * - ENS Registry: 0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e
- * - registry.resolver(node)
- * - resolver.addr(node)
- *
- * No external libs.
- */
-const ENS_REGISTRY = "0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e";
-
-// namehash implementation (ENS)
-function namehash(name: string): string {
-  let node =
-    "0x" +
-    "00".repeat(32);
-
-  if (!name) return node;
-
-  const labels = name.toLowerCase().split(".");
-  for (let i = labels.length - 1; i >= 0; i--) {
-    const labelSha = keccak256Utf8(labels[i]); // 32 bytes
-    node = keccak256Hex(node + labelSha.slice(2)); // keccak(node + labelSha)
-  }
-  return node;
-}
-
-// Minimal keccak helpers via built-in crypto in browser is not available for keccak,
-// so we use ethereum's JSON-RPC `web3_sha3` to hash.
-// That keeps it dependency-free.
-async function keccak256Hex(hexNo0x: string): Promise<string> {
-  const hex = hexNo0x.startsWith("0x") ? hexNo0x : "0x" + hexNo0x;
-  const out = (await window.ethereum!.request({
-    method: "web3_sha3",
-    params: [hex],
-  })) as string;
-  return out;
-}
-
-async function keccak256Utf8(text: string): Promise<string> {
-  // Convert utf8 -> hex -> web3_sha3
-  const bytes = new TextEncoder().encode(text);
-  let hex = "0x";
-  for (let i = 0; i < bytes.length; i++) hex += bytes[i].toString(16).padStart(2, "0");
-  const out = (await window.ethereum!.request({
-    method: "web3_sha3",
-    params: [hex],
-  })) as string;
-  return out;
-}
-
-function pad32(hex: string) {
-  const h = hex.startsWith("0x") ? hex.slice(2) : hex;
-  return "0x" + h.padStart(64, "0");
-}
-
-function encodeCall(selector: string, args: string[]) {
-  // selector: 4-byte hex string like '0x0178b8bf'
-  // args: each must be 32-byte padded
-  const sel = selector.startsWith("0x") ? selector.slice(2) : selector;
-  const data = "0x" + sel + args.map((a) => (a.startsWith("0x") ? a.slice(2) : a)).join("");
-  return data;
-}
-
-function decodeAddressFromReturn(data: string) {
-  // returns 32-byte word; address is last 20 bytes
-  const hex = data.startsWith("0x") ? data.slice(2) : data;
-  if (hex.length < 64) return "";
-  const last40 = hex.slice(64 - 40, 64);
-  return "0x" + last40;
-}
-
-async function resolveEnsToAddress(ensName: string): Promise<string> {
-  if (!window.ethereum) throw new Error("Wallet not found.");
-
-  // 1) namehash
-  // Note: namehash uses keccak, so we build it using web3_sha3
-  let node = "0x" + "00".repeat(32);
-  const labels = ensName.toLowerCase().split(".");
-  for (let i = labels.length - 1; i >= 0; i--) {
-    const labelSha = await keccak256Utf8(labels[i]);
-    const combined = node + labelSha.slice(2); // concat (no 0x in second)
-    node = await keccak256Hex(combined);
-  }
-
-  // 2) registry.resolver(bytes32) => address
-  // resolver(bytes32) selector = 0x0178b8bf
-  const resolverCallData = encodeCall("0x0178b8bf", [pad32(node)]);
-  const resolverRet = (await window.ethereum.request({
-    method: "eth_call",
-    params: [
-      {
-        to: ENS_REGISTRY,
-        data: resolverCallData,
-      },
-      "latest",
-    ],
-  })) as string;
-
-  const resolverAddr = decodeAddressFromReturn(resolverRet);
-  if (!resolverAddr || resolverAddr === "0x0000000000000000000000000000000000000000") {
-    throw new Error(`No resolver set for ${ensName}`);
-  }
-
-  // 3) resolver.addr(bytes32) => address
-  // addr(bytes32) selector = 0x3b3b57de
-  const addrCallData = encodeCall("0x3b3b57de", [pad32(node)]);
-  const addrRet = (await window.ethereum.request({
-    method: "eth_call",
-    params: [
-      {
-        to: resolverAddr,
-        data: addrCallData,
-      },
-      "latest",
-    ],
-  })) as string;
-
-  const finalAddr = decodeAddressFromReturn(addrRet);
-  if (!finalAddr || finalAddr === "0x0000000000000000000000000000000000000000") {
-    throw new Error(`ENS ${ensName} does not resolve to an address`);
-  }
-
-  return finalAddr;
 }
 
 /* ===================== UI ===================== */
@@ -214,18 +93,18 @@ export default function PicklePunksMintPage() {
   const [txHash, setTxHash] = useState("");
   const [error, setError] = useState("");
   const [status, setStatus] = useState("");
-  const [resolvedTo, setResolvedTo] = useState<string>("");
 
+  /* ---------- ETHSCRIPTION PAYLOAD (JSON -> data:application/json,...) ---------- */
   const payloadObject = useMemo(
     () => ({
       type: "bitbrains.ethscriptions.test",
       version: "1.0",
-      message: "testing bitbrains",
+      message: "calldata indexing test",
       anchors: {
         protocol_ens: "bitbrains.eth",
-        collection_ens: "picklepunks.eth",
         site: "https://bitbrains.us",
       },
+      // NOTE: timestamp helps uniqueness if you mint again later
       timestamp: new Date().toISOString(),
     }),
     []
@@ -238,6 +117,7 @@ export default function PicklePunksMintPage() {
 
   const payloadBytes = useMemo(() => byteLengthUtf8(ethscriptionPayload), [ethscriptionPayload]);
 
+  /* ===================== ACTIONS ===================== */
   async function connectWallet() {
     try {
       setError("");
@@ -266,7 +146,7 @@ export default function PicklePunksMintPage() {
     if (!window.ethereum) throw new Error("Wallet not found.");
     const chainId = (await window.ethereum.request({ method: "eth_chainId" })) as string;
     if (chainId !== "0x1") {
-      throw new Error("Wrong network. Please switch MetaMask to Ethereum Mainnet and try again.");
+      throw new Error("Wrong network. Switch MetaMask to Ethereum Mainnet and try again.");
     }
   }
 
@@ -277,7 +157,7 @@ export default function PicklePunksMintPage() {
       setTxHash("");
 
       if (!ETHSCRIPTIONS_TESTING_ENABLED) {
-        setError("Ethscriptions testing is currently disabled.");
+        setError("Ethscriptions testing is disabled.");
         return;
       }
 
@@ -294,22 +174,16 @@ export default function PicklePunksMintPage() {
       await assertMainnet();
 
       if (payloadBytes > MAX_DATA_URI_BYTES) {
-        setError(
-          `Payload too large (${payloadBytes} bytes). Max allowed is ${MAX_DATA_URI_BYTES} bytes.`
-        );
+        setError(`Payload too large (${payloadBytes} bytes). Max is ${MAX_DATA_URI_BYTES} bytes.`);
         return;
       }
 
-      let toAddress = "";
-      if (TEST_MODE) {
-        setStatus(`Resolving ${TEST_TO_ENS}…`);
-        toAddress = await resolveEnsToAddress(TEST_TO_ENS);
-        setResolvedTo(toAddress);
-      } else {
-        toAddress = account;
-        setResolvedTo(account);
-      }
+      // ✅ Destination logic:
+      // TEST: send to bitbrains.eth
+      // PROD: send to the connected wallet (sender)
+      const toAddress = TEST_MODE ? TEST_TO_ENS : account;
 
+      // ✅ Critical: raw calldata = hex(utf8("data:..."))
       const dataHex = utf8ToHex(ethscriptionPayload);
 
       setStatus("Sending transaction… confirm in MetaMask.");
@@ -334,6 +208,9 @@ export default function PicklePunksMintPage() {
     }
   }
 
+  /* ===================== RENDER ===================== */
+  const connectDisabled = !ETHSCRIPTIONS_TESTING_ENABLED && !MINTING_LIVE;
+
   return (
     <main
       style={{
@@ -344,6 +221,7 @@ export default function PicklePunksMintPage() {
       }}
     >
       <div style={{ maxWidth: 960, margin: "0 auto" }}>
+        {/* ===== Banner ===== */}
         <img
           src={BANNER_IMAGE}
           alt="Pickle Punks"
@@ -355,6 +233,7 @@ export default function PicklePunksMintPage() {
           }}
         />
 
+        {/* ===== Status ===== */}
         <div
           style={{
             textAlign: "center",
@@ -373,19 +252,22 @@ export default function PicklePunksMintPage() {
           Ethscriptions testing is {ETHSCRIPTIONS_TESTING_ENABLED ? "ENABLED" : "DISABLED"}.
         </p>
 
+        {/* ===== Wallet ===== */}
         <h3 style={{ marginTop: 28 }}>Step 1 — Connect Wallet</h3>
         {account ? (
           <p>Connected: {shorten(account)}</p>
         ) : (
-          <Button onClick={connectWallet} disabled={!ETHSCRIPTIONS_TESTING_ENABLED && !MINTING_LIVE}>
+          <Button onClick={connectWallet} disabled={connectDisabled}>
             Connect Wallet
           </Button>
         )}
 
+        {/* ===== ERC-721 ===== */}
         <h3 style={{ marginTop: 24 }}>Step 2 — Mint Pickle Punk (ERC-721)</h3>
         <p style={{ opacity: 0.7 }}>ERC-721 minting will open on March 1.</p>
         <Button disabled={!ERC721_ENABLED}>Mint ERC-721 (Disabled)</Button>
 
+        {/* ===== Ethscriptions ===== */}
         <h3 style={{ marginTop: 24 }}>Step 3 — Mint Ethscription (Calldata)</h3>
 
         <div
@@ -401,9 +283,7 @@ export default function PicklePunksMintPage() {
           <div style={{ opacity: 0.85, fontSize: 14 }}>
             Mode: <b>{TEST_MODE ? "TEST" : "PROD"}</b>
             <br />
-            To (ENS): <b>{TEST_MODE ? TEST_TO_ENS : "(sender wallet)"}</b>
-            <br />
-            To (resolved): <b>{resolvedTo ? resolvedTo : "(not resolved yet)"}</b>
+            To: <b>{TEST_MODE ? TEST_TO_ENS : account || "(connect wallet)"}</b>
           </div>
 
           <div style={{ fontWeight: 800, marginTop: 12, marginBottom: 6 }}>Payload Preview</div>
@@ -420,6 +300,7 @@ export default function PicklePunksMintPage() {
           Mint Ethscription (Test)
         </Button>
 
+        {/* ===== Debug / Status ===== */}
         {status && <p style={{ marginTop: 14, opacity: 0.85 }}>{status}</p>}
 
         {txHash && (
@@ -445,3 +326,8 @@ export default function PicklePunksMintPage() {
     </main>
   );
 }
+
+/**
+ * COMMIT MESSAGE:
+ * feat: enable calldata ethscription test mint to bitbrains.eth (no ENS resolver)
+ */
