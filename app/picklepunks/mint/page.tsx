@@ -6,7 +6,7 @@ import React, { useEffect, useMemo, useState } from "react";
  * Pickle Punks — Ethscriptions Mint (Option A)
  * - ✅ Next.js 14 / Vercel build-safe (NO global Window.ethereum redeclare)
  * - ✅ Mobile MetaMask friendly
- * - ✅ No payload preview spam
+ * - ✅ Base64 JSON payload so Ethscriptions renders image correctly
  * - ✅ Clean UI with Pickle Punks banner
  */
 
@@ -20,11 +20,11 @@ type EthereumProvider = {
 /* ================= CONFIG ================= */
 const MINTING_ENABLED = true;
 
-// Option A sink (DO NOT use 0x0…dEaD; MetaMask flags it as "internal account" on mobile sometimes)
+// Option A sink (avoid 0x0…dEaD; MetaMask can flag as "internal account" on mobile)
 const SINK_TO_ADDRESS = "0x0000000000000000000000000000000000000001";
 
-// Safety cap: many wallets/providers will refuse very large calldata
-const MAX_DATA_BYTES = 110_000; // ~110 KB
+// Safety cap: many wallets/providers refuse very large calldata
+const MAX_DATA_BYTES = 110_000; // ~110 KB (image bytes, not whole JSON)
 
 // Banner image (must exist in /public)
 const BANNER_SRC = "/IMG_2082.jpeg";
@@ -46,26 +46,32 @@ function bytesLengthFromDataUrl(dataUrl: string): number {
   return Math.floor((b64.length * 3) / 4) - padding;
 }
 
+// ✅ CRITICAL: base64-encode the JSON wrapper so Ethscriptions renders properly
 function buildEthscriptionsPayload(dataUrl: string): string {
-  // Canonical payload: JSON with a type field + image data URL
   const obj = {
     type: "picklepunks.ethscriptions.image",
     version: "1.0",
-    image: dataUrl, // must be a data:image/*;base64,... URL
+    image: dataUrl, // already data:image/*;base64,...
     createdAt: new Date().toISOString(),
     site: "https://www.bitbrains.us",
   };
 
-  return "data:application/json," + encodeURIComponent(JSON.stringify(obj));
+  const json = JSON.stringify(obj);
+
+  // UTF-8 safe base64
+  const b64 =
+    typeof window !== "undefined"
+      ? btoa(unescape(encodeURIComponent(json)))
+      : "";
+
+  return "data:application/json;base64," + b64;
 }
 
 function toHexData(utf8: string): string {
   // Convert UTF-8 string to hex (0x...)
-  // Use TextEncoder (supported broadly)
   const enc = new TextEncoder();
   const bytes = enc.encode(utf8);
 
-  // IMPORTANT: do NOT use for..of on Uint8Array (older TS builds can be weird in strict settings)
   let hex = "0x";
   for (let i = 0; i < bytes.length; i++) {
     hex += bytes[i].toString(16).padStart(2, "0");
@@ -143,7 +149,6 @@ export default function PicklePunksMintPage() {
 
     setFileName(file.name);
 
-    // Read file -> data URL
     const reader = new FileReader();
     reader.onload = () => {
       const result = String(reader.result || "");
@@ -183,11 +188,11 @@ export default function PicklePunksMintPage() {
       return;
     }
 
-    // Safety checks
     if (!dataUrl.startsWith("data:image/")) {
       setError("Invalid image data URL.");
       return;
     }
+
     if (dataBytes > MAX_DATA_BYTES) {
       setError(
         `Image too large for reliable calldata minting on mobile. Your image is ~${dataBytes.toLocaleString()} bytes. Try a smaller PNG (target < ${MAX_DATA_BYTES.toLocaleString()} bytes).`
@@ -198,7 +203,6 @@ export default function PicklePunksMintPage() {
     setBusy(true);
     setStatus("Opening MetaMask… confirm the transaction.");
     try {
-      // eth_sendTransaction with 0 value + calldata payload
       const txHash = await eth.request({
         method: "eth_sendTransaction",
         params: [
@@ -334,13 +338,7 @@ export default function PicklePunksMintPage() {
             </label>
 
             {dataUrl ? (
-              <div
-                style={{
-                  marginTop: 12,
-                  display: "flex",
-                  justifyContent: "center",
-                }}
-              >
+              <div style={{ marginTop: 12, display: "flex", justifyContent: "center" }}>
                 <img
                   src={dataUrl}
                   alt="Preview"
@@ -387,7 +385,8 @@ export default function PicklePunksMintPage() {
             </button>
 
             <div style={{ marginTop: 10, fontSize: 12, opacity: 0.7, lineHeight: 1.35 }}>
-              Destination (sink): <span style={{ fontFamily: "monospace" }}>{SINK_TO_ADDRESS}</span>
+              Destination (sink):{" "}
+              <span style={{ fontFamily: "monospace" }}>{SINK_TO_ADDRESS}</span>
               <br />
               Note: No payload preview is shown. We send a 0 ETH tx with calldata (your JSON payload),
               which is what Ethscriptions indexers read.
