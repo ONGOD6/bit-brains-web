@@ -1,4 +1,4 @@
-import Link from "next/link";
+ import Link from "next/link";
 
 export const metadata = {
   title: "BITY Nodes — ENS Identity",
@@ -52,7 +52,8 @@ export default function ENSPage() {
           }}
         >
           {[
-            { name: "bitynodes.eth", role: "Genesis / Protocol Root" },
+            { name: "bitbrains.eth", role: "Genesis / Protocol Root" },
+            { name: "bitynodes.eth", role: "BITY Nodes Root" },
             { name: "onodes.eth", role: "Operators" },
             { name: "vnodes.eth", role: "Verifiers" },
           ].map((ens) => (
