@@ -1,3 +1,4 @@
+import "./globals.css";
 import Link from "next/link";
 
 export const metadata = {
@@ -12,26 +13,17 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>
+      <body className="site">
         <nav className="nav">
           <Link href="/">Home</Link>
           <Link href="/proof-of-care">Proof of Care</Link>
           <Link href="/pocc">POCC</Link>
           <Link href="/manifesto">Protocol Standards</Link>
           <Link href="/ens">ENS</Link>
-
-          {/* ✅ NEW: Brains as a Service */}
           <Link href="/baas">BaaS</Link>
 
-          {/* Genesis Mints */}
           <Link href="/bitbrains/mint">
-            <span
-              style={{
-                display: "inline-block",
-                lineHeight: 1.05,
-                textAlign: "center",
-              }}
-            >
+            <span style={{ display: "inline-block", lineHeight: 1.05, textAlign: "center" }}>
               Bit Brains
               <br />
               Genesis Mint
@@ -39,13 +31,7 @@ export default function RootLayout({
           </Link>
 
           <Link href="/picklepunks/mint">
-            <span
-              style={{
-                display: "inline-block",
-                lineHeight: 1.05,
-                textAlign: "center",
-              }}
-            >
+            <span style={{ display: "inline-block", lineHeight: 1.05, textAlign: "center" }}>
               Pickle Punks
               <br />
               Mint
