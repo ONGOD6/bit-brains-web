@@ -1,64 +1,62 @@
-import "./globals.css";
-import Link from "next/link";
+/* Bit Brains — Global Styles (Dark Baseline) */
 
-export const metadata = {
-  title: "Bit Brains",
-  description: "Bit Brains protocol site",
-};
+:root {
+  color-scheme: dark;
+}
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  return (
-    <html lang="en">
-      <body>
-        <nav className="nav">
-          <Link href="/">Home</Link>
-          <Link href="/proof-of-care">Proof of Care</Link>
-          <Link href="/pocc">POCC</Link>
-          <Link href="/manifesto">Protocol Standards</Link>
-          <Link href="/ens">ENS</Link>
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: #050507;
+  color: rgba(255, 255, 255, 0.92);
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial,
+    "Apple Color Emoji", "Segoe UI Emoji";
+}
 
-          {/* BaaS (added, nothing else changed) */}
-          <Link href="/baas">BaaS</Link>
+/* Links should NOT be default blue */
+a {
+  color: rgba(255, 255, 255, 0.9);
+  text-decoration: none;
+}
 
-          {/* Genesis Mints */}
-          <Link href="/bitbrains/mint">
-            <span
-              style={{
-                display: "inline-block",
-                lineHeight: 1.05,
-                textAlign: "center",
-              }}
-            >
-              Bit Brains
-              <br />
-              Genesis Mint
-            </span>
-          </Link>
+a:hover {
+  text-decoration: underline;
+}
 
-          <Link href="/picklepunks/mint">
-            <span
-              style={{
-                display: "inline-block",
-                lineHeight: 1.05,
-                textAlign: "center",
-              }}
-            >
-              Pickle Punks
-              <br />
-              Mint
-            </span>
-          </Link>
+/* NAV — your layout uses className="nav" */
+.nav {
+  display: flex;
+  gap: 1.25rem;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  padding: 0.9rem 1rem;
+}
 
-          <Link href="/stake">Stake</Link>
-          <Link href="/music">Music</Link>
-        </nav>
+/* App layout shells you’re already using */
+.page-shell {
+  min-height: 100vh;
+  display: grid;
+  place-items: start center;
+  padding: 2rem 1rem;
+}
 
-        {children}
-      </body>
-    </html>
-  );
+.content-shell {
+  width: 100%;
+  max-width: 1100px;
+}
+
+/* Typography helpers used across pages */
+.page-title {
+  margin: 0;
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 800;
+  letter-spacing: 0.01em;
+}
+
+.page-subtitle {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.75);
+  line-height: 1.7;
 }
