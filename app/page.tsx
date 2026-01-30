@@ -84,40 +84,10 @@ export default function HomePage() {
             Launching Soon
           </div>
 
-          {/* BITYNODES.US LINK (NEW) */}
+          {/* BITY NODES NOTICE (UNCHANGED) */}
           <div
             style={{
-              marginTop: "1.5rem",
-              maxWidth: 640,
-              opacity: 0.78,
-              fontSize: "0.95rem",
-              textAlign: "center",
-              lineHeight: 1.5,
-            }}
-          >
-            <strong>Bitynodes Protocol</strong>
-            <br />
-            Please visit the node website at{" "}
-            <Link
-              href="https://bitynodes.us"
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{
-                textDecoration: "underline",
-                color: "rgba(255,255,255,0.9)",
-                fontWeight: 700,
-              }}
-            >
-              bitynodes.us
-            </Link>{" "}
-            to learn more about autonomous intelligence nodes, verification, and
-            network participation.
-          </div>
-
-          {/* BITY NODES NOTICE */}
-          <div
-            style={{
-              marginTop: "1.25rem",
+              marginTop: "2rem",
               opacity: 0.75,
               fontSize: "0.9rem",
               textAlign: "center",
@@ -137,6 +107,27 @@ export default function HomePage() {
             >
               View GitHub →
             </Link>
+          </div>
+
+          {/* ✅ NEW: SINGLE SENTENCE + LINK (ONLY ADDITION) */}
+          <div
+            style={{
+              marginTop: "0.75rem",
+              fontSize: "0.85rem",
+              opacity: 0.7,
+              textAlign: "center",
+            }}
+          >
+            Please visit the node website at{" "}
+            <Link
+              href="https://bitynodes.us"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ textDecoration: "underline" }}
+            >
+              bitynodes.us
+            </Link>{" "}
+            to learn more about autonomous intelligence nodes and verification.
           </div>
 
           {/* BRAIN IMAGE CENTERPIECE */}
@@ -160,7 +151,7 @@ export default function HomePage() {
             />
           </div>
 
-          {/* EXPLICIT DISCLAIMER */}
+          {/* DISCLAIMER */}
           <div
             style={{
               marginTop: "1.25rem",
