@@ -44,7 +44,7 @@ export default function HomePage() {
                 color: "rgba(255,255,255,0.75)",
               }}
             >
-              Brain Intelligence Token
+              Brain Intelligence Technology
             </div>
           </div>
 
