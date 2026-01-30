@@ -13,52 +13,19 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body
-        style={{
-          margin: 0,
-          background: "#050507",
-          color: "rgba(255,255,255,0.92)",
-        }}
-      >
-        <nav
-          className="nav"
-          style={{
-            display: "flex",
-            gap: "1.25rem",
-            alignItems: "center",
-            justifyContent: "center",
-            flexWrap: "wrap",
-            padding: "0.9rem 1rem",
-          }}
-        >
-          <Link href="/" style={{ color: "rgba(255,255,255,0.9)" }}>
-            Home
-          </Link>
-          <Link
-            href="/proof-of-care"
-            style={{ color: "rgba(255,255,255,0.9)" }}
-          >
-            Proof of Care
-          </Link>
-          <Link href="/pocc" style={{ color: "rgba(255,255,255,0.9)" }}>
-            POCC
-          </Link>
-          <Link
-            href="/manifesto"
-            style={{ color: "rgba(255,255,255,0.9)" }}
-          >
-            Protocol Standards
-          </Link>
-          <Link href="/ens" style={{ color: "rgba(255,255,255,0.9)" }}>
-            ENS
-          </Link>
+      <body>
+        <nav className="nav">
+          <Link href="/">Home</Link>
+          <Link href="/proof-of-care">Proof of Care</Link>
+          <Link href="/pocc">POCC</Link>
+          <Link href="/manifesto">Protocol Standards</Link>
+          <Link href="/ens">ENS</Link>
 
-          <Link href="/baas" style={{ color: "rgba(255,255,255,0.9)" }}>
-            BaaS
-          </Link>
+          {/* BaaS (added, nothing else changed) */}
+          <Link href="/baas">BaaS</Link>
 
           {/* Genesis Mints */}
-          <Link href="/bitbrains/mint" style={{ color: "rgba(255,255,255,0.9)" }}>
+          <Link href="/bitbrains/mint">
             <span
               style={{
                 display: "inline-block",
@@ -72,7 +39,7 @@ export default function RootLayout({
             </span>
           </Link>
 
-          <Link href="/picklepunks/mint" style={{ color: "rgba(255,255,255,0.9)" }}>
+          <Link href="/picklepunks/mint">
             <span
               style={{
                 display: "inline-block",
@@ -86,12 +53,8 @@ export default function RootLayout({
             </span>
           </Link>
 
-          <Link href="/stake" style={{ color: "rgba(255,255,255,0.9)" }}>
-            Stake
-          </Link>
-          <Link href="/music" style={{ color: "rgba(255,255,255,0.9)" }}>
-            Music
-          </Link>
+          <Link href="/stake">Stake</Link>
+          <Link href="/music">Music</Link>
         </nav>
 
         {children}
