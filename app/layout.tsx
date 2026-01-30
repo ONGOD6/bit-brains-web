@@ -1,4 +1,3 @@
-import "./globals.css";
 import Link from "next/link";
 
 export const metadata = {
@@ -20,6 +19,9 @@ export default function RootLayout({
           <Link href="/pocc">POCC</Link>
           <Link href="/manifesto">Protocol Standards</Link>
           <Link href="/ens">ENS</Link>
+
+          {/* ✅ NEW: Brains as a Service */}
+          <Link href="/baas">BaaS</Link>
 
           {/* Genesis Mints */}
           <Link href="/bitbrains/mint">
