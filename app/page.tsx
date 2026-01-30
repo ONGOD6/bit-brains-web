@@ -34,7 +34,7 @@ export default function HomePage() {
               BIT
             </div>
 
-            {/* BRAIN INTELLIGENCE TOKEN */}
+            {/* BRAIN INTELLIGENCE Technology */}
             <div
               style={{
                 fontSize: 16,
