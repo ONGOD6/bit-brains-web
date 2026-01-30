@@ -84,10 +84,40 @@ export default function HomePage() {
             Launching Soon
           </div>
 
+          {/* BITYNODES.US LINK (NEW) */}
+          <div
+            style={{
+              marginTop: "1.5rem",
+              maxWidth: 640,
+              opacity: 0.78,
+              fontSize: "0.95rem",
+              textAlign: "center",
+              lineHeight: 1.5,
+            }}
+          >
+            <strong>Bitynodes Protocol</strong>
+            <br />
+            Please visit the node website at{" "}
+            <Link
+              href="https://bitynodes.us"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                textDecoration: "underline",
+                color: "rgba(255,255,255,0.9)",
+                fontWeight: 700,
+              }}
+            >
+              bitynodes.us
+            </Link>{" "}
+            to learn more about autonomous intelligence nodes, verification, and
+            network participation.
+          </div>
+
           {/* BITY NODES NOTICE */}
           <div
             style={{
-              marginTop: "2rem",
+              marginTop: "1.25rem",
               opacity: 0.75,
               fontSize: "0.9rem",
               textAlign: "center",
