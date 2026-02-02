@@ -21,6 +21,13 @@ export default function RootLayout({
           <Link href="/manifesto">Protocol Standards</Link>
           <Link href="/ens">ENS</Link>
           <Link href="/baas">BaaS</Link>
+          <Link href="/genesis-docs">
+          <span style={{ display: "inline-block", lineHeight: 1.05, textAlign: "center" }}>
+           Genesis
+            <br />
+            Docs
+           </span>
+          </Link>
 
           <Link href="/bitbrains/mint">
             <span style={{ display: "inline-block", lineHeight: 1.05, textAlign: "center" }}>
