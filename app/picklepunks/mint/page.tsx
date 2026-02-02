@@ -339,6 +339,36 @@ export default function PicklePunksMintPage() {
             </span>
           </div>
 
+          {/* ===== MINT PHASES ===== */}
+<div style={{ marginBottom: 18, opacity: 0.85, lineHeight: 1.65 }}>
+  <strong>Pickle Punks Mint Phases</strong>
+  <br /><br />
+
+  The Pickle Punks collection is released across <b>three distinct mint phases</b>:
+  <br /><br />
+
+  <b>Phase 1 — Genesis (March 1)</b>
+  <br />
+  • 1,500 Pickle Punks — <b>Headshots</b>
+  <br /><br />
+
+  <b>Phase 2 — Expansion (August 1)</b>
+  <br />
+  • 1,500 Pickle Punks — <b>Full-body</b>
+  <br /><br />
+
+  <b>Phase 3 — Completion (November 1)</b>
+  <br />
+  • 2,000 Pickle Punks — <b>Full-body</b>
+  <br /><br />
+
+  <span style={{ opacity: 0.75 }}>
+    Each phase represents a separate mint window. Supply is fixed per phase and
+    does not roll over between phases.
+  </span>
+</div>
+          
+          
           {/* ===== EVERYTHING BELOW IS YOUR ORIGINAL PAGE, UNCHANGED ===== */}
 
           {/* Mode Toggle */}
