@@ -161,6 +161,35 @@ export default function BitBrainsGenesisMintPage() {
           This page is intentionally locked to prevent accidental mints while Genesis art + ERC-721 JSON metadata are finalized.
         </p>
 
+        {/* ===== MINT PHASES ===== */}
+<div style={{ marginBottom: 18, opacity: 0.85, lineHeight: 1.65 }}>
+  <strong>Bit Brains Mint Phases</strong>
+  <br /><br />
+
+  The Bit Brains collection is released across <b>three distinct mint phases</b>:
+  <br /><br />
+
+  <b>Phase 1 — Genesis (Date TBD)</b>
+  <br />
+  • 1,500 Bit Brains
+  <br /><br />
+
+  <b>Phase 2 — Expansion (August 1)</b>
+  <br />
+  • 1,500 Bit Brains
+  <br /><br />
+
+  <b>Phase 3 — Completion (November 1)</b>
+  <br />
+  • 2,000 Bit Brains
+  <br /><br />
+
+  <span style={{ opacity: 0.75 }}>
+    Each phase represents a separate mint window. Supply is fixed per phase and
+    does not roll over between phases.
+  </span>
+</div>
+
         {/* ===== Mint Card ===== */}
         <div
           style={{
