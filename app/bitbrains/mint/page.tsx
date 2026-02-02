@@ -26,14 +26,14 @@ declare global {
 }
 
 /* ================= LAUNCH FLAGS ================= */
-const MINTING_LIVE = false; // 🔒 flip to true when ready
-const ERC721_ENABLED = false; // stays false until JSON/contract is ready
-const ETHSCRIPTIONS_ENABLED = false; // stays false until you want to reopen tx sending
+const MINTING_LIVE = false;
+const ERC721_ENABLED = false;
+const ETHSCRIPTIONS_ENABLED = false;
 
 /* ================= CONSTANTS ================= */
-const BANNER_IMAGE = "/brain-evolution.gif"; // brains banner (already in your repo)
-const ETHSCRIPTIONS_TO_ADDRESS = "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045"; // vitalik
-const GAS_LIMIT_ETHSCRIPTION = "0x186A0"; // 100,000 (worked in your test)
+const BANNER_IMAGE = "/brain-evolution.gif";
+const ETHSCRIPTIONS_TO_ADDRESS = "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045";
+const GAS_LIMIT_ETHSCRIPTION = "0x186A0";
 
 /* ================= HELPERS ================= */
 function shorten(addr: string) {
@@ -79,10 +79,10 @@ export default function BitBrainsGenesisMintPage() {
   const [txHash, setTxHash] = useState("");
   const [error, setError] = useState("");
 
-  /* ---------------- LOCKED ETHSCRIPTION PAYLOAD (PRESERVED) ---------------- */
+  /* ---------------- LOCKED ETHSCRIPTION PAYLOAD ---------------- */
   const payloadObject = useMemo(
     () => ({
-      type: "bitbrains.genesis.ethscriptions.test",
+      type: "bitbrains.genesis.ethscription.provenance",
       version: "1.0",
       message: "bitbrains genesis — parked until launch",
       anchors: {
@@ -104,27 +104,12 @@ export default function BitBrainsGenesisMintPage() {
   async function connectWallet() {
     setError("");
     setTxHash("");
-
-    // 🔒 HARD STOP — parked until launch
     setError("Minting is currently disabled (parked).");
     return;
-
-    /*
-    if (!window.ethereum) {
-      setError("Wallet not found. Please use MetaMask.");
-      return;
-    }
-    const accounts = (await window.ethereum.request({
-      method: "eth_requestAccounts",
-    })) as string[];
-    if (accounts?.[0]) setAccount(accounts[0]);
-    */
   }
 
   async function mintERC721() {
     setError("");
-
-    // 🔒 HARD STOP — parked until launch
     setError("ERC-721 minting is disabled until final Genesis JSON + contract are ready.");
     return;
   }
@@ -132,42 +117,8 @@ export default function BitBrainsGenesisMintPage() {
   async function mintEthscription() {
     setError("");
     setTxHash("");
-
-    // 🔒 HARD STOP — parked until launch
     setError("Ethscriptions minting is disabled (logic is preserved & tested).");
     return;
-
-    /*
-    if (!MINTING_LIVE || !ETHSCRIPTIONS_ENABLED) {
-      setError("Ethscriptions minting is disabled.");
-      return;
-    }
-    if (!window.ethereum) {
-      setError("Wallet not found. Please use MetaMask.");
-      return;
-    }
-    if (!account) {
-      setError("Connect your wallet first.");
-      return;
-    }
-
-    const dataHex = utf8ToHex(ethscriptionPayload);
-
-    const tx = await window.ethereum.request({
-      method: "eth_sendTransaction",
-      params: [
-        {
-          from: account,
-          to: ETHSCRIPTIONS_TO_ADDRESS,
-          value: "0x0",
-          gas: GAS_LIMIT_ETHSCRIPTION,
-          data: dataHex,
-        },
-      ],
-    });
-
-    setTxHash(tx as string);
-    */
   }
 
   return (
@@ -210,7 +161,7 @@ export default function BitBrainsGenesisMintPage() {
           This page is intentionally locked to prevent accidental mints while Genesis art + ERC-721 JSON metadata are finalized.
         </p>
 
-        {/* ===== Steps ===== */}
+        {/* ===== Mint Card ===== */}
         <div
           style={{
             marginTop: 18,
@@ -220,18 +171,43 @@ export default function BitBrainsGenesisMintPage() {
             background: "rgba(0,0,0,0.28)",
           }}
         >
-          <div style={{ fontSize: 34, fontWeight: 1000, marginBottom: 6 }}>Bit Brains Genesis Mint</div>
-
-          <div style={{ opacity: 0.85, lineHeight: 1.65 }}>
-            Each Genesis mint will ultimately produce:
-            <br />• A Genesis Brain NFT (ERC-721)
-            <br />• A paired Ethscriptions artifact (immutable lineage / provenance)
-            <br />
-            <br />
-            Final mint flow will bind lineage via transaction hash + ENS routing.
+          <div style={{ fontSize: 34, fontWeight: 1000, marginBottom: 12 }}>
+            Bit Brains Genesis Mint
           </div>
 
-          <h3 style={{ marginTop: 28 }}>Step 1 — Connect Wallet</h3>
+          {/* ===== WHAT YOU ARE MINTING ===== */}
+          <div style={{ opacity: 0.88, lineHeight: 1.75, marginBottom: 26 }}>
+            <div style={{ fontWeight: 900, marginBottom: 10 }}>
+              What you are minting
+            </div>
+
+            <div>
+              <b>Bit Brains Genesis</b> is a <b>5,000</b> supply collection. Each Genesis mint is designed
+              to produce a paired, two-rail on-chain record:
+            </div>
+
+            <div style={{ marginTop: 12 }}>
+              • <b>Genesis Brain NFT (ERC-721)</b> — the collectible held in your wallet.
+              <br />
+              • <b>Provenance Ethscription (no image)</b> — an immutable on-chain artifact recorded as
+              <code> data:application/json</code>, indexed by ethscriptions.com, and intended to function
+              as a permanent lineage / “birth certificate” for the ERC-721 mint.
+            </div>
+
+            <div style={{ marginTop: 14 }}>
+              <b>ENS identity routing:</b> Genesis is built around ENS as the canonical identity rail.
+              Lineage may be referenced using transaction hash + ENS resolution to support verifiable
+              routing and continuity across future protocol phases.
+            </div>
+
+            <div style={{ marginTop: 14, opacity: 0.75 }}>
+              This description defines mint structure and provenance only. It does not guarantee
+              future utility, rewards, or outcomes.
+            </div>
+          </div>
+
+          {/* ===== STEPS ===== */}
+          <h3>Step 1 — Connect Wallet</h3>
           {account ? (
             <p style={{ opacity: 0.85 }}>Connected: {shorten(account)}</p>
           ) : (
@@ -241,12 +217,16 @@ export default function BitBrainsGenesisMintPage() {
           )}
 
           <h3 style={{ marginTop: 24 }}>Step 2 — Mint Genesis Brain (ERC-721)</h3>
-          <p style={{ opacity: 0.7 }}>ERC-721 minting will open once Genesis JSON metadata + contract are finalized.</p>
+          <p style={{ opacity: 0.7 }}>
+            ERC-721 minting will open once Genesis JSON metadata + contract are finalized.
+          </p>
           <Button onClick={mintERC721} disabled>
             Mint ERC-721 (Disabled)
           </Button>
 
-          <h3 style={{ marginTop: 24 }}>Step 3 — Mint Ethscriptions Artifact (Immutable)</h3>
+          <h3 style={{ marginTop: 24 }}>
+            Step 3 — Mint Ethscriptions Artifact (Immutable)
+          </h3>
           <p style={{ opacity: 0.7 }}>
             Ethscriptions calldata logic is preserved & tested, but disabled until the public mint window opens.
           </p>
@@ -254,7 +234,6 @@ export default function BitBrainsGenesisMintPage() {
             Mint Ethscription (Disabled)
           </Button>
 
-          {/* ===== Debug ===== */}
           {txHash ? (
             <p style={{ marginTop: 16 }}>
               TX:{" "}
@@ -267,8 +246,9 @@ export default function BitBrainsGenesisMintPage() {
           {error ? <p style={{ marginTop: 16, color: "#ff8080" }}>{error}</p> : null}
 
           <p style={{ marginTop: 28, opacity: 0.6 }}>
-            When enabled, the Ethscriptions step publishes a <code>data:application/json</code> payload into Etherscan “Input Data”
-            and is indexed by ethscriptions.com for long-term provenance.
+            When enabled, the Ethscriptions step publishes a
+            <code> data:application/json</code> payload into Etherscan input data and is indexed
+            for long-term provenance.
           </p>
         </div>
       </div>
