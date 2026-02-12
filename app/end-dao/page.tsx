@@ -22,7 +22,7 @@ export default function EndDaoPage() {
               marginBottom: 12,
             }}
           >
-            Ethereum Node Development DAO
+            Ethereum Nodes Development DAO
           </h1>
 
           <div
