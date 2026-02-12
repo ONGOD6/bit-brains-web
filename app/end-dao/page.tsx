@@ -1,8 +1,9 @@
+import Link from "next/link";
+
 export default function EndDaoPage() {
   return (
     <main className="page-shell">
       <section className="content-shell">
-
         <div
           style={{
             maxWidth: 900,
@@ -12,89 +13,106 @@ export default function EndDaoPage() {
             paddingBottom: "80px",
           }}
         >
-          {/* Title */}
+          {/* TITLE */}
           <h1
             style={{
               fontSize: 42,
               fontWeight: 800,
               letterSpacing: "0.08em",
-              marginBottom: 12,
+              marginBottom: 20,
             }}
           >
             Ethereum Node Development DAO
           </h1>
 
-          <div
-            style={{
-              fontSize: 14,
-              letterSpacing: "0.28em",
-              textTransform: "uppercase",
-              opacity: 0.6,
-              marginBottom: 40,
-            }}
-          >
-            END DAO
-          </div>
-
-          {/* Intro */}
+          {/* INTRO */}
           <p
             style={{
               fontSize: 18,
               lineHeight: 1.7,
-              opacity: 0.85,
+              opacity: 0.9,
               marginBottom: 50,
             }}
           >
-            END DAO is the constitutional governance body of the Bit Brains
-            and BITY Nodes ecosystem.
+            The Ethereum Node Development DAO (END DAO) is the constitutional
+            authority of the Bit Brains and BITY Nodes ecosystem.
           </p>
 
-          {/* Timeline Block */}
+          {/* TIMELINE */}
           <div
             style={{
               marginBottom: 60,
-              opacity: 0.9,
+              fontSize: 16,
+              letterSpacing: "0.08em",
               lineHeight: 1.8,
+              opacity: 0.85,
             }}
           >
-            <strong>Launch:</strong> March 1, 2026
+            <strong>LAUNCH</strong> — March 1, 2026
             <br />
-            <strong>DAO Activation:</strong> March 1, 2027
+            <strong>DAO ACTIVATION</strong> — March 1, 2027
           </div>
 
-          {/* Governance Summary */}
+          {/* GOVERNANCE SCOPE */}
           <div
             style={{
-              textAlign: "left",
               maxWidth: 720,
               margin: "0 auto",
               lineHeight: 1.8,
               fontSize: 16,
-              opacity: 0.85,
+              opacity: 0.9,
+              textAlign: "left",
             }}
           >
-            <p>
-              During Year One, infrastructure stabilizes under founder
-              stewardship.
-            </p>
-
-            <p>
-              Upon activation, governance transitions to token holders through
-              supermajority voting thresholds.
-            </p>
-
             <p>
               END DAO governs emissions, treasury allocation, service revenue,
               node reward distribution, and constitutional guardrails.
             </p>
 
             <p>
-              The native governance token is <strong>BITS — Brain Intelligence
-              Technology Services</strong>, launching at DAO activation.
+              During Year One, infrastructure stabilizes under founder
+              stewardship. Upon activation, governance transitions to token
+              holders through supermajority voting thresholds.
+            </p>
+
+            <p>
+              The native governance token is{" "}
+              <strong>BITS — Brain Intelligence Technology Services</strong>,
+              launching at DAO activation.
             </p>
           </div>
 
-          {/* Constitutional Guardrail */}
+          {/* EIP LINKS */}
+          <div
+            style={{
+              marginTop: 60,
+              fontSize: 14,
+              opacity: 0.75,
+              letterSpacing: "0.06em",
+            }}
+          >
+            Governance Specifications:
+            <br />
+            <Link
+              href="https://github.com/ONGOD6/bit-brains-web/blob/main/eips/eip-0013.md"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ textDecoration: "underline", display: "block", marginTop: 8 }}
+            >
+              EIP-0013 — END DAO Governance & Revenue Framework
+            </Link>
+
+            <Link
+              href="https://github.com/ONGOD6/bit-brains-web/blob/main/eips/eip-0013-a.md"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ textDecoration: "underline", display: "block", marginTop: 6 }}
+            >
+              EIP-0013-A — Emission & Authorization Constraints
+            </Link>
+          </div>
+
+          {/* CONSTITUTIONAL FOOTER */}
           <div
             style={{
               marginTop: 70,
@@ -103,12 +121,9 @@ export default function EndDaoPage() {
               letterSpacing: "0.06em",
             }}
           >
-            Fixed supply.  
-            Supermajority governance.  
-            Long-term infrastructure alignment.
+            Fixed supply. Supermajority governance. Long-term infrastructure alignment.
           </div>
         </div>
-
       </section>
     </main>
   );
