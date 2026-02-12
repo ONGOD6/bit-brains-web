@@ -13,15 +13,16 @@ export default function HomePage() {
             gap: "1.25rem",
           }}
         >
-          {/* BIT LOCKUP */}
+          {/* BIT BRAINS LOCKUP (PROTOCOL BRAND — NOT TOKEN) */}
           <div
             style={{
               display: "grid",
               placeItems: "center",
               marginBottom: "0.25rem",
+              gap: "0.35rem",
             }}
           >
-            {/* BIT (centered over INTELLIGENCE) */}
+            {/* BIT BRAINS */}
             <div
               style={{
                 fontSize: 28,
@@ -31,10 +32,10 @@ export default function HomePage() {
                 color: "rgba(255,255,255,0.95)",
               }}
             >
-              BIT
+              BIT BRAINS
             </div>
 
-            {/* BRAIN INTELLIGENCE Technology */}
+            {/* BRAIN INTELLIGENCE TECHNOLOGY (PROTOCOL ACRONYM LANGUAGE) */}
             <div
               style={{
                 fontSize: 16,
@@ -45,6 +46,20 @@ export default function HomePage() {
               }}
             >
               Brain Intelligence Technology
+            </div>
+
+            {/* TOKEN IDENTITY (SUBTLE, NON-PROMISSORY) */}
+            <div
+              style={{
+                fontSize: 12,
+                fontWeight: 600,
+                letterSpacing: "0.08em",
+                color: "rgba(255,255,255,0.55)",
+                textTransform: "uppercase",
+              }}
+            >
+              Native token: BITS (Brain Intelligence Technology Services) — launches
+              at DAO activation (Mar 1, 2027)
             </div>
           </div>
 
