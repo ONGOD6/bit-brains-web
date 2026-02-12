@@ -4,7 +4,6 @@ export default function HomePage() {
   return (
     <main className="page-shell">
       <section className="content-shell">
-        {/* HERO BLOCK */}
         <div
           style={{
             display: "grid",
@@ -13,19 +12,17 @@ export default function HomePage() {
             gap: "1.25rem",
           }}
         >
-          {/* BIT BRAINS LOCKUP (PROTOCOL BRAND — NOT TOKEN) */}
+          {/* BRAND LOCKUP */}
           <div
             style={{
               display: "grid",
               placeItems: "center",
-              marginBottom: "0.25rem",
-              gap: "0.35rem",
+              marginBottom: "0.5rem",
             }}
           >
-            {/* BIT BRAINS */}
             <div
               style={{
-                fontSize: 28,
+                fontSize: 32,
                 fontWeight: 800,
                 letterSpacing: "0.22em",
                 marginLeft: "0.22em",
@@ -35,120 +32,72 @@ export default function HomePage() {
               BIT BRAINS
             </div>
 
-            {/* BRAIN INTELLIGENCE TECHNOLOGY (PROTOCOL ACRONYM LANGUAGE) */}
             <div
               style={{
-                fontSize: 16,
+                fontSize: 14,
                 fontWeight: 600,
-                letterSpacing: "0.12em",
+                letterSpacing: "0.18em",
                 textTransform: "uppercase",
-                color: "rgba(255,255,255,0.75)",
+                color: "rgba(255,255,255,0.6)",
+                marginTop: 6,
               }}
             >
               Brain Intelligence Technology
             </div>
-
-            {/* TOKEN IDENTITY (SUBTLE, NON-PROMISSORY) */}
-            <div
-              style={{
-                fontSize: 12,
-                fontWeight: 600,
-                letterSpacing: "0.08em",
-                color: "rgba(255,255,255,0.55)",
-                textTransform: "uppercase",
-              }}
-            >
-              Native token: BITS (Brain Intelligence Technology Services) — launches
-              at DAO activation (Mar 1, 2027)
-            </div>
           </div>
 
-          {/* HERO TEXT */}
-          <h1 className="page-title">Proof of Care comes first.</h1>
+          {/* HERO TITLE */}
+          <h1 className="page-title">
+            Genesis begins.
+          </h1>
 
-          <p className="page-subtitle" style={{ maxWidth: 820 }}>
-            Bit Brains is a protocol for NFTs, ENS-based Identity,
-            Zero-Knowledge Proof Eligibility, Autonomous Intelligence Node
-            Protocol, and Real-World Asset Integration — beginning on Ethereum.
-          </p>
-
-          <Link
-            href="/proof-of-care"
+          {/* MINT ANNOUNCEMENT */}
+          <div
             style={{
-              marginTop: "0.25rem",
-              color: "rgba(255,255,255,0.9)",
-              textDecoration: "underline",
+              fontSize: 16,
               fontWeight: 600,
+              letterSpacing: "0.05em",
+              color: "rgba(255,255,255,0.9)",
             }}
           >
-            Enter Proof of Care →
+            Pickle Punks Genesis Mint begins March 1, 2026.
+            <br />
+            Brains Genesis Mint — Date TBD.
+          </div>
+
+          {/* CTA */}
+          <Link
+            href="/picklepunks/mint"
+            style={{
+              marginTop: "0.75rem",
+              padding: "12px 24px",
+              borderRadius: 10,
+              background: "rgba(255,255,255,0.08)",
+              border: "1px solid rgba(255,255,255,0.15)",
+              color: "#ffffff",
+              fontWeight: 600,
+              textDecoration: "none",
+              transition: "0.2s ease",
+            }}
+          >
+            Enter Genesis Mint →
           </Link>
 
           {/* SITE STATUS */}
           <div
             style={{
-              marginTop: "0.75rem",
-              opacity: 0.65,
-              fontWeight: 600,
+              marginTop: "1.25rem",
+              opacity: 0.55,
+              fontSize: 14,
             }}
           >
-            Website & GitHub
-            <br />
-            Under Construction
-            <br />
-            Launching Soon
+            Website & GitHub under active development.
           </div>
 
-          {/* BITY NODES NOTICE (UNCHANGED) */}
+          {/* BRAIN IMAGE */}
           <div
             style={{
-              marginTop: "2rem",
-              opacity: 0.75,
-              fontSize: "0.9rem",
-              textAlign: "center",
-            }}
-          >
-            <strong>BITY Nodes Protocol</strong> — Under Construction
-            <br />
-            <Link
-              href="https://github.com/ONGOD6"
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{
-                fontSize: "0.85rem",
-                textDecoration: "underline",
-                opacity: 0.85,
-              }}
-            >
-              View GitHub →
-            </Link>
-          </div>
-
-          {/* ✅ NEW: SINGLE SENTENCE + LINK (ONLY ADDITION) */}
-          <div
-            style={{
-              marginTop: "0.75rem",
-              fontSize: "0.85rem",
-              opacity: 0.7,
-              textAlign: "center",
-            }}
-          >
-            Please visit the node website at{" "}
-            <Link
-              href="https://bitynodes.us"
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ textDecoration: "underline" }}
-            >
-              bitynodes.us
-            </Link>{" "}
-            to learn more about autonomous intelligence nodes and verification.
-          </div>
-
-          {/* BRAIN IMAGE CENTERPIECE */}
-          <div
-            style={{
-              marginTop: "2.25rem",
+              marginTop: "2.5rem",
               width: "100%",
               maxWidth: 520,
               opacity: 0.95,
@@ -156,7 +105,7 @@ export default function HomePage() {
           >
             <img
               src="/brain-evolution.gif"
-              alt="Brain evolution"
+              alt="Genesis brain evolution"
               style={{
                 width: "100%",
                 height: "auto",
@@ -164,23 +113,6 @@ export default function HomePage() {
                 borderRadius: 18,
               }}
             />
-          </div>
-
-          {/* DISCLAIMER */}
-          <div
-            style={{
-              marginTop: "1.25rem",
-              maxWidth: 520,
-              fontSize: 13,
-              lineHeight: 1.5,
-              color: "rgba(255,255,255,0.55)",
-            }}
-          >
-            <strong>EXAMPLE IMAGE ONLY.</strong>
-            <br />
-            This image is a visual prototype for demonstration purposes. Final
-            production Genesis NFTs may differ in appearance, traits, and
-            structure.
           </div>
         </div>
       </section>
