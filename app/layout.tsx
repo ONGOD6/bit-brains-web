@@ -22,6 +22,7 @@ export default function RootLayout({
 
           {/* wording only: keep route the same */}
           <Link href="/manifesto">Protocol Standards</Link>
+          <Link href="/end-dao">END DAO</Link>
 
           <Link href="/ens">ENS</Link>
           <Link href="/baas">BaaS</Link>
