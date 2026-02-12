@@ -74,7 +74,7 @@ export default function EndDaoPage() {
             }}
           >
             <p>
-              During Year One, infrastructure stabilizes under founder
+              During Year One, infrastructure stabilizes under founders
               stewardship.
             </p>
 
