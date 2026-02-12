@@ -108,7 +108,7 @@ export default function EndDaoPage() {
           >
             <div style={{ marginBottom: 10 }}>
               <Link
-                href="https://github.com/ONGOD6/bit-brains-eip/blob/main/eips/eip-0013.md"
+                href="https://github.com/ONGOD6/bit-brains-eip-/blob/main/eips/eip-0013.md"
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{ textDecoration: "underline" }}
@@ -119,7 +119,7 @@ export default function EndDaoPage() {
 
             <div>
               <Link
-                href="https://github.com/ONGOD6/bit-brains-eip/blob/main/eips/eip-0013-a.md"
+                href="https://github.com/ONGOD6/bit-brains-eip-/blob/main/eips/eip-0013-a.md"
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{ textDecoration: "underline" }}
@@ -145,5 +145,3 @@ export default function EndDaoPage() {
     </main>
   );
 }
-
-          
